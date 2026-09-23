@@ -1,0 +1,911 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Générateur de Schéma d'Aéroport</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: #0b0f19;
+            color: #e2e8f0;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+        }
+        header {
+            background-color: #111827;
+            border-bottom: 1px solid #1f2937;
+            padding: 12px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        h1 { font-size: 18px; font-weight: 600; color: #f3f4f6; }
+        
+        .main-container { display: flex; flex: 1; height: calc(100vh - 57px); }
+        .sidebar {
+            width: 380px;
+            background-color: #111827;
+            border-right: 1px solid #1f2937;
+            display: flex;
+            flex-direction: column;
+            z-index: 10;
+        }
+        .sidebar-content { padding: 16px; flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 14px; }
+
+        .search-box { position: relative; }
+        
+        input[type="text"] {
+            width: 100%;
+            background-color: #1f2937;
+            color: #38bdf8;
+            border: 1px solid #374151;
+            border-radius: 6px;
+            padding: 10px 12px;
+            font-size: 13px;
+            font-weight: 600;
+            outline: none;
+            text-transform: uppercase;
+        }
+        input[type="text"]::placeholder {
+            color: #6b7280;
+            text-transform: none;
+            font-weight: normal;
+        }
+        input[type="text"]:focus { border-color: #3b82f6; }
+
+        .autocomplete-results {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background-color: #1f2937;
+            border: 1px solid #374151;
+            border-top: none;
+            border-bottom-left-radius: 6px;
+            border-bottom-right-radius: 6px;
+            max-height: 220px;
+            overflow-y: auto;
+            z-index: 20;
+            display: none;
+        }
+        .autocomplete-item {
+            padding: 8px 12px;
+            font-size: 12px;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            border-bottom: 1px solid #2d3748;
+        }
+        .autocomplete-item:last-child { border-bottom: none; }
+        .autocomplete-item:hover { background-color: #374151; color: #fff; }
+
+        .quick-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+        .tag-btn {
+            background-color: #1f2937;
+            color: #9ca3af;
+            border: 1px solid #374151;
+            border-radius: 4px;
+            padding: 4px 8px;
+            font-size: 11px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .tag-btn:hover { color: #38bdf8; border-color: #3b82f6; }
+
+        /* Carte d'informations aéroport */
+        .info-card {
+            background-color: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 8px;
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .info-card h2 {
+            font-size: 14px;
+            font-weight: 700;
+            color: #f8fafc;
+            line-height: 1.3;
+        }
+        .info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 6px 12px;
+            font-size: 11px;
+            align-items: center;
+        }
+        .info-label { color: #94a3b8; font-weight: 500; }
+        .info-val { color: #e2e8f0; font-weight: 600; }
+
+        /* Section rétractable des fréquences */
+        .freq-details {
+            margin-top: 6px;
+            border-top: 1px solid #334155;
+            padding-top: 6px;
+        }
+        .freq-details summary {
+            font-size: 11px;
+            font-weight: 600;
+            color: #38bdf8;
+            cursor: pointer;
+            user-select: none;
+            outline: none;
+        }
+        .freq-details summary:hover { color: #60a5fa; }
+        .freq-list {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            margin-top: 6px;
+            max-height: 140px;
+            overflow-y: auto;
+        }
+        .freq-item {
+            display: flex;
+            justify-content: space-between;
+            font-size: 11px;
+            background: #0f172a;
+            padding: 4px 6px;
+            border-radius: 4px;
+        }
+        .freq-type { color: #94a3b8; font-weight: 500; }
+        .freq-mhz { color: #10b981; font-weight: 700; font-family: monospace; }
+
+        /* Bouton de filtre de pistes */
+        .filter-btn {
+            width: 100%;
+            background-color: #374151;
+            color: #f3f4f6;
+            border: 1px solid #4b5563;
+            border-radius: 6px;
+            padding: 8px 12px;
+            font-size: 11px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            transition: background-color 0.2s, border-color 0.2s;
+        }
+        .filter-btn:hover { background-color: #4b5563; border-color: #6b7280; }
+        .filter-btn.active {
+            background-color: #1e3a8a;
+            color: #93c5fd;
+            border-color: #3b82f6;
+        }
+
+        .runway-list { display: flex; flex-direction: column; gap: 8px; max-height: 260px; overflow-y: auto; }
+        .runway-item {
+            background-color: #1f2937;
+            padding: 10px;
+            border-radius: 6px;
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            border: 1px solid #374151;
+        }
+
+        .canvas-area { flex: 1; position: relative; background-color: #080c14; display: flex; align-items: center; justify-content: center; }
+        canvas { display: block; cursor: grab; }
+        canvas:active { cursor: grabbing; }
+
+        .controls-overlay {
+            position: absolute; bottom: 20px; right: 20px; display: flex; gap: 8px;
+            background-color: rgba(17, 24, 39, 0.85); padding: 6px; border-radius: 8px; border: 1px solid #374151;
+        }
+        .ctrl-btn { background: #1f2937; color: #fff; border: 1px solid #374151; width: 34px; height: 34px; border-radius: 6px; cursor: pointer; font-weight: bold; }
+        .error-msg { background-color: #7f1d1d; color: #fecaca; padding: 10px; border-radius: 6px; font-size: 12px; display: none; }
+        .loading-msg { background-color: #1e293b; color: #38bdf8; padding: 10px; border-radius: 6px; font-size: 12px; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Airport Diagram Generator (Info Live)</h1>
+    </header>
+
+    <div class="main-container">
+        <div class="sidebar">
+            <div class="sidebar-content">
+                <div>
+                    <label style="font-size: 11px; font-weight: bold; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 8px;">
+                        Rechercher un aéroport (ICAO / Nom)
+                    </label>
+                    <div class="search-box">
+                        <input type="text" id="airportInput" placeholder="Ex: LFPG, Nice, KLAX..." oninput="handleInput(this.value)" autocomplete="off" disabled>
+                        <div id="autocompleteResults" class="autocomplete-results"></div>
+                    </div>
+                    
+                    <div class="quick-tags" id="quickTags">
+                        <button class="tag-btn" onclick="selectAirport('LFMN')">LFMN</button>
+                        <button class="tag-btn" onclick="selectAirport('LFPG')">LFPG</button>
+                        <button class="tag-btn" onclick="selectAirport('KJFK')">KJFK</button>
+                        <button class="tag-btn" onclick="selectAirport('KLAX')">KLAX</button>
+                        <button class="tag-btn" onclick="selectAirport('KSEA')">KSEA</button>
+                    </div>
+                </div>
+
+                <div id="statusBox" class="loading-msg">Téléchargement des bases de données...</div>
+                <div id="fileError" class="error-msg"></div>
+
+                <!-- Informations Générales de l'Aéroport -->
+                <div id="airportCard" class="info-card" style="display: none;">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                        <h2 id="apName">Nice-Côte d'Azur</h2>
+                        <span id="apIdent" style="background:#3b82f6; color:#fff; font-size:11px; font-weight:bold; padding:2px 6px; border-radius:4px;">LFMN</span>
+                    </div>
+                    <div class="info-grid">
+                        <div><span class="info-label">IATA : </span><span id="apIata" class="info-val">-</span></div>
+                        <div><span class="info-label">Type : </span><span id="apType" class="info-val">-</span></div>
+                        <div><span class="info-label">Ville : </span><span id="apMunicipality" class="info-val">-</span></div>
+                        <div><span class="info-label">Pays : </span><span id="apCountry" class="info-val">-</span></div>
+                        <div><span class="info-label">Altitude : </span><span id="apElev" class="info-val">-</span></div>
+                        <div><span class="info-label">Coordonnées : </span><span id="apCoords" class="info-val">-</span></div>
+                    </div>
+                    
+                    <details class="freq-details">
+                        <summary id="freqSummary">Fréquences radio (0)</summary>
+                        <div id="freqList" class="freq-list"></div>
+                    </details>
+
+                    <div style="margin-top: 4px; text-align: right;">
+                        <a id="apLink" href="#" target="_blank" rel="noopener" style="color: #38bdf8; font-size: 11px; text-decoration: none; font-weight: 600;">Fiche OurAirports ↗</a>
+                    </div>
+                </div>
+
+                <!-- Bouton optionnel de filtrage des petites pistes -->
+                <button id="filterRunwaysBtn" class="filter-btn" style="display: none;" onclick="toggleShortRunways()">
+                    <span>Masquer les pistes < 2000m</span>
+                </button>
+
+                <div id="statsBox" style="display:none; background:#1e293b; padding:10px; border-radius:6px; font-size:12px;">
+                    <div id="statsTitle" style="font-weight:bold; color:#60a5fa;">Pistes chargées</div>
+                </div>
+
+                <div id="runwayList" class="runway-list"></div>
+            </div>
+        </div>
+
+        <div class="canvas-area" id="canvasContainer">
+            <canvas id="diagramCanvas"></canvas>
+            <div class="controls-overlay">
+                <button class="ctrl-btn" onclick="zoom(1.2)">+</button>
+                <button class="ctrl-btn" onclick="zoom(0.8)">-</button>
+                <button class="ctrl-btn" onclick="resetView()">⟲</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const RUNWAYS_URL = 'https://davidmegginson.github.io/ourairports-data/runways.csv';
+        const AIRPORTS_URL = 'https://davidmegginson.github.io/ourairports-data/airports.csv';
+        const FREQUENCIES_URL = 'https://davidmegginson.github.io/ourairports-data/airport-frequencies.csv';
+        const FT_TO_M = 0.3048;
+        const MIN_RUNWAY_LENGTH_M = 2000;
+
+        const canvas = document.getElementById('diagramCanvas');
+        const ctx = canvas.getContext('2d');
+        const canvasContainer = document.getElementById('canvasContainer');
+
+        let runwaysData = {}; 
+        let airportsMetadata = {};
+        let frequenciesData = {};
+        
+        let rawRunways = [];         // Toutes les pistes brutes traitées
+        let currentRunways = [];     // Pistes actuellement visibles à l'écran
+        let hideShortRunways = false; // État du filtre
+        let currentAirportCode = '';
+
+        let viewState = { scale: 1, offsetX: 0, offsetY: 0, isDragging: false, startX: 0, startY: 0, baseBounds: null };
+
+        function resizeCanvas() {
+            canvas.width = canvasContainer.clientWidth;
+            canvas.height = canvasContainer.clientHeight;
+            if (currentRunways.length > 0) draw();
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        function parseCSVRow(line) {
+            const result = [];
+            let cur = '';
+            let inQuotes = false;
+            for (let i = 0; i < line.length; i++) {
+                const c = line[i];
+                if (c === '"') { inQuotes = !inQuotes; }
+                else if (c === ',' && !inQuotes) { result.push(cur.trim()); cur = ''; }
+                else { cur += c; }
+            }
+            result.push(cur.trim());
+            return result.map(v => v.replace(/^"|"$/g, ''));
+        }
+
+        async function fetchAllData() {
+            const statusBox = document.getElementById('statusBox');
+            const errorBox = document.getElementById('fileError');
+            const inputEl = document.getElementById('airportInput');
+
+            try {
+                statusBox.innerText = "Chargement des pistes, métadonnées et fréquences...";
+                
+                const [resRunways, resAirports, resFreqs] = await Promise.all([
+                    fetch(RUNWAYS_URL),
+                    fetch(AIRPORTS_URL),
+                    fetch(FREQUENCIES_URL)
+                ]);
+
+                if (!resRunways.ok || !resAirports.ok || !resFreqs.ok) throw new Error("Erreur de téléchargement des fichiers CSV.");
+
+                const txtRunways = await resRunways.text();
+                const txtAirports = await resAirports.text();
+                const txtFreqs = await resFreqs.text();
+
+                parseAirportsCSV(txtAirports);
+                parseRunwaysCSV(txtRunways);
+                parseFrequenciesCSV(txtFreqs);
+
+                statusBox.style.display = 'none';
+                inputEl.disabled = false;
+                inputEl.placeholder = "Taper un ICAO ou un Nom (ex: LFPG, Nice)...";
+
+                selectAirport('LFMN');
+
+            } catch (err) {
+                statusBox.style.display = 'none';
+                errorBox.innerText = `Échec de chargement des données : ${err.message}`;
+                errorBox.style.display = 'block';
+            }
+        }
+
+        function parseAirportsCSV(text) {
+            const lines = text.trim().split(/\r?\n/);
+            if (lines.length < 2) return;
+
+            const headers = parseCSVRow(lines[0]);
+            const findCol = (name) => headers.findIndex(h => h.toLowerCase() === name.toLowerCase());
+
+            const idxIdent = findCol('ident');
+            const idxName = findCol('name');
+            const idxType = findCol('type');
+            const idxLat = findCol('latitude_deg');
+            const idxLon = findCol('longitude_deg');
+            const idxElev = findCol('elevation_ft');
+            const idxCountry = findCol('iso_country');
+            const idxMunicipality = findCol('municipality');
+            const idxIata = findCol('iata_code');
+            const idxHomeLink = findCol('home_link');
+
+            airportsMetadata = {};
+
+            for (let i = 1; i < lines.length; i++) {
+                if (!lines[i]) continue;
+                const row = parseCSVRow(lines[i]);
+                const ident = row[idxIdent] ? row[idxIdent].toUpperCase() : '';
+
+                if (!ident) continue;
+
+                airportsMetadata[ident] = {
+                    ident: ident,
+                    name: row[idxName] || ident,
+                    type: row[idxType] || 'N/A',
+                    lat: parseFloat(row[idxLat]),
+                    lon: parseFloat(row[idxLon]),
+                    elev_ft: row[idxElev] !== '' ? parseFloat(row[idxElev]) : null,
+                    country: row[idxCountry] || 'N/A',
+                    municipality: row[idxMunicipality] || 'N/A',
+                    iata: row[idxIata] || '-',
+                    home_link: row[idxHomeLink] || ''
+                };
+            }
+        }
+
+        function parseRunwaysCSV(text) {
+            const lines = text.trim().split(/\r?\n/);
+            if (lines.length < 2) return;
+
+            const headers = parseCSVRow(lines[0]);
+            const findCol = (name) => headers.findIndex(h => h.toLowerCase() === name.toLowerCase());
+
+            const idxIdent = findCol('airport_ident');
+            const idxLeIdent = findCol('le_ident');
+            const idxHeIdent = findCol('he_ident');
+            const idxLeLat = findCol('le_latitude_deg');
+            const idxLeLon = findCol('le_longitude_deg');
+            const idxHeLat = findCol('he_latitude_deg');
+            const idxHeLon = findCol('he_longitude_deg');
+            const idxWidth = findCol('width_ft');
+            const idxLeDisp = findCol('le_displaced_threshold_ft');
+            const idxHeDisp = findCol('he_displaced_threshold_ft');
+
+            runwaysData = {};
+
+            for (let i = 1; i < lines.length; i++) {
+                if (!lines[i]) continue;
+                const row = parseCSVRow(lines[i]);
+                const airportIdent = row[idxIdent] ? row[idxIdent].toUpperCase() : '';
+
+                if (!airportIdent) continue;
+
+                const leLat = parseFloat(row[idxLeLat]);
+                const leLon = parseFloat(row[idxLeLon]);
+                const heLat = parseFloat(row[idxHeLat]);
+                const heLon = parseFloat(row[idxHeLon]);
+
+                if (isNaN(leLat) || isNaN(leLon) || isNaN(heLat) || isNaN(heLon)) continue;
+
+                if (!runwaysData[airportIdent]) {
+                    runwaysData[airportIdent] = [];
+                }
+
+                runwaysData[airportIdent].push({
+                    le_ident: idxLeIdent !== -1 && row[idxLeIdent] ? row[idxLeIdent] : 'LE',
+                    he_ident: idxHeIdent !== -1 && row[idxHeIdent] ? row[idxHeIdent] : 'HE',
+                    le_lat: leLat, le_lon: leLon, he_lat: heLat, he_lon: heLon,
+                    width_ft: idxWidth !== -1 && !isNaN(parseFloat(row[idxWidth])) ? parseFloat(row[idxWidth]) : 150,
+                    le_disp_ft: idxLeDisp !== -1 && !isNaN(parseFloat(row[idxLeDisp])) ? Math.max(0, parseFloat(row[idxLeDisp])) : 0,
+                    he_disp_ft: idxHeDisp !== -1 && !isNaN(parseFloat(row[idxHeDisp])) ? Math.max(0, parseFloat(row[idxHeDisp])) : 0
+                });
+            }
+        }
+
+        function parseFrequenciesCSV(text) {
+            const lines = text.trim().split(/\r?\n/);
+            if (lines.length < 2) return;
+
+            const headers = parseCSVRow(lines[0]);
+            const findCol = (name) => headers.findIndex(h => h.toLowerCase() === name.toLowerCase());
+
+            const idxIdent = findCol('airport_ident');
+            const idxType = findCol('type');
+            const idxDesc = findCol('description');
+            const idxMhz = findCol('frequency_mhz');
+
+            frequenciesData = {};
+
+            for (let i = 1; i < lines.length; i++) {
+                if (!lines[i]) continue;
+                const row = parseCSVRow(lines[i]);
+                const airportIdent = row[idxIdent] ? row[idxIdent].toUpperCase() : '';
+
+                if (!airportIdent) continue;
+
+                if (!frequenciesData[airportIdent]) {
+                    frequenciesData[airportIdent] = [];
+                }
+
+                frequenciesData[airportIdent].push({
+                    type: idxType !== -1 && row[idxType] ? row[idxType] : 'FREQ',
+                    description: idxDesc !== -1 && row[idxDesc] ? row[idxDesc] : '',
+                    mhz: idxMhz !== -1 && row[idxMhz] ? row[idxMhz] : '-'
+                });
+            }
+        }
+
+        function getAirportTypeBadge(type) {
+            const config = {
+                'large_airport':  { label: 'Grand aéroport', bg: '#10b981', color: '#ffffff' },
+                'medium_airport': { label: 'Aéroport moyen', bg: '#3b82f6', color: '#ffffff' },
+                'small_airport':  { label: 'Petit aéroport', bg: '#8b5cf6', color: '#ffffff' },
+                'heliport':       { label: 'Héliport',        bg: '#f59e0b', color: '#ffffff' },
+                'seaplane_base':  { label: 'Hydrobase',       bg: '#06b6d4', color: '#ffffff' },
+                'closed':         { label: 'Fermé',           bg: '#ef4444', color: '#ffffff' }
+            };
+
+            const cfg = config[type] || { label: type || 'N/A', bg: '#4b5563', color: '#ffffff' };
+
+            return `<span style="background-color: ${cfg.bg}; color: ${cfg.color}; font-size: 10px; font-weight: bold; padding: 2px 6px; border-radius: 4px; display: inline-block;">${cfg.label}</span>`;
+        }
+
+        function handleInput(val) {
+            const query = val.trim().toUpperCase();
+            const resultsBox = document.getElementById('autocompleteResults');
+            
+            if (!query) {
+                resultsBox.style.display = 'none';
+                return;
+            }
+
+            const matches = Object.keys(runwaysData)
+                .filter(code => {
+                    const meta = airportsMetadata[code];
+                    return code.startsWith(query) || (meta && meta.name.toUpperCase().includes(query));
+                })
+                .slice(0, 8);
+
+            if (matches.length > 0) {
+                resultsBox.innerHTML = '';
+                matches.forEach(code => {
+                    const meta = airportsMetadata[code];
+                    const name = meta ? meta.name : 'Aéroport';
+                    const typeBadge = meta ? getAirportTypeBadge(meta.type) : 'N/A';
+                    const count = runwaysData[code].length;
+
+                    const item = document.createElement('div');
+                    item.className = 'autocomplete-item';
+                    item.innerHTML = `
+                        <div style="display:flex; justify-content:space-between; align-items:center;">
+                            <div>
+                                <b>${code}</b>
+                                <span style="margin-left:6px;">${typeBadge}</span>
+                            </div>
+                            <span style="color:#9ca3af; font-size:11px;">${count} piste(s)</span>
+                        </div>
+                        <div style="color:#94a3b8; font-size:11px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${name}</div>
+                    `;
+                    item.onclick = () => {
+                        document.getElementById('airportInput').value = code;
+                        resultsBox.style.display = 'none';
+                        selectAirport(code);
+                    };
+                    resultsBox.appendChild(item);
+                });
+                resultsBox.style.display = 'block';
+            } else {
+                resultsBox.style.display = 'none';
+            }
+
+            if (runwaysData[query]) {
+                selectAirport(query);
+            }
+        }
+
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.search-box')) {
+                document.getElementById('autocompleteResults').style.display = 'none';
+            }
+        });
+
+        function selectAirport(code) {
+            const upperCode = code.toUpperCase();
+            const errorBox = document.getElementById('fileError');
+            errorBox.style.display = 'none';
+
+            if (!runwaysData[upperCode] || runwaysData[upperCode].length === 0) {
+                errorBox.innerText = `Aéroport '${upperCode}' non trouvé dans les données de pistes.`;
+                errorBox.style.display = 'block';
+                return;
+            }
+
+            currentAirportCode = upperCode;
+            hideShortRunways = false; // Réinitialisation du filtre pour le nouvel aéroport
+
+            document.getElementById('airportInput').value = upperCode;
+            document.getElementById('autocompleteResults').style.display = 'none';
+
+            displayAirportInfo(upperCode);
+            rawRunways = processRunwayCoordinates(runwaysData[upperCode]);
+            
+            updateFilterButtonVisibility();
+            applyFilterAndRefresh();
+        }
+
+        function updateFilterButtonVisibility() {
+            const filterBtn = document.getElementById('filterRunwaysBtn');
+            const hasShortRunways = rawRunways.some(r => r.length_m < MIN_RUNWAY_LENGTH_M);
+            const hasLongRunways = rawRunways.some(r => r.length_m >= MIN_RUNWAY_LENGTH_M);
+
+            // Affiche l'option uniquement s'il y a au moins une piste < 2000m ET au moins une piste >= 2000m
+            if (hasShortRunways && hasLongRunways) {
+                filterBtn.style.display = 'flex';
+            } else {
+                filterBtn.style.display = 'none';
+            }
+        }
+
+        function toggleShortRunways() {
+            hideShortRunways = !hideShortRunways;
+            applyFilterAndRefresh();
+        }
+
+        function applyFilterAndRefresh() {
+            const filterBtn = document.getElementById('filterRunwaysBtn');
+            
+            if (hideShortRunways) {
+                currentRunways = rawRunways.filter(r => r.length_m >= MIN_RUNWAY_LENGTH_M);
+                filterBtn.classList.add('active');
+                filterBtn.innerHTML = `<span>Afficher toutes les pistes</span>`;
+            } else {
+                currentRunways = [...rawRunways];
+                filterBtn.classList.remove('active');
+                filterBtn.innerHTML = `<span>Masquer les pistes < 2000m</span>`;
+            }
+
+            updateSidebarInfo(currentAirportCode);
+            resetView();
+        }
+
+        function displayAirportInfo(code) {
+            const card = document.getElementById('airportCard');
+            const meta = airportsMetadata[code];
+
+            if (!meta) {
+                card.style.display = 'none';
+                return;
+            }
+
+            document.getElementById('apName').innerText = meta.name;
+            document.getElementById('apIdent').innerText = meta.ident;
+            document.getElementById('apIata').innerText = meta.iata || '-';
+            document.getElementById('apType').innerHTML = getAirportTypeBadge(meta.type);
+            document.getElementById('apMunicipality').innerText = meta.municipality;
+            document.getElementById('apCountry').innerText = meta.country;
+            
+            if (meta.elev_ft !== null) {
+                const elevM = Math.round(meta.elev_ft * FT_TO_M);
+                document.getElementById('apElev').innerText = `${meta.elev_ft} ft (${elevM} m)`;
+            } else {
+                document.getElementById('apElev').innerText = '-';
+            }
+
+            document.getElementById('apCoords').innerText = `${meta.lat.toFixed(3)}°, ${meta.lon.toFixed(3)}°`;
+            document.getElementById('apLink').href = `https://ourairports.com/airports/${code}/`;
+
+            const freqs = frequenciesData[code] || [];
+            const freqSummary = document.getElementById('freqSummary');
+            const freqList = document.getElementById('freqList');
+            
+            freqSummary.innerText = `Fréquences radio (${freqs.length})`;
+            freqList.innerHTML = '';
+
+            if (freqs.length === 0) {
+                freqList.innerHTML = `<div style="font-size:11px; color:#6b7280; font-style:italic;">Aucune fréquence répertoriée</div>`;
+            } else {
+                freqs.forEach(f => {
+                    const item = document.createElement('div');
+                    item.className = 'freq-item';
+                    const label = f.description ? `${f.type} (${f.description})` : f.type;
+                    item.innerHTML = `
+                        <span class="freq-type" title="${label}">${label}</span>
+                        <span class="freq-mhz">${f.mhz} MHz</span>
+                    `;
+                    freqList.appendChild(item);
+                });
+            }
+
+            card.style.display = 'flex';
+        }
+
+        function processRunwayCoordinates(runways) {
+            let centerLat = 0, centerLon = 0;
+            runways.forEach(r => {
+                centerLat += (r.le_lat + r.he_lat) / 2;
+                centerLon += (r.le_lon + r.he_lon) / 2;
+            });
+            centerLat /= runways.length;
+            centerLon /= runways.length;
+
+            const R = 6371000;
+            const radCenterLat = centerLat * Math.PI / 180;
+
+            const gpsToMeters = (lat, lon) => ({
+                x: (lon - centerLon) * Math.PI / 180 * Math.cos(radCenterLat) * R,
+                y: (lat - centerLat) * Math.PI / 180 * R
+            });
+
+            return runways.map(r => {
+                const le_m = gpsToMeters(r.le_lat, r.le_lon);
+                const he_m = gpsToMeters(r.he_lat, r.he_lon);
+                const length_m = Math.hypot(he_m.x - le_m.x, he_m.y - le_m.y);
+
+                return {
+                    ...r,
+                    le_m: le_m,
+                    he_m: he_m,
+                    length_m: length_m,
+                    width_m: r.width_ft * FT_TO_M,
+                    le_disp_m: r.le_disp_ft * FT_TO_M,
+                    he_disp_m: r.he_disp_ft * FT_TO_M
+                };
+            });
+        }
+
+        function updateSidebarInfo(code) {
+            document.getElementById('statsBox').style.display = 'block';
+            const filterNotice = hideShortRunways ? ' (filtrées)' : '';
+            document.getElementById('statsTitle').innerText = `${code} : ${currentRunways.length} Piste(s)${filterNotice}`;
+            
+            const listEl = document.getElementById('runwayList');
+            listEl.innerHTML = '';
+
+            currentRunways.forEach(r => {
+                const lengthM = Math.round(r.length_m);
+                const hasDisp = r.le_disp_ft > 0 || r.he_disp_ft > 0;
+                let dispInfo = '';
+                if (r.le_disp_ft > 0) dispInfo += `Seuil ${r.le_ident}: ${Math.round(r.le_disp_ft)}ft `;
+                if (r.he_disp_ft > 0) dispInfo += `Seuil ${r.he_ident}: ${Math.round(r.he_disp_ft)}ft`;
+
+                const item = document.createElement('div');
+                item.className = 'runway-item';
+                item.innerHTML = `
+                    <div>
+                        <span style="font-weight:bold; color:#10b981;">${r.le_ident}/${r.he_ident}</span>
+                        <div style="color:#6b7280; font-size:11px;">Largeur: ${Math.round(r.width_m)}m (${Math.round(r.width_ft)}ft)</div>
+                        ${hasDisp ? `<div style="color:#f59e0b; font-size:10px; margin-top:2px;">${dispInfo}</div>` : ''}
+                    </div>
+                    <div style="text-align:right;">
+                        <div>${lengthM} m</div>
+                        <div style="color:#6b7280; font-size:11px;">${Math.round(lengthM / FT_TO_M)} ft</div>
+                    </div>
+                `;
+                listEl.appendChild(item);
+            });
+        }
+
+        function calculateBounds() {
+            let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+            currentRunways.forEach(r => {
+                minX = Math.min(minX, r.le_m.x, r.he_m.x);
+                maxX = Math.max(maxX, r.le_m.x, r.he_m.x);
+                minY = Math.min(minY, r.le_m.y, r.he_m.y);
+                maxY = Math.max(maxY, r.le_m.y, r.he_m.y);
+            });
+            return { minX, maxX, minY, maxY, width: maxX - minX || 100, height: maxY - minY || 100 };
+        }
+
+        function resetView() {
+            if (currentRunways.length === 0) return;
+            viewState.baseBounds = calculateBounds();
+            const padding = 100;
+            const scaleX = (canvas.width - 2 * padding) / viewState.baseBounds.width;
+            const scaleY = (canvas.height - 2 * padding) / viewState.baseBounds.height;
+            viewState.scale = Math.min(scaleX, scaleY);
+            viewState.offsetX = 0; viewState.offsetY = 0;
+            draw();
+        }
+
+        function zoom(factor) { viewState.scale *= factor; draw(); }
+
+        function toCanvasCoords(m) {
+            const b = viewState.baseBounds;
+            const centerX = (b.minX + b.maxX) / 2;
+            const centerY = (b.minY + b.maxY) / 2;
+            return {
+                x: canvas.width / 2 + (m.x - centerX) * viewState.scale + viewState.offsetX,
+                y: canvas.height / 2 - (m.y - centerY) * viewState.scale + viewState.offsetY
+            };
+        }
+
+        function drawDisplacedThreshold(pStart, ux, uy, nx, ny, dispPx, halfWidthPx) {
+            if (dispPx <= 0) return;
+
+            const pEnd = { x: pStart.x + ux * dispPx, y: pStart.y + uy * dispPx };
+
+            ctx.fillStyle = 'rgba(245, 158, 11, 0.25)';
+            ctx.beginPath();
+            ctx.moveTo(pStart.x + nx * halfWidthPx, pStart.y + ny * halfWidthPx);
+            ctx.lineTo(pEnd.x + nx * halfWidthPx, pEnd.y + ny * halfWidthPx);
+            ctx.lineTo(pEnd.x - nx * halfWidthPx, pEnd.y - ny * halfWidthPx);
+            ctx.lineTo(pStart.x - nx * halfWidthPx, pStart.y - ny * halfWidthPx);
+            ctx.closePath();
+            ctx.fill();
+
+            ctx.strokeStyle = '#fbbf24';
+            ctx.lineWidth = 4;
+            ctx.beginPath();
+            ctx.moveTo(pEnd.x + nx * (halfWidthPx + 4), pEnd.y + ny * (halfWidthPx + 4));
+            ctx.lineTo(pEnd.x - nx * (halfWidthPx + 4), pEnd.y - ny * (halfWidthPx + 4));
+            ctx.stroke();
+
+            const arrowCount = Math.max(1, Math.floor(dispPx / 25));
+            const step = dispPx / (arrowCount + 1);
+
+            ctx.lineWidth = 2.5;
+            for (let i = 1; i <= arrowCount; i++) {
+                const cx = pStart.x + ux * (step * i);
+                const cy = pStart.y + uy * (step * i);
+                const arrowSize = Math.max(8, halfWidthPx * 0.7);
+
+                ctx.beginPath();
+                ctx.moveTo(cx - ux * arrowSize + nx * arrowSize, cy - uy * arrowSize + ny * arrowSize);
+                ctx.lineTo(cx, cy);
+                ctx.lineTo(cx - ux * arrowSize - nx * arrowSize, cy - uy * arrowSize - ny * arrowSize);
+                ctx.stroke();
+            }
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            ctx.strokeStyle = '#111827';
+            ctx.lineWidth = 1;
+            for (let x = 0; x < canvas.width; x += 40) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); ctx.stroke(); }
+            for (let y = 0; y < canvas.height; y += 40) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); ctx.stroke(); }
+
+            currentRunways.forEach(r => {
+                const p1 = toCanvasCoords(r.le_m);
+                const p2 = toCanvasCoords(r.he_m);
+                const dx = p2.x - p1.x, dy = p2.y - p1.y;
+                const len = Math.hypot(dx, dy);
+                if (len === 0) return;
+
+                const ux = dx / len, uy = dy / len;
+                const nx = -uy, ny = ux;
+                const halfWidthPx = Math.max((r.width_m * viewState.scale) / 2, 3);
+
+                ctx.fillStyle = '#374151';
+                ctx.strokeStyle = '#64748b';
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.moveTo(p1.x + nx * halfWidthPx, p1.y + ny * halfWidthPx);
+                ctx.lineTo(p2.x + nx * halfWidthPx, p2.y + ny * halfWidthPx);
+                ctx.lineTo(p2.x - nx * halfWidthPx, p2.y - ny * halfWidthPx);
+                ctx.lineTo(p1.x - nx * halfWidthPx, p1.y - ny * halfWidthPx);
+                ctx.closePath();
+                ctx.fill(); ctx.stroke();
+
+                ctx.strokeStyle = '#f8fafc';
+                ctx.lineWidth = 1.5;
+                ctx.setLineDash([8, 8]);
+                ctx.beginPath(); ctx.moveTo(p1.x, p1.y); ctx.lineTo(p2.x, p2.y); ctx.stroke();
+                ctx.setLineDash([]);
+
+                const leDispPx = r.le_disp_m * viewState.scale;
+                const heDispPx = r.he_disp_m * viewState.scale;
+
+                drawDisplacedThreshold(p1, ux, uy, nx, ny, leDispPx, halfWidthPx);
+                drawDisplacedThreshold(p2, -ux, -uy, -nx, -ny, heDispPx, halfWidthPx);
+
+                ctx.fillStyle = '#10b981';
+                ctx.font = 'bold 12px sans-serif';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(r.le_ident, p1.x - ux * 28, p1.y - uy * 28);
+                ctx.fillText(r.he_ident, p2.x + ux * 28, p2.y + uy * 28);
+
+                const midX = (p1.x + p2.x) / 2;
+                const midY = (p1.y + p2.y) / 2;
+                const lengthM = Math.round(r.length_m);
+                const lengthFt = Math.round(lengthM / FT_TO_M);
+                const widthM = Math.round(r.width_m);
+                const widthFt = Math.round(r.width_ft);
+
+                const label = `${lengthM}m x ${widthM}m (${lengthFt}ft x ${widthFt}ft)`;
+
+                ctx.save();
+                ctx.translate(midX, midY);
+                let angle = Math.atan2(dy, dx);
+                if (angle > Math.PI / 2 || angle < -Math.PI / 2) angle += Math.PI;
+                ctx.rotate(angle);
+
+                ctx.font = '10px monospace';
+                const textWidth = ctx.measureText(label).width;
+                
+                ctx.fillStyle = 'rgba(15, 23, 42, 0.85)';
+                ctx.fillRect(-textWidth / 2 - 4, -18, textWidth + 8, 14);
+
+                ctx.fillStyle = '#38bdf8';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(label, 0, -11);
+                ctx.restore();
+            });
+        }
+
+        canvas.addEventListener('mousedown', (e) => {
+            viewState.isDragging = true;
+            viewState.startX = e.clientX - viewState.offsetX;
+            viewState.startY = e.clientY - viewState.offsetY;
+        });
+
+        window.addEventListener('mousemove', (e) => {
+            if (viewState.isDragging) {
+                viewState.offsetX = e.clientX - viewState.startX;
+                viewState.offsetY = e.clientY - viewState.startY;
+                draw();
+            }
+        });
+
+        window.addEventListener('mouseup', () => viewState.isDragging = false);
+        canvas.addEventListener('wheel', (e) => { e.preventDefault(); zoom(e.deltaY < 0 ? 1.1 : 0.9); });
+
+        fetchAllData();
+    </script>
+</body>
+</html>

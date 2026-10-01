@@ -284,9 +284,6 @@
     </div>
 
     <script>
-        const RUNWAYS_URL = 'https://davidmegginson.github.io/ourairports-data/runways.csv';
-        const AIRPORTS_URL = 'https://davidmegginson.github.io/ourairports-data/airports.csv';
-        const FREQUENCIES_URL = 'https://davidmegginson.github.io/ourairports-data/airport-frequencies.csv';
         const FT_TO_M = 0.3048;
         const MIN_RUNWAY_LENGTH_M = 2000;
 
@@ -294,10 +291,10 @@
         const ctx = canvas.getContext('2d');
         const canvasContainer = document.getElementById('canvasContainer');
 
-        let runwaysData = {}; 
-        let airportsMetadata = {};
-        let frequenciesData = {};
-        
+        let searchIndex = [];
+        let searchIndexMap = new Map();
+        let airportCache = new Map();
+
         let rawRunways = [];         // Toutes les pistes brutes traitées
         let currentRunways = [];     // Pistes actuellement visibles à l'écran
         let hideShortRunways = false; // État du filtre
@@ -313,181 +310,6 @@
         window.addEventListener('resize', resizeCanvas);
         resizeCanvas();
 
-        function parseCSVRow(line) {
-            const result = [];
-            let cur = '';
-            let inQuotes = false;
-            for (let i = 0; i < line.length; i++) {
-                const c = line[i];
-                if (c === '"') { inQuotes = !inQuotes; }
-                else if (c === ',' && !inQuotes) { result.push(cur.trim()); cur = ''; }
-                else { cur += c; }
-            }
-            result.push(cur.trim());
-            return result.map(v => v.replace(/^"|"$/g, ''));
-        }
-
-        async function fetchAllData() {
-            const statusBox = document.getElementById('statusBox');
-            const errorBox = document.getElementById('fileError');
-            const inputEl = document.getElementById('airportInput');
-
-            try {
-                statusBox.innerText = "Chargement des pistes, métadonnées et fréquences...";
-                
-                const [resRunways, resAirports, resFreqs] = await Promise.all([
-                    fetch(RUNWAYS_URL),
-                    fetch(AIRPORTS_URL),
-                    fetch(FREQUENCIES_URL)
-                ]);
-
-                if (!resRunways.ok || !resAirports.ok || !resFreqs.ok) throw new Error("Erreur de téléchargement des fichiers CSV.");
-
-                const txtRunways = await resRunways.text();
-                const txtAirports = await resAirports.text();
-                const txtFreqs = await resFreqs.text();
-
-                parseAirportsCSV(txtAirports);
-                parseRunwaysCSV(txtRunways);
-                parseFrequenciesCSV(txtFreqs);
-
-                statusBox.style.display = 'none';
-                inputEl.disabled = false;
-                inputEl.placeholder = "Taper un ICAO ou un Nom (ex: LFPG, Nice)...";
-
-                selectAirport('LFMN');
-
-            } catch (err) {
-                statusBox.style.display = 'none';
-                errorBox.innerText = `Échec de chargement des données : ${err.message}`;
-                errorBox.style.display = 'block';
-            }
-        }
-
-        function parseAirportsCSV(text) {
-            const lines = text.trim().split(/\r?\n/);
-            if (lines.length < 2) return;
-
-            const headers = parseCSVRow(lines[0]);
-            const findCol = (name) => headers.findIndex(h => h.toLowerCase() === name.toLowerCase());
-
-            const idxIdent = findCol('ident');
-            const idxName = findCol('name');
-            const idxType = findCol('type');
-            const idxLat = findCol('latitude_deg');
-            const idxLon = findCol('longitude_deg');
-            const idxElev = findCol('elevation_ft');
-            const idxCountry = findCol('iso_country');
-            const idxMunicipality = findCol('municipality');
-            const idxIata = findCol('iata_code');
-            const idxHomeLink = findCol('home_link');
-
-            airportsMetadata = {};
-
-            for (let i = 1; i < lines.length; i++) {
-                if (!lines[i]) continue;
-                const row = parseCSVRow(lines[i]);
-                const ident = row[idxIdent] ? row[idxIdent].toUpperCase() : '';
-
-                if (!ident) continue;
-
-                airportsMetadata[ident] = {
-                    ident: ident,
-                    name: row[idxName] || ident,
-                    type: row[idxType] || 'N/A',
-                    lat: parseFloat(row[idxLat]),
-                    lon: parseFloat(row[idxLon]),
-                    elev_ft: row[idxElev] !== '' ? parseFloat(row[idxElev]) : null,
-                    country: row[idxCountry] || 'N/A',
-                    municipality: row[idxMunicipality] || 'N/A',
-                    iata: row[idxIata] || '-',
-                    home_link: row[idxHomeLink] || ''
-                };
-            }
-        }
-
-        function parseRunwaysCSV(text) {
-            const lines = text.trim().split(/\r?\n/);
-            if (lines.length < 2) return;
-
-            const headers = parseCSVRow(lines[0]);
-            const findCol = (name) => headers.findIndex(h => h.toLowerCase() === name.toLowerCase());
-
-            const idxIdent = findCol('airport_ident');
-            const idxLeIdent = findCol('le_ident');
-            const idxHeIdent = findCol('he_ident');
-            const idxLeLat = findCol('le_latitude_deg');
-            const idxLeLon = findCol('le_longitude_deg');
-            const idxHeLat = findCol('he_latitude_deg');
-            const idxHeLon = findCol('he_longitude_deg');
-            const idxWidth = findCol('width_ft');
-            const idxLeDisp = findCol('le_displaced_threshold_ft');
-            const idxHeDisp = findCol('he_displaced_threshold_ft');
-
-            runwaysData = {};
-
-            for (let i = 1; i < lines.length; i++) {
-                if (!lines[i]) continue;
-                const row = parseCSVRow(lines[i]);
-                const airportIdent = row[idxIdent] ? row[idxIdent].toUpperCase() : '';
-
-                if (!airportIdent) continue;
-
-                const leLat = parseFloat(row[idxLeLat]);
-                const leLon = parseFloat(row[idxLeLon]);
-                const heLat = parseFloat(row[idxHeLat]);
-                const heLon = parseFloat(row[idxHeLon]);
-
-                if (isNaN(leLat) || isNaN(leLon) || isNaN(heLat) || isNaN(heLon)) continue;
-
-                if (!runwaysData[airportIdent]) {
-                    runwaysData[airportIdent] = [];
-                }
-
-                runwaysData[airportIdent].push({
-                    le_ident: idxLeIdent !== -1 && row[idxLeIdent] ? row[idxLeIdent] : 'LE',
-                    he_ident: idxHeIdent !== -1 && row[idxHeIdent] ? row[idxHeIdent] : 'HE',
-                    le_lat: leLat, le_lon: leLon, he_lat: heLat, he_lon: heLon,
-                    width_ft: idxWidth !== -1 && !isNaN(parseFloat(row[idxWidth])) ? parseFloat(row[idxWidth]) : 150,
-                    le_disp_ft: idxLeDisp !== -1 && !isNaN(parseFloat(row[idxLeDisp])) ? Math.max(0, parseFloat(row[idxLeDisp])) : 0,
-                    he_disp_ft: idxHeDisp !== -1 && !isNaN(parseFloat(row[idxHeDisp])) ? Math.max(0, parseFloat(row[idxHeDisp])) : 0
-                });
-            }
-        }
-
-        function parseFrequenciesCSV(text) {
-            const lines = text.trim().split(/\r?\n/);
-            if (lines.length < 2) return;
-
-            const headers = parseCSVRow(lines[0]);
-            const findCol = (name) => headers.findIndex(h => h.toLowerCase() === name.toLowerCase());
-
-            const idxIdent = findCol('airport_ident');
-            const idxType = findCol('type');
-            const idxDesc = findCol('description');
-            const idxMhz = findCol('frequency_mhz');
-
-            frequenciesData = {};
-
-            for (let i = 1; i < lines.length; i++) {
-                if (!lines[i]) continue;
-                const row = parseCSVRow(lines[i]);
-                const airportIdent = row[idxIdent] ? row[idxIdent].toUpperCase() : '';
-
-                if (!airportIdent) continue;
-
-                if (!frequenciesData[airportIdent]) {
-                    frequenciesData[airportIdent] = [];
-                }
-
-                frequenciesData[airportIdent].push({
-                    type: idxType !== -1 && row[idxType] ? row[idxType] : 'FREQ',
-                    description: idxDesc !== -1 && row[idxDesc] ? row[idxDesc] : '',
-                    mhz: idxMhz !== -1 && row[idxMhz] ? row[idxMhz] : '-'
-                });
-            }
-        }
-
         function getAirportTypeBadge(type) {
             const config = {
                 'large_airport':  { label: 'Grand aéroport', bg: '#10b981', color: '#ffffff' },
@@ -499,8 +321,45 @@
             };
 
             const cfg = config[type] || { label: type || 'N/A', bg: '#4b5563', color: '#ffffff' };
-
             return `<span style="background-color: ${cfg.bg}; color: ${cfg.color}; font-size: 10px; font-weight: bold; padding: 2px 6px; border-radius: 4px; display: inline-block;">${cfg.label}</span>`;
+        }
+
+        async function initApp() {
+            const statusBox = document.getElementById('statusBox');
+            const errorBox = document.getElementById('fileError');
+            const inputEl = document.getElementById('airportInput');
+
+            try {
+                statusBox.innerText = "Chargement de l'index des aéroports...";
+
+                const res = await fetch('./data/search_index.json');
+                if (!res.ok) {
+                    throw new Error(`Index introuvable (${res.status}). Veuillez exécuter 'python scripts/build_data.py'`);
+                }
+
+                searchIndex = await res.json();
+                searchIndexMap = new Map();
+                for (let i = 0; i < searchIndex.length; i++) {
+                    searchIndexMap.set(searchIndex[i].ident, searchIndex[i]);
+                }
+
+                statusBox.style.display = 'none';
+                inputEl.disabled = false;
+                inputEl.placeholder = "Taper un ICAO, IATA ou Nom (ex: LFPG, Nice, CDG)...";
+
+                // Vérifier si un paramètre d'URL est fourni, sinon défaut à LFMN
+                const urlParams = new URLSearchParams(window.location.search);
+                const initialCode = (urlParams.get('icao') || 'LFMN').toUpperCase();
+                selectAirport(initialCode);
+
+            } catch (err) {
+                statusBox.style.display = 'none';
+                errorBox.innerHTML = `
+                    <strong>Impossible de charger les données :</strong> ${err.message}<br><br>
+                    <small>Astuce : En local, générez les données avec <code>python scripts/build_data.py --output .</code> et lancez un serveur avec <code>python -m http.server</code>.</small>
+                `;
+                errorBox.style.display = 'block';
+            }
         }
 
         function handleInput(val) {
@@ -512,46 +371,53 @@
                 return;
             }
 
-            const matches = Object.keys(runwaysData)
-                .filter(code => {
-                    const meta = airportsMetadata[code];
-                    return code.startsWith(query) || (meta && meta.name.toUpperCase().includes(query));
-                })
-                .slice(0, 8);
+            const matches = [];
+            for (let i = 0; i < searchIndex.length; i++) {
+                const item = searchIndex[i];
+                if (
+                    item.ident.startsWith(query) ||
+                    (item.iata && item.iata.startsWith(query)) ||
+                    item.name.toUpperCase().includes(query) ||
+                    (item.municipality && item.municipality.toUpperCase().includes(query))
+                ) {
+                    matches.push(item);
+                    if (matches.length >= 8) break;
+                }
+            }
 
             if (matches.length > 0) {
                 resultsBox.innerHTML = '';
-                matches.forEach(code => {
-                    const meta = airportsMetadata[code];
-                    const name = meta ? meta.name : 'Aéroport';
-                    const typeBadge = meta ? getAirportTypeBadge(meta.type) : 'N/A';
-                    const count = runwaysData[code].length;
-
-                    const item = document.createElement('div');
-                    item.className = 'autocomplete-item';
-                    item.innerHTML = `
+                matches.forEach(item => {
+                    const typeBadge = getAirportTypeBadge(item.type);
+                    const el = document.createElement('div');
+                    el.className = 'autocomplete-item';
+                    el.innerHTML = `
                         <div style="display:flex; justify-content:space-between; align-items:center;">
                             <div>
-                                <b>${code}</b>
+                                <b>${item.ident}</b>
+                                ${item.iata ? `<span style="color:#38bdf8; font-size:11px; margin-left:4px;">(${item.iata})</span>` : ''}
                                 <span style="margin-left:6px;">${typeBadge}</span>
                             </div>
-                            <span style="color:#9ca3af; font-size:11px;">${count} piste(s)</span>
+                            <span style="color:#9ca3af; font-size:11px;">${item.runways} piste(s)</span>
                         </div>
-                        <div style="color:#94a3b8; font-size:11px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${name}</div>
+                        <div style="color:#94a3b8; font-size:11px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+                            ${item.name}${item.municipality ? ` (${item.municipality})` : ''}
+                        </div>
                     `;
-                    item.onclick = () => {
-                        document.getElementById('airportInput').value = code;
+                    el.onclick = () => {
+                        document.getElementById('airportInput').value = item.ident;
                         resultsBox.style.display = 'none';
-                        selectAirport(code);
+                        selectAirport(item.ident);
                     };
-                    resultsBox.appendChild(item);
+                    resultsBox.appendChild(el);
                 });
                 resultsBox.style.display = 'block';
             } else {
                 resultsBox.style.display = 'none';
             }
 
-            if (runwaysData[query]) {
+            // Si correspondance exacte ICAO tapée
+            if (searchIndexMap.has(query)) {
                 selectAirport(query);
             }
         }
@@ -562,28 +428,53 @@
             }
         });
 
-        function selectAirport(code) {
-            const upperCode = code.toUpperCase();
+        async function selectAirport(code) {
+            const upperCode = code.toUpperCase().trim();
             const errorBox = document.getElementById('fileError');
+            const statusBox = document.getElementById('statusBox');
             errorBox.style.display = 'none';
-
-            if (!runwaysData[upperCode] || runwaysData[upperCode].length === 0) {
-                errorBox.innerText = `Aéroport '${upperCode}' non trouvé dans les données de pistes.`;
-                errorBox.style.display = 'block';
-                return;
-            }
-
-            currentAirportCode = upperCode;
-            hideShortRunways = false; // Réinitialisation du filtre pour le nouvel aéroport
 
             document.getElementById('airportInput').value = upperCode;
             document.getElementById('autocompleteResults').style.display = 'none';
 
-            displayAirportInfo(upperCode);
-            rawRunways = processRunwayCoordinates(runwaysData[upperCode]);
+            let data = airportCache.get(upperCode);
+
+            if (!data) {
+                statusBox.style.display = 'block';
+                statusBox.innerText = `Chargement des données de ${upperCode}...`;
+
+                try {
+                    const res = await fetch(`./data/airports/${upperCode}.json`);
+                    if (!res.ok) {
+                        throw new Error(`Aéroport '${upperCode}' non trouvé ou non répertorié.`);
+                    }
+                    data = await res.json();
+                    airportCache.set(upperCode, data);
+                } catch (err) {
+                    statusBox.style.display = 'none';
+                    errorBox.innerText = err.message;
+                    errorBox.style.display = 'block';
+                    return;
+                } finally {
+                    statusBox.style.display = 'none';
+                }
+            }
+
+            currentAirportCode = upperCode;
+            hideShortRunways = false;
+
+            displayAirportInfo(data);
+            rawRunways = processRunwayCoordinates(data.runways || []);
             
             updateFilterButtonVisibility();
             applyFilterAndRefresh();
+
+            // Mettre à jour l'URL sans rechargement de page
+            if (window.history && window.history.replaceState) {
+                const url = new URL(window.location);
+                url.searchParams.set('icao', upperCode);
+                window.history.replaceState({}, '', url);
+            }
         }
 
         function updateFilterButtonVisibility() {
@@ -591,7 +482,6 @@
             const hasShortRunways = rawRunways.some(r => r.length_m < MIN_RUNWAY_LENGTH_M);
             const hasLongRunways = rawRunways.some(r => r.length_m >= MIN_RUNWAY_LENGTH_M);
 
-            // Affiche l'option uniquement s'il y a au moins une piste < 2000m ET au moins une piste >= 2000m
             if (hasShortRunways && hasLongRunways) {
                 filterBtn.style.display = 'flex';
             } else {
@@ -621,33 +511,31 @@
             resetView();
         }
 
-        function displayAirportInfo(code) {
+        function displayAirportInfo(data) {
             const card = document.getElementById('airportCard');
-            const meta = airportsMetadata[code];
-
-            if (!meta) {
+            if (!data) {
                 card.style.display = 'none';
                 return;
             }
 
-            document.getElementById('apName').innerText = meta.name;
-            document.getElementById('apIdent').innerText = meta.ident;
-            document.getElementById('apIata').innerText = meta.iata || '-';
-            document.getElementById('apType').innerHTML = getAirportTypeBadge(meta.type);
-            document.getElementById('apMunicipality').innerText = meta.municipality;
-            document.getElementById('apCountry').innerText = meta.country;
+            document.getElementById('apName').innerText = data.name || data.ident;
+            document.getElementById('apIdent').innerText = data.ident;
+            document.getElementById('apIata').innerText = (data.iata && data.iata !== '-') ? data.iata : '-';
+            document.getElementById('apType').innerHTML = getAirportTypeBadge(data.type);
+            document.getElementById('apMunicipality').innerText = data.municipality || '-';
+            document.getElementById('apCountry').innerText = data.country || '-';
             
-            if (meta.elev_ft !== null) {
-                const elevM = Math.round(meta.elev_ft * FT_TO_M);
-                document.getElementById('apElev').innerText = `${meta.elev_ft} ft (${elevM} m)`;
+            if (data.elev_ft !== null && data.elev_ft !== undefined) {
+                const elevM = Math.round(data.elev_ft * FT_TO_M);
+                document.getElementById('apElev').innerText = `${data.elev_ft} ft (${elevM} m)`;
             } else {
                 document.getElementById('apElev').innerText = '-';
             }
 
-            document.getElementById('apCoords').innerText = `${meta.lat.toFixed(3)}°, ${meta.lon.toFixed(3)}°`;
-            document.getElementById('apLink').href = `https://ourairports.com/airports/${code}/`;
+            document.getElementById('apCoords').innerText = `${(data.lat || 0).toFixed(3)}°, ${(data.lon || 0).toFixed(3)}°`;
+            document.getElementById('apLink').href = data.home_link || `https://ourairports.com/airports/${data.ident}/`;
 
-            const freqs = frequenciesData[code] || [];
+            const freqs = data.frequencies || [];
             const freqSummary = document.getElementById('freqSummary');
             const freqList = document.getElementById('freqList');
             
@@ -905,7 +793,7 @@
         window.addEventListener('mouseup', () => viewState.isDragging = false);
         canvas.addEventListener('wheel', (e) => { e.preventDefault(); zoom(e.deltaY < 0 ? 1.1 : 0.9); });
 
-        fetchAllData();
+        initApp();
     </script>
 </body>
 </html>

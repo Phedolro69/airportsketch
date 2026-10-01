@@ -691,42 +691,92 @@
         .btn-exit-fullscreen:active { transform: scale(0.95); }
 
         /* Bascule de mode de recherche (Aéroport / Vol) */
+        /* Couleur propre à chaque mode : bleu = aéroport, violet = vol */
+        .search-section[data-mode="airport"] {
+            --mode-accent: #38bdf8;
+            --mode-strong: #2563eb;
+            --mode-soft: rgba(56, 189, 248, 0.12);
+        }
+        .search-section[data-mode="flight"] {
+            --mode-accent: #c4b5fd;
+            --mode-strong: #7c3aed;
+            --mode-soft: rgba(167, 139, 250, 0.14);
+        }
         .search-header {
             display: flex;
-            justify-content: space-between;
-            align-items: center;
+            flex-direction: column;
             gap: 8px;
-            margin-bottom: 8px;
+            margin-bottom: 10px;
         }
         .search-header label {
-            font-size: 11px;
+            font-size: 13px;
             font-weight: 700;
-            color: #94a3b8;
+            color: var(--mode-accent);
             text-transform: uppercase;
-            letter-spacing: 0.5px;
+            letter-spacing: 0.6px;
+            transition: color 0.15s ease;
         }
         .search-mode-toggle {
-            display: flex;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 4px;
             background-color: #1f2937;
             border: 1px solid #374151;
-            border-radius: 7px;
-            padding: 2px;
-            flex-shrink: 0;
+            border-radius: 10px;
+            padding: 4px;
         }
         .mode-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 7px;
             background: none;
             border: none;
             color: var(--text-muted);
-            font-size: 11px;
+            font-size: 14px;
             font-weight: 600;
-            padding: 4px 10px;
-            border-radius: 5px;
+            padding: 9px 12px;
+            border-radius: 7px;
             cursor: pointer;
             touch-action: manipulation;
+            transition: background-color 0.15s ease, color 0.15s ease;
+        }
+        .mode-btn:hover:not(.active) {
+            background-color: #283548;
+            color: var(--text-main);
         }
         .mode-btn.active {
-            background-color: #2563eb;
+            background-color: var(--mode-strong);
             color: #fff;
+            box-shadow: 0 2px 8px -2px var(--mode-strong);
+        }
+
+        /* Champ et liste déroulante aux couleurs du mode */
+        .search-section input[type="text"] {
+            color: var(--mode-accent);
+            border-color: var(--mode-strong);
+            border-left-width: 3px;
+        }
+        .search-section input[type="text"]:focus {
+            border-color: var(--mode-accent);
+            box-shadow: 0 0 0 3px var(--mode-soft);
+        }
+        .search-section .autocomplete-results {
+            border-color: var(--mode-strong);
+            border-top: 2px solid var(--mode-accent);
+            margin-top: 2px;
+            border-radius: 8px;
+        }
+        .search-section .autocomplete-item {
+            border-left: 3px solid transparent;
+        }
+        .search-section .autocomplete-item:hover,
+        .search-section .autocomplete-item:active {
+            background-color: var(--mode-soft);
+            border-left-color: var(--mode-accent);
+        }
+        .search-section .autocomplete-item b {
+            color: var(--mode-accent);
         }
         .autocomplete-msg {
             padding: 10px 12px;
@@ -971,12 +1021,18 @@
         <!-- Sidebar : Recherche + Navigation Mobile + Détails de l'aéroport -->
         <div class="sidebar">
             <!-- Barre de recherche (toujours accessible) -->
-            <div class="search-section">
+            <div class="search-section" id="searchSection" data-mode="airport">
                 <div class="search-header">
                     <label id="searchLabel" for="airportInput">Rechercher un aéroport</label>
-                    <div class="search-mode-toggle">
-                        <button class="mode-btn active" id="modeBtnAirport" onclick="setSearchMode('airport')">Aéroport</button>
-                        <button class="mode-btn" id="modeBtnFlight" onclick="setSearchMode('flight')">Vol</button>
+                    <div class="search-mode-toggle" role="tablist">
+                        <button class="mode-btn mode-airport active" id="modeBtnAirport" onclick="setSearchMode('airport')" role="tab" aria-selected="true">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s-7-6.5-7-12a7 7 0 0 1 14 0c0 5.5-7 12-7 12z"/><circle cx="12" cy="10" r="2.5"/></svg>
+                            <span>Aéroport</span>
+                        </button>
+                        <button class="mode-btn mode-flight" id="modeBtnFlight" onclick="setSearchMode('flight')" role="tab" aria-selected="false">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"/></svg>
+                            <span>Vol</span>
+                        </button>
                     </div>
                 </div>
                 <div class="search-box" id="airportSearchBox">
@@ -1491,8 +1547,13 @@
 
         function setSearchMode(mode, focus = true) {
             const isFlight = mode === 'flight';
-            document.getElementById('modeBtnAirport').classList.toggle('active', !isFlight);
-            document.getElementById('modeBtnFlight').classList.toggle('active', isFlight);
+            document.getElementById('searchSection').dataset.mode = mode;
+            const btnAirport = document.getElementById('modeBtnAirport');
+            const btnFlight = document.getElementById('modeBtnFlight');
+            btnAirport.classList.toggle('active', !isFlight);
+            btnFlight.classList.toggle('active', isFlight);
+            btnAirport.setAttribute('aria-selected', String(!isFlight));
+            btnFlight.setAttribute('aria-selected', String(isFlight));
             document.getElementById('airportSearchBox').hidden = isFlight;
             document.getElementById('flightSearchBox').hidden = !isFlight;
 
@@ -1597,7 +1658,7 @@
                 el.className = 'autocomplete-item';
                 el.innerHTML = `
                     <div><b>${escapeHtml(p.q)}</b> <span style="color:#9ca3af; font-size:11px; margin-left:4px;">pas en vol actuellement</span></div>
-                    <div style="color:#38bdf8; font-size:11px;">Afficher le dernier vol connu ➔</div>
+                    <div style="color:var(--mode-accent); font-size:11px;">Afficher le dernier vol connu ➔</div>
                 `;
                 el.onclick = () => selectFlight(p.q, p.flightParam);
                 box.appendChild(el);
@@ -1616,7 +1677,7 @@
                     <div style="display:flex; justify-content:space-between; align-items:center;">
                         <div>
                             <b>${escapeHtml(code)}</b>
-                            ${other ? `<span style="color:#38bdf8; font-size:11px; margin-left:4px;">(${escapeHtml(other)})</span>` : ''}
+                            ${other ? `<span style="color:var(--mode-accent); font-size:11px; margin-left:4px;">(${escapeHtml(other)})</span>` : ''}
                         </div>
                         <span style="color:${status.color}; font-size:11px; font-weight:600;">${escapeHtml(status.label)}</span>
                     </div>

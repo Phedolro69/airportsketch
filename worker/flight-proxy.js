@@ -2,7 +2,7 @@
  * AirportSketch - Proxy Cloudflare Worker pour l'API AirLabs
  *
  * Garde la clé AirLabs côté serveur (secret AIRLABS_API_KEY) et met les
- * réponses en cache pour économiser le quota.
+ * réponses en cache (Workers KV, partagé entre visiteurs) pour économiser le quota.
  *
  * Routes :
  *   GET /live?airline_iata=AF   | /live?airline_icao=AFR    -> vols en direct de la compagnie
@@ -91,12 +91,16 @@ export default {
             return json({ error: { message: 'AIRLABS_API_KEY non configurée sur le Worker' } }, 500, cors);
         }
 
-        // Clé de cache sans la clé d'API
-        const cacheKey = new Request(`${url.origin}${url.pathname}?${paramName}=${paramValue}`);
-        const cache = caches.default;
-        let cached = await cache.match(cacheKey);
+        // Cache KV partagé entre tous les visiteurs (clé sans la clé d'API)
+        const cacheHeaders = { 'Cache-Control': `public, max-age=${route.ttl}` };
+        const cacheKey = `${url.pathname}?${paramName}=${paramValue}`;
+        const kv = env.FLIGHT_CACHE;
+        const cached = kv ? await kv.get(cacheKey) : null;
         if (cached) {
-            return new Response(cached.body, { status: cached.status, headers: { ...Object.fromEntries(cached.headers), ...cors } });
+            return new Response(cached, {
+                status: 200,
+                headers: { 'Content-Type': 'application/json; charset=utf-8', ...cacheHeaders, 'X-Cache': 'HIT', ...cors }
+            });
         }
 
         const upstreamUrl = new URL(AIRLABS_BASE + route.upstream);
@@ -118,10 +122,14 @@ export default {
             : { response: data ? data.response ?? null : null };
         const status = body.error ? 502 : 200;
 
-        const response = json(body, status, { 'Cache-Control': `public, max-age=${route.ttl}` });
-        if (status === 200) {
-            ctx.waitUntil(cache.put(cacheKey, response.clone()));
+        const text = JSON.stringify(body);
+        if (status === 200 && kv) {
+            // KV impose un TTL minimum de 60 s
+            ctx.waitUntil(kv.put(cacheKey, text, { expirationTtl: Math.max(60, route.ttl) }));
         }
-        return new Response(response.body, { status, headers: { ...Object.fromEntries(response.headers), ...cors } });
+        return new Response(text, {
+            status,
+            headers: { 'Content-Type': 'application/json; charset=utf-8', ...cacheHeaders, 'X-Cache': 'MISS', ...cors }
+        });
     }
 };

@@ -1584,7 +1584,7 @@
                     .sort((a, b) => (parseInt(a.flight_number, 10) || 0) - (parseInt(b.flight_number, 10) || 0))
                     .slice(0, MAX_FLIGHT_RESULTS);
                 renderFlightResults(p, matches, liveError);
-            }, 300);
+            }, /\d/.test(p.q) ? 300 : 900); // sans chiffre, "AF" peut encore devenir "AFR" : on attend plus longtemps
         }
 
         function renderFlightResults(p, matches, liveError) {

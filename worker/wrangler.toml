@@ -10,3 +10,9 @@ ALLOWED_ORIGINS = "https://phedolro69.github.io"
 # La clé AirLabs est un secret, jamais dans ce fichier :
 #   npx wrangler secret put AIRLABS_API_KEY
 # En local, la mettre dans worker/.dev.vars :  AIRLABS_API_KEY=xxxx
+
+# Cache partagé entre tous les visiteurs (le Cache API ne fonctionne pas sur *.workers.dev)
+#   npx wrangler kv namespace create FLIGHT_CACHE
+[[kv_namespaces]]
+binding = "FLIGHT_CACHE"
+id = "ec217b6f95bf493991524c8e3d1d7aa0"

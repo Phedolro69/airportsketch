@@ -21,7 +21,7 @@ L'application utilise une architecture statique pré-compilée :
 
 4. **Recherche de vols & dossier de vol (AirLabs)** :
    - Le mode **Vol** de la recherche propose les vols en direct de la compagnie saisie (ex : `AF1…`), et le vol connu le plus proche (dernier ou prochain) quand le vol n'est pas en l'air.
-   - Les données viennent de l'API [AirLabs](https://airlabs.co), appelée via un petit proxy **Cloudflare Worker** (`worker/`) qui garde la clé secrète et met les réponses en cache (2 min pour les vols en direct, 1 min pour un vol).
+   - Les données viennent de l'API [AirLabs](https://airlabs.co), appelée via un petit proxy **Cloudflare Worker** (`worker/`) qui garde la clé secrète et met les réponses en cache partagé Workers KV (2 min pour les vols en direct, 1 min pour un vol).
    - Un vol peut être partagé par URL : `?flight=AF173`.
 
 ---
@@ -33,6 +33,7 @@ L'application utilise une architecture statique pré-compilée :
    ```bash
    cd worker
    npx wrangler login
+   npx wrangler kv namespace create FLIGHT_CACHE   # puis reportez l'id' dans wrangler.toml
    npx wrangler secret put AIRLABS_API_KEY   # collez la clé AirLabs
    npx wrangler deploy                       # affiche l'URL https://airportsketch-flights.<compte>.workers.dev
    ```

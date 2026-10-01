@@ -554,7 +554,10 @@
         }
         .short-rwy-btn[hidden] { display: none; }
         .short-rwy-btn:hover { background: rgba(76, 29, 149, 0.55); border-color: #a78bfa; }
-        .short-rwy-btn.active { background: rgba(76, 29, 149, 0.7); border-color: #a78bfa; color: #fff; }
+        /* Par défaut (petites pistes masquées : « Afficher petites pistes ») le bouton reste discret ;
+           petites pistes affichées : léger voile violet */
+        .short-rwy-btn.active { background: rgba(17, 24, 39, 0.88); border-color: rgba(167, 139, 250, 0.35); color: #cbd5e1; }
+        .short-rwy-btn:not(.active) { background: rgba(167, 139, 250, 0.16); border-color: rgba(167, 139, 250, 0.55); }
         .short-rwy-swatch {
             width: 16px;
             height: 6px;
@@ -866,6 +869,8 @@
         .is-fullscreen .map-settings { top: 118px; }
         .map-settings-row { display: flex; align-items: center; gap: 8px; }
         .map-settings-row > span { width: 46px; color: var(--text-muted); }
+        .map-settings .map-large-only { margin: 0; font-weight: 600; }
+        .map-settings .map-large-only > .overflown-switch { width: 26px; }
         .map-settings-row b { min-width: 58px; text-align: right; color: #fde68a; font-weight: 700; }
         .map-seg { display: flex; background: #1f2937; border: 1px solid #374151; border-radius: 6px; padding: 2px; }
         .map-seg button {
@@ -934,6 +939,40 @@
         .overflown-city { color: #cbd5e1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .overflown-dist { color: var(--text-muted); font-size: 11px; white-space: nowrap; }
         .overflown-empty { padding: 0 12px 10px; font-size: 11px; color: var(--text-muted); }
+        .overflown-filter {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin: 0 10px 6px;
+            font-size: 11px;
+            color: #cbd5e1;
+            cursor: pointer;
+            user-select: none;
+        }
+        .overflown-filter input { position: absolute; opacity: 0; pointer-events: none; }
+        .overflown-switch {
+            position: relative;
+            width: 26px;
+            height: 14px;
+            flex: none;
+            border-radius: 9999px;
+            background: #374151;
+            transition: background-color 0.15s ease;
+        }
+        .overflown-switch::after {
+            content: '';
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #cbd5e1;
+            transition: transform 0.15s ease;
+        }
+        .overflown-filter input:checked + .overflown-switch { background: #ca8a04; }
+        .overflown-filter input:checked + .overflown-switch::after { transform: translateX(12px); background: #fff; }
+        .overflown-filter input:focus-visible + .overflown-switch { outline: 2px solid #facc15; outline-offset: 2px; }
 
         /* Progression d'un vol en cours */
         .flight-progress { margin: 2px 0 12px; }
@@ -1702,7 +1741,7 @@
                     <div class="help-card-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.9 19.1a10 10 0 0 1 0-14.2M7.8 16.2a6 6 0 0 1 0-8.4M16.2 7.8a6 6 0 0 1 0 8.4M19.1 4.9a10 10 0 0 1 0 14.2"/><circle cx="12" cy="12" r="2"/></svg></div>
                     <div>
                         <h3>Pistes &amp; fréquences</h3>
-                        <p>La fiche détaille chaque piste (longueur, largeur, seuils) et les fréquences radio. Les pistes de moins de 2 000 m sont en <b>violet pâle</b> ; le bouton « Masquer petites pistes » en haut du schéma les cache.</p>
+                        <p>La fiche détaille chaque piste (longueur, largeur, seuils) et les fréquences radio. Les pistes de moins de 2 000 m sont masquées par défaut ; le bouton « Afficher petites pistes » en haut du schéma les montre, en <b>violet pâle</b>.</p>
                     </div>
                 </section>
                 <section class="help-card" style="--c: #c4b5fd">
@@ -1923,6 +1962,11 @@
                     <input type="range" id="mapBand" min="100" max="300" step="10" oninput="setMapBand(this.value)" title="Distance maximale de part et d'autre de la route">
                     <b id="mapBandValue">± 100 nm</b>
                 </label>
+                <label class="map-settings-row overflown-filter map-large-only">
+                    <input type="checkbox" id="mapLargeOnly" onchange="setLargeOnly(this.checked)">
+                    <span class="overflown-switch"></span>
+                    Grands aéroports seulement
+                </label>
             </div>
             <div class="map-notice" id="mapNotice" hidden></div>
             <div class="map-legend" id="mapLegend" hidden></div>
@@ -1969,7 +2013,7 @@
 
         let rawRunways = [];
         let currentRunways = [];
-        let hideShortRunways = false;
+        let hideShortRunways = true;   // petites pistes (< 2000 m) masquées par défaut ; bouton pour les afficher
         let currentAirportCode = '';
         let currentAirportData = null;
 
@@ -2278,7 +2322,7 @@
 
             currentAirportCode = upperCode;
             currentAirportData = data;
-            hideShortRunways = false;
+            hideShortRunways = true;   // chaque nouvel aéroport s'ouvre petites pistes masquées
 
             displayAirportInfo(data);
             updateFlightCardActive();
@@ -2665,10 +2709,11 @@
         const EARTH_NM = 3440.065;
         // Réglages de la carte du vol, mémorisés dans le navigateur (simple confort, facultatif)
         const MAP_PREFS_KEY = 'airportsketch.mapPrefs';
-        const mapPrefs = { code: 'icao', band: 100 };   // code : 'icao' (KJFK, par défaut) | 'iata' (JFK) ; couloir en nm
+        const mapPrefs = { code: 'icao', band: 100, largeOnly: false };   // code : 'icao' (KJFK, par défaut) | 'iata' (JFK) ; couloir en nm
         try {
             const saved = JSON.parse(localStorage.getItem(MAP_PREFS_KEY) || '{}');
             if (saved.code === 'iata' || saved.code === 'icao') mapPrefs.code = saved.code;
+            if (typeof saved.largeOnly === 'boolean') mapPrefs.largeOnly = saved.largeOnly;
             if (Number.isFinite(saved.band)) mapPrefs.band = Math.min(300, Math.max(100, Math.round(saved.band / 10) * 10));
         } catch (err) { /* stockage indisponible : valeurs par défaut */ }
         function saveMapPrefs() {
@@ -2715,7 +2760,7 @@
          * -> arrivée si la position est connue) est échantillonnée tous les 50 nm ; en chaque point on retient
          * les aéroports éligibles à 100 nm ou moins ET toujours les 2 plus proches, quelle que soit la distance
          * (au-dessus des océans : Shannon, Keflavik, Gander, Lajes...).
-         * Éligibles = aéroports dont l'index fournit les coordonnées (large_airport, ou medium_airport avec
+         * Éligibles = aéroports dont l'index fournit les coordonnées (large_airport avec une piste ≥ 2 800 m, ou medium_airport avec
          * une piste d'au moins 2 500 m, voir build_data.py). Départ et arrivée exclus, ainsi que ce qui est
          * derrière le départ ou au-delà de l'arrivée.
          * Résultat trié dans l'ordre de passage : [{ ap, xtrack (nm, + = à droite), along (nm depuis le départ) }].
@@ -2803,15 +2848,26 @@
             else scheduleMapDraw();
         }
 
+        // Type d'un aéroport sur la carte du vol : un grand aéroport dont la plus longue piste fait moins de
+        // 2 800 m y compte comme aéroport moyen (route_type fourni par build_data.py)
+        function routeType(ap) { return (ap && (ap.route_type || ap.type)) || ''; }
+        function isLargeOnRoute(ap) { return routeType(ap) === 'large_airport'; }
+
+        // Aéroports le long de la route affichés (carte et liste), selon « grands aéroports seulement »
+        function visibleOverflown(list = flightMap.overflown) {
+            return mapPrefs.largeOnly ? list.filter(o => isLargeOnRoute(o.ap)) : list.slice();
+        }
+
         function renderOverflownList(f, list, routeKnown) {
             const box = document.getElementById('flightOverflown');
             if (!box) return;
             if (!routeKnown) { box.innerHTML = ''; return; }
             const wasOpen = box.querySelector('details') && box.querySelector('details').open;
-            const rows = list.map(o => {
+            const shown = visibleOverflown(list);
+            const rows = shown.map(o => {
                 const code = airportCode(o.ap);
                 const side = Math.round(Math.abs(o.xtrack)) < 1 ? 'sur la route' : `${Math.round(Math.abs(o.xtrack))} nm ${o.xtrack > 0 ? 'à droite' : 'à gauche'}`;
-                return `<button type="button" class="overflown-row${o.ap.type === 'large_airport' ? '' : ' is-medium'}" onclick="openFlightAirport('${escapeHtml(o.ap.ident)}')" title="${escapeHtml(o.ap.name)} — ouvrir le diagramme">
+                return `<button type="button" class="overflown-row${isLargeOnRoute(o.ap) ? '' : ' is-medium'}" onclick="openFlightAirport('${escapeHtml(o.ap.ident)}')" title="${escapeHtml(o.ap.name)} — ouvrir le diagramme">
                     <b>${escapeHtml(code)}</b>
                     <span class="overflown-city">${escapeHtml(o.ap.municipality && o.ap.municipality !== 'N/A' ? o.ap.municipality : o.ap.name)}</span>
                     <span class="overflown-dist">${side}</span>
@@ -2819,8 +2875,13 @@
             }).join('');
             box.innerHTML = `
                 <details${wasOpen ? ' open' : ''}>
-                    <summary>Aéroports le long de la route <span class="overflown-count">${list.length}</span></summary>
-                    ${list.length ? `<div class="overflown-list">${rows}</div>` : '<div class="overflown-empty">Aucun aéroport éligible le long de la route.</div>'}
+                    <summary>Aéroports le long de la route <span class="overflown-count">${shown.length}</span></summary>
+                    <label class="overflown-filter">
+                        <input type="checkbox" ${mapPrefs.largeOnly ? 'checked' : ''} onchange="setLargeOnly(this.checked)">
+                        <span class="overflown-switch"></span>
+                        Grands aéroports seulement
+                    </label>
+                    ${shown.length ? `<div class="overflown-list">${rows}</div>` : `<div class="overflown-empty">${mapPrefs.largeOnly && list.length ? 'Aucun grand aéroport le long de la route.' : 'Aucun aéroport éligible le long de la route.'}</div>`}
                 </details>`;
         }
 
@@ -2950,9 +3011,9 @@
         }
 
         function applyFilterAndRefresh() {
-            currentRunways = hideShortRunways
-                ? rawRunways.filter(r => r.length_m >= MIN_RUNWAY_LENGTH_M)
-                : [...rawRunways];
+            // Un aéroport qui n'a que des petites pistes les montre toutes (sinon le diagramme serait vide)
+            const longRunways = rawRunways.filter(r => r.length_m >= MIN_RUNWAY_LENGTH_M);
+            currentRunways = hideShortRunways && longRunways.length ? longRunways : [...rawRunways];
             ['shortRwyBtn', 'fsFilterBtn'].forEach(id => {
                 const btn = document.getElementById(id);
                 btn.classList.toggle('active', hideShortRunways);
@@ -3159,7 +3220,7 @@
 
         function updateSidebarInfo(code) {
             document.getElementById('statsBox').style.display = 'flex';
-            const filterNotice = hideShortRunways ? ' (filtrées)' : '';
+            const filterNotice = currentRunways.length < rawRunways.length ? ' (petites pistes masquées)' : '';
             document.getElementById('statsTitle').innerText = `${code} : ${currentRunways.length} Piste(s)${filterNotice}`;
             
             const listEl = document.getElementById('runwayList');
@@ -3645,6 +3706,7 @@
             sea: '#0d1322', land: '#1a2438', coast: '#2e3f5e', border: 'rgba(100, 116, 139, 0.32)',
             grid: 'rgba(255, 255, 255, 0.035)', route: '#a78bfa', routeSoft: 'rgba(167, 139, 250, 0.75)',
             direct: '#64748b', casing: 'rgba(13, 19, 34, 0.85)', plane: '#c4b5fd',
+            capitalText: 'rgba(226, 232, 240, 0.72)', capitalDot: 'rgba(226, 232, 240, 0.55)',
             apLarge: '#facc15', apLargeText: '#fde68a', apMedium: 'rgba(250, 204, 21, 0.45)', apMediumText: 'rgba(254, 243, 199, 0.62)'
         };
         const PLANE_PATH = new Path2D('M12 1.5 L13.6 8.5 L22 13.5 L22 15.5 L13.6 12.8 L13.2 19 L16 21 L16 22.5 L12 21.5 L8 22.5 L8 21 L10.8 19 L10.4 12.8 L2 15.5 L2 13.5 L10.4 8.5 Z');
@@ -3696,7 +3758,8 @@
         // Charge une seule fois le fond de carte (data/world.json) et le convertit en Path2D
         function loadWorld() {
             if (!flightMap.worldPromise) {
-                flightMap.worldPromise = fetch('./data/world.json')
+                // Version dans l'URL : à changer à chaque régénération de world.json (évite l'ancien fichier en cache)
+                flightMap.worldPromise = fetch('./data/world.json?v=2-capitales')
                     .then(res => { if (!res.ok) throw new Error('Fond de carte indisponible'); return res.json(); })
                     .then(w => {
                         const u = w.unit, land = new Path2D(), borders = new Path2D();
@@ -3711,7 +3774,7 @@
                         };
                         w.land.forEach(r => add(land, r, true));
                         w.borders.forEach(b => add(borders, b, false));
-                        flightMap.world = { land, borders };
+                        flightMap.world = { land, borders, capitals: w.capitals || [] };
                     })
                     .catch(err => { flightMap.worldPromise = null; throw err; });
             }
@@ -3922,7 +3985,7 @@
         // Rectangles (pixels du canvas) des éléments visibles posés sur la carte
         function mapObstacles() {
             const base = mapCanvas.getBoundingClientRect();
-            return ['#mapLegend', '#mapSettings', '#mapHud', '#viewToggle', '.canvas-top-actions', '.controls-overlay', '#fullscreenHeader']
+            return ['#mapLegend', '#mapSettings', '#mapHud', '#mapNotice', '#viewToggle', '#shortRwyBtn', '.canvas-top-actions', '.controls-overlay', '#fullscreenHeader']
                 .map(sel => document.querySelector(sel))
                 .filter(el => el && !el.hidden && el.offsetParent !== null && getComputedStyle(el).display !== 'none')
                 .map(el => {
@@ -3987,15 +4050,39 @@
             const w = canvasContainer.clientWidth, h = canvasContainer.clientHeight;
             if (!w || !h) return false;
             const tw = Math.round(w * dpr), th = Math.round(h * dpr);
+            let resized = false;
             if (mapCanvas.width !== tw || mapCanvas.height !== th) {
                 mapCanvas.width = tw;
                 mapCanvas.height = th;
                 mapCanvas.style.width = w + 'px';
                 mapCanvas.style.height = h + 'px';
+                resized = true;
             }
-            if (flightMap.needsFit) fitFlightMap(); else scheduleMapDraw();
+            // Taille changée (fenêtre, plein écran) : recadrer, sauf si l'utilisateur a déplacé la carte
+            if (flightMap.needsFit || (resized && !flightMap.userMoved && flightMap.route)) fitFlightMap();
+            else scheduleMapDraw();
             return true;
         }
+
+        // Les panneaux posés sur la carte changent de taille après coup (polices chargées, résumé qui
+        // apparaît avec la position, légende qui s'allonge) : recadrer pour que la trajectoire reste dégagée
+        let mapRefitTimer = 0;
+        function scheduleMapRefit() {
+            if (viewMode !== 'map' || flightMap.userMoved || !flightMap.route) return;
+            clearTimeout(mapRefitTimer);
+            mapRefitTimer = setTimeout(() => {
+                if (viewMode === 'map' && !flightMap.userMoved && flightMap.route) fitFlightMap();
+            }, 60);
+        }
+        if (window.ResizeObserver) {
+            const panelObserver = new ResizeObserver(scheduleMapRefit);
+            ['mapLegend', 'mapSettings', 'mapHud', 'mapNotice', 'viewToggle'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) panelObserver.observe(el);
+            });
+        }
+        if (document.fonts && document.fonts.ready) document.fonts.ready.then(scheduleMapRefit);
+        window.addEventListener('resize', () => { if (viewMode === 'map') resizeMapCanvas(); });
 
         function scheduleMapDraw() {
             if (flightMap.raf || viewMode !== 'map') return;
@@ -4102,10 +4189,10 @@
             const refLon = route.dep ? route.dep.lon : flightMap.cx;
             for (let k = k0; k <= k1; k++) {
                 // Grands aéroports d'abord : leurs étiquettes sont prioritaires en cas de chevauchement
-                const ordered = flightMap.overflown.slice().sort((p, q) =>
-                    (p.ap.type === 'large_airport' ? 0 : 1) - (q.ap.type === 'large_airport' ? 0 : 1));
+                const ordered = visibleOverflown().sort((p, q) =>
+                    (isLargeOnRoute(p.ap) ? 0 : 1) - (isLargeOnRoute(q.ap) ? 0 : 1));
                 ordered.forEach(o => {
-                    const big = o.ap.type === 'large_airport';
+                    const big = isLargeOnRoute(o.ap);
                     const lon = unwrapLon(o.ap.lon, refLon) + k * 360;
                     const x = ox + lon * s, y = oy + mapY(o.ap.lat) * s;
                     if (x < -20 || x > w + 20 || y < -20 || y > h + 20) return;
@@ -4132,6 +4219,42 @@
                     }
                     flightMap.hits.push({ x: x - 7, y: y - 8, w: (clash ? 14 : bw + 14), h: 16, icao: o.ap.ident });
                 });
+            }
+
+            // Capitales des pays : texte discret, sous les aéroports. Les étiquettes départ/arrivée et aéroports
+            // sont prioritaires ; entre capitales, les plus peuplées d'abord (la liste est déjà triée)
+            if (world && world.capitals.length) {
+                const reserved = labelBoxes.slice();
+                mctx.font = 'bold 11px sans-serif';
+                for (let k = k0; k <= k1; k++) {
+                    [route.dep, route.arr].forEach(m => {
+                        if (!m) return;
+                        const x = ox + (m.lon + k * 360) * s, y = oy + mapY(m.lat) * s;
+                        reserved.push({ x: x - 8, y: y - 12, w: 9 + mctx.measureText(m.label).width + 22, h: 24 });
+                    });
+                }
+                mctx.font = '500 10px sans-serif';
+                mctx.textAlign = 'left';
+                mctx.textBaseline = 'middle';
+                for (let k = k0; k <= k1; k++) {
+                    for (const [name, lat, lon] of world.capitals) {
+                        const x = ox + (lon + k * 360) * s, y = oy + mapY(lat) * s;
+                        if (x < -60 || x > w + 10 || y < -10 || y > h + 10) continue;
+                        const tw = mctx.measureText(name).width;
+                        const box = { x: x - 3, y: y - 7, w: tw + 10, h: 14 };
+                        if (reserved.some(b => box.x < b.x + b.w && box.x + box.w > b.x && box.y < b.y + b.h && box.y + box.h > b.y)) continue;
+                        reserved.push(box);
+                        mctx.beginPath();
+                        mctx.arc(x, y, 1.8, 0, Math.PI * 2);
+                        mctx.fillStyle = MAP_COLORS.capitalDot;
+                        mctx.fill();
+                        mctx.lineWidth = 3;
+                        mctx.strokeStyle = MAP_COLORS.sea;
+                        mctx.strokeText(name, x + 5, y);
+                        mctx.fillStyle = MAP_COLORS.capitalText;
+                        mctx.fillText(name, x + 5, y);
+                    }
+                }
             }
 
             for (let k = k0; k <= k1; k++) {
@@ -4223,9 +4346,9 @@
             } else if (route) {
                 items.push(line('stroke="#64748b" stroke-width="2" stroke-dasharray="5 5"', 'Route directe (estimation)'));
             }
-            if (route && flightMap.overflown.length) {
-                const hasLarge = flightMap.overflown.some(o => o.ap.type === 'large_airport');
-                const hasMedium = flightMap.overflown.some(o => o.ap.type !== 'large_airport');
+            if (route && visibleOverflown().length) {
+                const hasLarge = visibleOverflown().some(o => isLargeOnRoute(o.ap));
+                const hasMedium = visibleOverflown().some(o => !isLargeOnRoute(o.ap));
                 if (hasLarge) items.push(`<div><svg width="30" height="10"><circle cx="15" cy="5" r="3.6" fill="${MAP_COLORS.apLarge}" stroke="#0d1322" stroke-width="1.5"/></svg>Grand aéroport sur la route</div>`);
                 if (hasMedium) items.push(`<div><svg width="30" height="10"><circle cx="15" cy="5" r="2.7" fill="${MAP_COLORS.apMedium}" stroke="#0d1322" stroke-width="1.5"/></svg>Aéroport moyen (piste ≥ 2 500 m)</div>`);
             }
@@ -4236,6 +4359,8 @@
                 ? `${items.join('')}<small>${credit}<br>Plan de vol non public · indicatif, ne pas utiliser pour la navigation</small>`
                 : '';
             legend.hidden = !items.length;
+            // Le contenu (donc la taille) de ces boîtes vient de changer : la trajectoire doit rester dégagée
+            scheduleMapRefit();
         }
 
         function syncFullscreenHeader() {
@@ -4353,6 +4478,7 @@
             });
             document.getElementById('mapBand').value = mapPrefs.band;
             document.getElementById('mapBandValue').textContent = `± ${mapPrefs.band} nm`;
+            document.getElementById('mapLargeOnly').checked = mapPrefs.largeOnly;
         }
 
         function setMapCode(code) {
@@ -4361,6 +4487,16 @@
             syncMapSettings();
             if (flightMap.flight && flightMap.route) flightMap.route = buildFlightRoute();   // étiquettes départ/arrivée
             if (currentFlight) renderOverflownList(currentFlight, flightMap.overflown, true);
+            scheduleMapDraw();
+        }
+
+        // Réglage partagé entre la carte (panneau de réglages) et la liste du dossier de vol
+        function setLargeOnly(on) {
+            mapPrefs.largeOnly = !!on;
+            saveMapPrefs();
+            syncMapSettings();
+            if (currentFlight) renderOverflownList(currentFlight, flightMap.overflown, true);
+            if (flightMap.flight) updateMapOverlay();   // légende (types affichés)
             scheduleMapDraw();
         }
 
@@ -4403,7 +4539,7 @@
         function renderMapTip(icao, data) {
             const idx = searchIndexMap.get(icao) || {};
             const name = (data && data.name) || idx.name || icao;
-            const type = (data && data.type) || idx.type;
+            const type = idx.route_type || (data && data.type) || idx.type;
             const iata = (data && data.iata && data.iata !== '-') ? data.iata : idx.iata;
             const cityRaw = (data && data.municipality) || idx.municipality;
             const city = cityRaw && cityRaw !== 'N/A' ? cityRaw : '';
@@ -4416,7 +4552,7 @@
                 const nRwy = (long.length ? long : all).length;
                 rows = `<div class="map-tooltip-row"><b>${nRwy}</b> piste${nRwy > 1 ? 's' : ''}`;
                 const len = Math.round(longestRunway(data));
-                if (len) rows += ` · plus longue <b>${len.toLocaleString('fr-FR')} m</b> (${Math.round(len / FT_TO_M).toLocaleString('fr-FR')} ft)`;
+                if (len) rows += ` · plus longue&nbsp;: <b>${len.toLocaleString('fr-FR')} m</b> (${Math.round(len / FT_TO_M).toLocaleString('fr-FR')} ft)`;
             } else {
                 rows = '<div class="map-tooltip-row"><span style="color:var(--text-dim)">Chargement…</span>';
             }

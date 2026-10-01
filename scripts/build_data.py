@@ -40,8 +40,9 @@ TYPE_PRIORITY = {
 }
 
 
-# Longueur de piste minimale d'un medium_airport pour figurer parmi les aéroports de la route (dégagements)
-ELIGIBLE_MIN_RUNWAY_M = 2500
+# Longueur minimale de la plus longue piste pour figurer parmi les aéroports le long de la route (carte du vol)
+ELIGIBLE_MIN_RUNWAY_LARGE_M = 2800   # en dessous, un large_airport compte comme medium_airport sur la carte
+ELIGIBLE_MIN_RUNWAY_M = 2500         # medium_airport (dégagements océaniques : Gander, Lajes...)
 
 
 def longest_runway_m(runways):
@@ -294,9 +295,14 @@ def build_data(output_dir: str, copy_html: bool = True, faa_cache: str = None):
         }
         # Coordonnées des aéroports « éligibles » seulement (carte du vol : aéroports le long de la route,
         # dégagements océaniques compris), sans alourdir l'index pour les ~10 000 autres :
-        # large_airport, ou medium_airport dont la plus longue piste fait au moins 2 500 m
-        eligible = meta["type"] == "large_airport" or (
-            meta["type"] == "medium_airport" and longest_runway_m(runways) >= ELIGIBLE_MIN_RUNWAY_M)
+        # Carte du vol : un large_airport dont la plus longue piste fait moins de 2 800 m y est traité comme
+        # un medium_airport (« route_type »). Éligibles : grands (≥ 2 800 m) et moyens avec une piste ≥ 2 500 m.
+        longest = longest_runway_m(runways) if meta["type"] in ("large_airport", "medium_airport") else 0
+        route_type = meta["type"]
+        if route_type == "large_airport" and longest < ELIGIBLE_MIN_RUNWAY_LARGE_M:
+            route_type = "medium_airport"
+            entry["route_type"] = route_type
+        eligible = route_type == "large_airport" or (route_type == "medium_airport" and longest >= ELIGIBLE_MIN_RUNWAY_M)
         if eligible and (meta["lat"] or meta["lon"]):
             entry["lat"] = round(meta["lat"], 4)
             entry["lon"] = round(meta["lon"], 4)

@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """
 Génère scripts/assets/world.json : fond de carte vectoriel pour la carte des vols.
+Après régénération, changer la version dans l'URL de chargement (index.html, « world.json?v=… »).
 
 Source : Natural Earth 1:50m (domaine public), via le paquet npm `world-atlas`
 (TopoJSON, licence ISC). À relancer seulement pour changer la résolution ; le fichier
@@ -14,6 +15,7 @@ dépasse ±180 (la carte du site se répète en longitude).
 Format de sortie (coordonnées en centièmes de degré, codées en deltas) :
     {"land":    [anneau, ...],     # terres émergées, anneaux à remplir en "evenodd"
      "borders": [ligne, ...],      # frontières entre pays
+     "capitals": [[nom, lat, lon, population], ...],   # capitales, de la plus peuplée à la moins peuplée
      "unit": 0.01}
     anneau / ligne = [x0, y0, dx1, dy1, dx2, dy2, ...]  (x = longitude, y = latitude)
 L'Antarctique est omis (aucun vol, et la projection Mercator l'étire à l'infini).
@@ -26,6 +28,8 @@ import subprocess
 import sys
 
 SOURCE = "https://cdn.jsdelivr.net/npm/world-atlas@2/countries-50m.json"
+# Capitales des pays (Natural Earth 1:110m populated places, domaine public), noms en français
+CAPITALS_SOURCE = "https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/ne_110m_populated_places.geojson"
 OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets", "world.json")
 UNIT = 0.01            # précision de sortie en degrés
 SIMPLIFY_DEG = 0.02    # tolérance Douglas-Peucker (~2 km)
@@ -144,11 +148,22 @@ def main():
         if len(pts) >= 2:
             borders.append(encode(pts))
 
+    # Capitales de pays : nom français (sinon nom local), position, population (pour la priorité d'affichage)
+    capitals = []
+    for feat in download(CAPITALS_SOURCE)["features"]:
+        p = feat["properties"]
+        if p.get("FEATURECLA") != "Admin-0 capital":
+            continue
+        lon, lat = feat["geometry"]["coordinates"][:2]
+        capitals.append([p.get("NAME_FR") or p.get("NAME"), round(lat, 3), round(lon, 3), int(p.get("POP_MAX") or 0)])
+    capitals.sort(key=lambda c: -c[3])
+
     os.makedirs(os.path.dirname(OUT), exist_ok=True)
     with open(OUT, "w", encoding="utf-8") as f:
-        json.dump({"unit": UNIT, "land": land, "borders": borders}, f, separators=(",", ":"))
+        json.dump({"unit": UNIT, "land": land, "borders": borders, "capitals": capitals}, f,
+                  separators=(",", ":"), ensure_ascii=False)
     size = os.path.getsize(OUT)
-    print(f"{OUT}: {size:,} octets ({len(land)} anneaux de terre, {len(borders)} frontières)")
+    print(f"{OUT}: {size:,} octets ({len(land)} anneaux de terre, {len(borders)} frontières, {len(capitals)} capitales)")
 
 
 if __name__ == "__main__":

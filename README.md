@@ -93,10 +93,11 @@ Quand un vol est sélectionné, des boutons en haut de la zone principale bascul
 Pour un vol en cours, le dossier de vol affiche une **barre de progression** et le **temps de vol restant**, calculés à partir du décollage réel et de l'arrivée estimée (actualisés toutes les 30 s), ainsi que la liste repliable des **aéroports le long de la route**.
 
 **Ce que la carte montre**
-- **l'avion à sa position réelle**, orienté selon son cap, avec altitude, vitesse sol et cap en haut à gauche (position chargée à l'ouverture de la carte, sans actualisation automatique pour préserver le quota ; l'heure de la position est affichée) ;
+- **l'avion à sa position réelle**, orienté selon son cap, avec altitude, vitesse sol et cap en haut à gauche (position reçue à l'ouverture de la carte, puis **estimée toutes les 20 s** par navigation à l'estime : l'avion avance le long du grand cercle vers l'arrivée à sa vitesse sol, déduite de l'heure d'arrivée si besoin, sans aucun appel au service ; le résumé indique « position estimée à hh:mm:ss » et l'heure de la dernière position reçue) ;
 - **Parcouru** (trait plein discret) : grand cercle du départ jusqu'à l'avion, **estimation** ;
 - **Reste à parcourir** (pointillés) : grand cercle de l'avion jusqu'à l'arrivée, **estimation** ;
 - départ et arrivée : un clic ouvre le diagramme de pistes de l'aéroport ;
+- **zoom sémantique** : zoomer fort (au-delà de 600 px par degré) près d'un aéroport de la carte ouvre son diagramme (molette ignorée 600 ms après la bascule, pour ne pas zoomer aussitôt le diagramme) ; dézoomer nettement ce diagramme (sous la moitié de son cadrage) ramène à la carte, centrée sur l'aéroport. Un diagramme ouvert autrement (bouton, recherche) ne renvoie pas à la carte. Zoom maximal de la carte : 1 500 px par degré (~75 m par pixel) ;
 - **aéroports le long de la route** (étiquettes « Ville - CODE », aussi listés dans le dossier de vol dans l'ordre de passage, avec la distance latérale à gauche ou à droite ; un clic ouvre leur diagramme) : la route (départ → avion → arrivée si la position est connue) est échantillonnée tous les 50 nm, et en chaque point on retient les aéroports éligibles situés dans le **couloir** réglable de ± 100 à 300 nm, plus toujours les 2 plus proches (dégagements océaniques : Shannon, Keflavik, Gander…). Un `large_airport` dont la plus longue piste fait moins de 2 800 m est traité ici comme un `medium_airport` (champ `route_type` de l'index ; la recherche et la fiche de l'aéroport gardent le type OurAirports). Éligibles : grands aéroports, et aéroports moyens dont la plus longue piste fait au moins 2 500 m (coordonnées ajoutées à `search_index.json` pour ces ~1 800 aéroports). Grands aéroports en jaune vif, moyens en jaune pâle ;
 - réglages (mémorisés dans le navigateur) : codes **OACI** (par défaut) ou IATA, largeur du couloir ;
 - au survol d'un aéroport : nom, codes, type, nombre de pistes et piste la plus longue (hors pistes de moins de 2 000 m), approches IFR pour les terrains américains, et mini-diagramme des pistes ;
@@ -144,7 +145,7 @@ Sans le bon code, le worker sert la démo, quoi que fasse le site. Pour ouvrir l
 
 L'offre gratuite d'AirLabs est de **1 000 requêtes par mois**. Seules les requêtes absentes du cache comptent ; le worker les protège (`worker/budget.js`) :
 - **caches partagés** (Workers KV) : 10 min pour la liste des vols d'une compagnie et pour une fiche de vol, 5 min pour une position ; le site garde aussi la liste 10 min ;
-- **pas d'actualisation automatique** de la position sur la carte ; la position fournie par `/flight` est réutilisée ;
+- **pas de rappel du service** pour suivre l'avion : la position fournie par `/flight` est réutilisée, puis extrapolée toutes les 20 s dans le navigateur ;
 - **budget quotidien** `DAILY_BUDGET` (30 par défaut, dans `wrangler.toml`) : au-delà, plus aucun appel à AirLabs jusqu'au lendemain (UTC), les vols déjà en cache restent servis et le site affiche « Limite quotidienne de suivi des vols atteinte » ;
 - **limite par visiteur** : 10 appels réels par minute et par adresse IP (binding Cloudflare Rate Limiting `LIMITER`) ;
 - **quota mensuel épuisé** côté AirLabs : message « Quota mensuel du service de vols épuisé ».

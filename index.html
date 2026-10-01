@@ -1797,7 +1797,7 @@
                     <div class="help-card-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3.5 3 14.5 0 18M12 3c-3 3.5-3 14.5 0 18"/></svg></div>
                     <div>
                         <h3>Carte du vol</h3>
-                        <p>L'avion à sa <b>position réelle</b> (altitude, vitesse, cap), le trajet estimé et les <b>aéroports le long de la route</b> : grands en jaune vif, moyens à longue piste en jaune pâle, aussi listés dans le dossier de vol. Réglez le <b>couloir</b> de ± 100 à 300 nm ; au-dessus des océans, les dégagements les plus proches (Shannon, Keflavik, Gander…) restent affichés. <b>Survolez</b> un aéroport pour sa fiche et son mini-schéma, <b>cliquez</b> pour ouvrir son diagramme.</p>
+                        <p>L'avion à sa <b>position réelle</b> (altitude, vitesse, cap), puis <b>estimée toutes les 20 s</b> d'après sa vitesse et sa route, le trajet estimé et les <b>aéroports le long de la route</b> : grands en jaune vif, moyens à longue piste en jaune pâle, aussi listés dans le dossier de vol. Réglez le <b>couloir</b> de ± 100 à 300 nm ; au-dessus des océans, les dégagements les plus proches (Shannon, Keflavik, Gander…) restent affichés. <b>Survolez</b> un aéroport pour sa fiche et son mini-schéma, <b>cliquez</b> ou <b>zoomez fort dessus</b> pour ouvrir son diagramme ; dézoomez ce diagramme pour revenir à la carte.</p>
                     </div>
                 </section>
                 <section class="help-card wide" style="--c: #d946ef">
@@ -2336,6 +2336,7 @@
 
         async function selectAirport(code) {
             const upperCode = code.toUpperCase().trim();
+            if (zoomReturn && zoomReturn.icao !== upperCode) zoomReturn = null;
             setViewMode('diagram');
             const errorBox = document.getElementById('fileError');
             const statusBox = document.getElementById('statusBox');
@@ -3087,6 +3088,7 @@
 
         function closeFlightCard() {
             currentFlight = null;
+            zoomReturn = null;
             if (flightProgressTimer) { clearInterval(flightProgressTimer); flightProgressTimer = null; }
             delete document.body.dataset.flight;
             setViewMode('diagram');
@@ -3403,6 +3405,7 @@
             const scaleX = (width - 2 * padX) / viewState.baseBounds.width;
             const scaleY = (height - padTop - padY) / viewState.baseBounds.height;
             viewState.scale = Math.min(scaleX, scaleY);
+            viewState.fitScale = viewState.scale;   // référence pour le retour vers la carte au dézoom
             viewState.offsetX = 0;
             viewState.offsetY = (padTop - padY) / 2;
             draw();
@@ -3420,6 +3423,7 @@
             viewState.offsetY = cy - centerY - (cy - centerY - viewState.offsetY) * factor;
             viewState.scale = newScale;
             draw();
+            if (factor < 1) maybeReturnToMap();
         }
 
         function toCanvasCoords(m) {
@@ -3689,6 +3693,7 @@
 
         canvas.addEventListener('wheel', (e) => {
             e.preventDefault();
+            if (Date.now() < wheelPausedUntil) return;   // juste après une bascule carte -> diagramme
             const factor = e.deltaY < 0 ? 1.15 : 0.85;
             zoom(factor, e.clientX, e.clientY);
         }, { passive: false });
@@ -3762,6 +3767,7 @@
                     viewState.offsetX = midX - centerX - (midX - centerX - viewState.offsetX) * scaleFactor;
                     viewState.offsetY = midY - centerY - (midY - centerY - viewState.offsetY) * scaleFactor;
                     viewState.scale = newScale;
+                    if (scaleFactor < 1) maybeReturnToMap();
 
                     // Déplacement simultané si les deux doigts glissent
                     if (touchState.lastMidpoint) {
@@ -3805,7 +3811,7 @@
         const mapCanvas = document.getElementById('mapCanvas');
         const mctx = mapCanvas.getContext('2d');
         const MAP_MAX_LAT = 84;
-        const MAP_MAX_SCALE = 80;       // pixels par degré
+        const MAP_MAX_SCALE = 1500;     // pixels par degré (~75 m par pixel : on peut s'approcher d'un aéroport)
         const MAP_GAP_S = 1200;         // au-delà de 20 min sans position, le tracé est interpolé (pointillé)
         const MAP_COLORS = {
             sea: '#0d1322', land: '#1a2438', coast: '#2e3f5e', border: 'rgba(100, 116, 139, 0.32)',
@@ -4149,6 +4155,8 @@
         function mapZoomAt(factor, px, py) {
             const w = mapCanvas.clientWidth, h = mapCanvas.clientHeight;
             const s = flightMap.scale, next = clampMapScale(s * factor);
+            // Zoom fort près d'un aéroport de la carte : on passe à son diagramme
+            if (factor > 1 && next >= MAP_TO_DIAGRAM_SCALE && enterDiagramFromMapAt(px, py)) return;
             if (next === s) return;
             const wx = flightMap.cx + (px - w / 2) / s, wy = flightMap.cy + (py - h / 2) / s;
             flightMap.scale = next;
@@ -4156,6 +4164,55 @@
             flightMap.cy = wy - (py - h / 2) / next;
             clampMapCenter();
             scheduleMapDraw();
+        }
+
+        // --- Zoom sémantique : carte <-> diagramme -----------------------------------------
+        // En zoomant fort sur un aéroport de la carte (départ, arrivée, aéroport le long de la route), on ouvre
+        // son diagramme ; en dézoomant nettement ce diagramme, on revient à la carte, là où on l'avait laissée.
+        const MAP_TO_DIAGRAM_SCALE = 600;   // pixels par degré au-delà desquels on bascule
+        const VIEW_SWITCH_WHEEL_PAUSE_MS = 600;    // molette ignorée juste après la bascule carte -> diagramme
+        let wheelPausedUntil = 0;
+        const MAP_PICK_RADIUS = 60;         // distance max (px) entre le point de zoom et l'aéroport
+        const DIAGRAM_BACK_RATIO = 0.5;     // dézoom du diagramme sous la moitié de son cadrage : retour carte
+        let zoomReturn = null;              // { icao } : diagramme ouvert par le zoom depuis la carte
+
+        function enterDiagramFromMapAt(px, py) {
+            const route = flightMap.route;
+            if (!route || viewMode !== 'map') return false;
+            const w = mapCanvas.clientWidth, h = mapCanvas.clientHeight, s = flightMap.scale;
+            const ox = w / 2 - flightMap.cx * s, oy = h / 2 - flightMap.cy * s;
+            const candidates = [];
+            [route.dep, route.arr].forEach(m => { if (m && m.icao) candidates.push({ icao: m.icao, lat: m.lat, lon: m.lon }); });
+            visibleOverflown().forEach(o => candidates.push({ icao: o.ap.ident, lat: o.ap.lat, lon: unwrapLon(o.ap.lon, flightMap.cx) }));
+            let best = null;
+            candidates.forEach(c => {
+                const lon = unwrapLon(c.lon, flightMap.cx);
+                const d = Math.hypot(ox + lon * s - px, oy + mapY(c.lat) * s - py);
+                if (d <= MAP_PICK_RADIUS && (!best || d < best.d)) best = { ...c, d };
+            });
+            if (!best) return false;
+            zoomReturn = { icao: best.icao };
+            wheelPausedUntil = Date.now() + VIEW_SWITCH_WHEEL_PAUSE_MS;   // la suite du geste ne zoome pas le diagramme
+            openFlightAirport(best.icao);
+            return true;
+        }
+
+        function maybeReturnToMap() {
+            if (!zoomReturn || viewMode !== 'diagram' || !currentFlight || zoomReturn.icao !== currentAirportCode) return;
+            if (!viewState.fitScale || viewState.scale > viewState.fitScale * DIAGRAM_BACK_RATIO) return;
+            const icao = zoomReturn.icao;
+            zoomReturn = null;
+            showFlightMap(true);
+            // Carte centrée sur l'aéroport, juste sous le seuil de bascule (pas de va-et-vient)
+            const ap = searchIndexMap.get(icao) || airportCache.get(icao);
+            if (ap && typeof ap.lat === 'number') {
+                flightMap.userMoved = true;
+                flightMap.scale = clampMapScale(MAP_TO_DIAGRAM_SCALE * 0.55);
+                flightMap.cx = unwrapLon(ap.lon, flightMap.cx);
+                flightMap.cy = mapY(ap.lat);
+                clampMapCenter();
+                scheduleMapDraw();
+            }
         }
 
         // Boutons + / - / recentrer, communs au schéma de pistes et à la carte
@@ -4207,6 +4264,7 @@
         }
         if (document.fonts && document.fonts.ready) document.fonts.ready.then(scheduleMapRefit);
         window.addEventListener('resize', () => { if (viewMode === 'map') resizeMapCanvas(); });
+        document.addEventListener('visibilitychange', () => { if (!document.hidden) applyEstimatedPosition(); });
 
         function scheduleMapDraw() {
             if (flightMap.raf || viewMode !== 'map') return;
@@ -4441,13 +4499,18 @@
 
             if (f && t && t.now) {
                 const n = t.now;
-                const time = n.ts ? new Date(n.ts * 1000).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) : '';
+                const hm = ts => new Date(ts * 1000).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+                const time = n.ts ? (n.estimated
+                    ? new Date(n.ts * 1000).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+                    : hm(n.ts)) : '';
                 hud.innerHTML = [
                     `<b>${escapeHtml(f.flight_iata || f.flight_icao || '')}</b>`,
                     n.alt != null ? `${n.alt.toLocaleString('fr-FR')} ft` : '',
                     n.gs != null ? `${n.gs} kt` : '',
                     n.track != null ? `cap ${String(n.track).padStart(3, '0')}°` : '',
-                    time ? `<span class="dim">position à ${time}</span>` : ''
+                    time ? (n.estimated
+                        ? `<span class="dim" title="Position extrapolée à partir de la dernière position reçue (${hm(n.fixTs)}), de la vitesse et de la route">position estimée à ${time}</span>`
+                        : `<span class="dim">position à ${time}</span>`) : ''
                 ].filter(Boolean).join('<i></i>');
                 hud.hidden = false;
             } else {
@@ -4464,7 +4527,7 @@
                 if (route.hasGap) items.push(line('stroke="#a78bfa" stroke-width="2" stroke-dasharray="5 4" opacity=".75"', 'Sans réception'));
                 if (route.hasRemaining) items.push(line('stroke="#a78bfa" stroke-width="2.4" stroke-dasharray="0.1 5" stroke-linecap="round" opacity=".75"', 'Reste à parcourir (estimé)'));
             } else if (route && route.hasPosition) {
-                items.push(`<div><svg width="30" height="14" viewBox="0 0 30 14"><g transform="translate(8 0) scale(0.58) rotate(90 12 12)"><path fill="#c4b5fd" d="M12 1.5 L13.6 8.5 L22 13.5 L22 15.5 L13.6 12.8 L13.2 19 L16 21 L16 22.5 L12 21.5 L8 22.5 L8 21 L10.8 19 L10.4 12.8 L2 15.5 L2 13.5 L10.4 8.5 Z"/></g></svg>${t && t.source === 'demo' ? "Position simulée de l'avion (démo)" : "Position réelle de l'avion"}</div>`);
+                items.push(`<div><svg width="30" height="14" viewBox="0 0 30 14"><g transform="translate(8 0) scale(0.58) rotate(90 12 12)"><path fill="#c4b5fd" d="M12 1.5 L13.6 8.5 L22 13.5 L22 15.5 L13.6 12.8 L13.2 19 L16 21 L16 22.5 L12 21.5 L8 22.5 L8 21 L10.8 19 L10.4 12.8 L2 15.5 L2 13.5 L10.4 8.5 Z"/></g></svg>${t && t.source === 'demo' ? "Position simulée de l'avion (démo)" : "Position de l'avion"}${t && t.now && t.now.estimated ? ', estimée toutes les 20 s' : ''}</div>`);
                 items.push(line('stroke="#a78bfa" stroke-width="2.4" stroke-linecap="round" opacity=".75"', 'Parcouru (estimé)'));
                 if (route.hasRemaining) items.push(line('stroke="#a78bfa" stroke-width="2.4" stroke-dasharray="0.1 5" stroke-linecap="round" opacity=".75"', 'Reste à parcourir (estimé)'));
             } else if (route) {
@@ -4525,6 +4588,59 @@
             if (flightMap.timer) { clearInterval(flightMap.timer); flightMap.timer = null; }
         }
 
+        // --- Position estimée (navigation à l'estime) ------------------------------------
+        // Aucun appel au service : à partir de la dernière position reçue (heure, vitesse sol), l'avion avance
+        // le long du grand cercle vers l'aéroport d'arrivée. Recalculée toutes les 20 s quand la carte est affichée.
+        const ESTIMATE_PERIOD_MS = 20000;
+
+        function estimatedNow(base, nowSec) {
+            const fix = base && base.now;
+            const arr = flightMap.arr, f = flightMap.flight;
+            if (!fix || typeof fix.lat !== 'number' || !arr || !fix.ts || f.status !== 'en-route') return null;
+            const from = { lat: fix.lat, lon: fix.lon }, to = { lat: arr.lat, lon: arr.lon };
+            const remaining = gcDist(from, to);                    // radians
+            if (remaining <= 0) return null;
+            // Vitesse sol connue, sinon déduite de la distance restante et de l'heure d'arrivée estimée
+            let gsKt = typeof fix.gs === 'number' && fix.gs > 50 ? fix.gs : null;
+            if (!gsKt) {
+                const eta = utcMs(f.arr_estimated_utc) || utcMs(f.arr_time_utc);
+                const hours = eta ? (eta / 1000 - fix.ts) / 3600 : 0;
+                if (hours > 0.05) gsKt = (remaining * EARTH_NM) / hours;
+            }
+            if (!gsKt) return null;
+            const elapsedH = Math.max(0, nowSec - fix.ts) / 3600;
+            const frac = Math.min(1, (gsKt * elapsedH / EARTH_NM) / remaining);
+            const pos = gcInterpolate(from, to, remaining, frac);
+            const ahead = frac < 1 ? gcInterpolate(from, to, remaining, Math.min(1, frac + 0.002)) : to;
+            return {
+                ...fix,
+                lat: pos.lat,
+                lon: pos.lon,
+                track: frac < 1 ? Math.round(bearingDeg(pos.lat, pos.lon, ahead.lat, ahead.lon)) : fix.track,
+                gs: fix.gs ?? Math.round(gsKt),
+                ts: nowSec,
+                fixTs: fix.ts,
+                estimated: frac > 0
+            };
+        }
+
+        function applyEstimatedPosition() {
+            if (!flightMap.trackBase || viewMode !== 'map' || document.hidden) return;
+            const est = estimatedNow(flightMap.trackBase, Math.round(Date.now() / 1000));
+            if (!est) return;
+            flightMap.track = { ...flightMap.trackBase, now: est };
+            flightMap.route = buildFlightRoute();
+            updateMapOverlay();
+            scheduleMapDraw();
+        }
+
+        function startEstimates() {
+            stopMapRefresh();
+            if (!flightMap.trackBase || !flightMap.flight || flightMap.flight.status !== 'en-route') return;
+            applyEstimatedPosition();
+            flightMap.timer = setInterval(applyEstimatedPosition, ESTIMATE_PERIOD_MS);
+        }
+
         // Affiche la carte du vol sélectionné ; `reuse` réutilise les données déjà chargées pour ce vol.
         // Pas d'actualisation automatique de la position (quota AirLabs) : rechercher à nouveau le vol la met à jour.
         async function showFlightMap(reuse = false) {
@@ -4538,12 +4654,13 @@
             if (fresh) {
                 updateMapOverlay();
                 resizeMapCanvas();
+                startEstimates();
                 return;
             }
 
             const seq = ++flightMap.seq;
             stopMapRefresh();
-            Object.assign(flightMap, { flight: f, dep: null, arr: null, track: null, route: null, notice: 'Chargement de la carte…' });
+            Object.assign(flightMap, { flight: f, dep: null, arr: null, track: null, trackBase: null, route: null, notice: 'Chargement de la carte…' });
             syncFullscreenHeader();
             updateMapOverlay();
             scheduleMapDraw();
@@ -4556,6 +4673,7 @@
             flightMap.dep = dep.value || null;
             flightMap.arr = arr.value || null;
             flightMap.track = tracked.value ? tracked.value.data : null;
+            flightMap.trackBase = flightMap.track;   // dernière position reçue, base de l'estime
             flightMap.route = buildFlightRoute();
             refreshOverflown();
             flightMap.loadedAt = Date.now();
@@ -4567,6 +4685,7 @@
             updateMapOverlay();
             flightMap.needsFit = true;
             resizeMapCanvas();
+            startEstimates();
         }
 
         // --- Interactions : souris, tactile (déplacement, pincement), clic sur un aéroport ----

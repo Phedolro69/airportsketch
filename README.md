@@ -83,24 +83,19 @@ Quand un vol est sélectionné, des boutons en haut de la zone principale bascul
 Pour un vol en cours, le dossier de vol affiche une **barre de progression** et le **temps de vol restant**, calculés à partir du décollage réel et de l'arrivée estimée (actualisés toutes les 30 s).
 
 **Ce que la carte montre**
-- **Route suivie** (trait plein) : les positions ADS-B réellement émises par l'avion depuis son décollage ;
-- **Sans réception** (tirets) : tronçon interpolé en grand cercle quand l'avion n'a pas été reçu plus de 20 min (océans) ;
-- **Reste à parcourir** (pointillés) : grand cercle de l'avion jusqu'à l'aéroport d'arrivée, **estimation** ;
-- l'avion, orienté selon son cap, avec altitude, vitesse sol et cap en haut à gauche (actualisés toutes les 60 s) ;
+- **l'avion à sa position réelle**, orienté selon son cap, avec altitude, vitesse sol et cap en haut à gauche (actualisés toutes les 60 s) ;
+- **Parcouru** (trait plein discret) : grand cercle du départ jusqu'à l'avion, **estimation** ;
+- **Reste à parcourir** (pointillés) : grand cercle de l'avion jusqu'à l'arrivée, **estimation** ;
 - départ et arrivée : un clic ouvre le diagramme de pistes de l'aéroport ;
-- pour un vol qui n'est pas en l'air (prévu, atterri, annulé) ou pas encore reçu : seule la **route directe estimée** est tracée, avec un message.
+- pour un vol qui n'est pas en l'air (prévu, atterri, annulé) ou dont la position est indisponible : seule la **route directe estimée** est tracée, avec un message.
 
-> Le **plan de vol déposé** (waypoints, airways) n'est pas public vol par vol : la carte montre la route *réellement suivie*, jamais le plan. Information indicative, à ne pas utiliser pour la navigation.
+> Ni le **plan de vol déposé** ni la **trajectoire depuis le décollage** ne sont affichés : le plan n'est pas public vol par vol, et les réseaux ADS-B ouverts (adsb.lol, adsb.fi, airplanes.live, OpenSky) refusent les requêtes venant de Cloudflare — testé en octobre 2026. Une vraie trajectoire nécessiterait une API commerciale (ex. FlightAware AeroAPI). Information indicative, à ne pas utiliser pour la navigation.
 
-**Données de trajectoire** : route `/track?callsign=AFR556` du worker (`worker/track.js`), qui interroge le réseau ADS-B ouvert [adsb.lol](https://adsb.lol) (gratuit, sans clé, données ODbL — attribution affichée sur la carte) :
-1. `/v2/callsign/{indicatif}` : l'avion en vol (position, altitude, vitesse, cap) ;
-2. historique `trace_full` (journée, ~30 min de retard) complété par `trace_recent` (à jour) ;
-3. découpe du **dernier vol** : après le dernier point au sol, ou après une escale (longue interruption à basse altitude au même endroit : un fichier couvre ~24 h et peut contenir plusieurs vols) ; les lacunes océaniques, à haute altitude, sont conservées ;
-4. simplification Douglas-Peucker (≤ 400 points, ~2 Ko), cache KV partagé de 60 s. Si adsb.lol limite le débit (HTTP 429), le site affiche un message et réessaie à la minute suivante.
+**Données de position** : route `/track?callsign=AFR556` du worker (`worker/position.js`), qui interroge AirLabs `/flights` (même clé que la recherche de vols) : position, altitude, vitesse et cap actuels de l'avion. Cache KV partagé de 60 s : un vol affiché par plusieurs visiteurs ne coûte qu'un appel AirLabs par minute.
 
 **Fond de carte** : dessiné par le site, sans tuiles, clé ni bibliothèque. Source [Natural Earth](https://www.naturalearthdata.com) 1:50m (domaine public, via le paquet `world-atlas`), converti par `scripts/make_world.py` en `scripts/assets/world.json` (255 Ko, ~90 Ko gzippé, versionné), copié dans `data/world.json` par `build_data.py` et chargé seulement à l'ouverture de la carte. Projection Mercator, répétée en longitude (les vols transpacifiques traversent la ligne de changement de date sans coupure). Pour régénérer le fond (changer la résolution) : `python scripts/make_world.py`.
 
-**Limites** : seuls les vols en cours ont une trajectoire ; la couverture ADS-B est lacunaire au-dessus des océans ; pas de noms d'airways.
+**Limites** : seuls les vols en cours ont une position ; le trajet tracé est une estimation (grand cercle) et non la route réelle ; pas de noms d'airways.
 
 ---
 
@@ -119,7 +114,7 @@ Pour un vol en cours, le dossier de vol affiche une **barre de progression** et 
 
 Si le site est servi depuis un autre domaine que `https://phedolro69.github.io`, ajoutez-le à `ALLOWED_ORIGINS` dans `worker/wrangler.toml`.
 
-Routes du worker : `/live` et `/flight` (AirLabs, clé requise) et `/track` (adsb.lol, sans clé). Le worker est déployé à la main (`npx wrangler deploy`) : le workflow GitHub ne met à jour que le site.
+Routes du worker : `/live`, `/flight` et `/track` (toutes via AirLabs, clé requise). Le worker est déployé à la main (`npx wrangler deploy`) : le workflow GitHub ne met à jour que le site.
 
 **En local**, le site appelle automatiquement `http://<hôte>:8787`. Deux options (une seule à la fois sur ce port) :
 
@@ -129,8 +124,8 @@ Routes du worker : `/live` et `/flight` (AirLabs, clé requise) et `/track` (ads
   ```
   Vols déterministes et cohérents avec l'heure courante. Cas de test : `AF1` en vol, `AF2` prévu, `AF3` atterri,
   `AF4` annulé, `AF5` retardé de 45 min, `AF9999` inconnu, compagnie `ZZ` sans vol en cours, `XX` erreur AirLabs (502).
-  `/track` simule la trajectoire des vols en cours (écart latéral au grand cercle, lacune de réception sur les vols longs) ;
-  `AF429` simule la saturation d'adsb.lol (503), `ZZZ…` un vol non reçu.
+  `/track` simule la position des vols en cours (sans historique, comme en production) ;
+  `AF429` simule un quota AirLabs atteint (503), `ZZZ…` un vol sans position.
 - **Vraie API via le worker** (consomme le quota AirLabs) :
   ```bash
   cd worker

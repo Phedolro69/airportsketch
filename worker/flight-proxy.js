@@ -7,10 +7,10 @@
  * Routes :
  *   GET /live?airline_iata=AF   | /live?airline_icao=AFR    -> vols en direct de la compagnie
  *   GET /flight?flight_iata=AF173 | /flight?flight_icao=AFR173 -> vol le plus proche (en vol, prévu ou atterri)
- *   GET /track?callsign=AFR173                                 -> trajectoire réellement suivie (ADS-B, adsb.lol), sans clé AirLabs
+ *   GET /track?callsign=AFR173                                 -> position actuelle du vol en cours (AirLabs /flights)
  */
 
-import { fetchTrack } from './track.js';
+import { fetchPosition } from './position.js';
 
 const AIRLABS_BASE = 'https://airlabs.co/api/v9';
 
@@ -67,7 +67,7 @@ function json(body, status, extraHeaders = {}) {
     });
 }
 
-// Trajectoire d'un vol en cours (ADS-B). Même cache KV partagé que les autres routes.
+// Position d'un vol en cours (AirLabs). Même cache KV partagé que les autres routes.
 async function handleTrack(url, env, ctx, cors) {
     const callsign = (url.searchParams.get('callsign') || '').toUpperCase();
     if (!TRACK_CALLSIGN.test(callsign)) {
@@ -85,17 +85,20 @@ async function handleTrack(url, env, ctx, cors) {
         });
     }
 
+    if (!env.AIRLABS_API_KEY) {
+        return json({ error: { message: 'AIRLABS_API_KEY non configurée sur le Worker' } }, 500, cors);
+    }
     let track;
     try {
-        track = await fetchTrack(callsign);
+        track = await fetchPosition(callsign, env.AIRLABS_API_KEY);
     } catch (err) {
         if (err && err.status === 429) {
-            return json({ error: { message: 'Suivi ADS-B momentanément saturé, réessayez dans une minute', code: 'rate_limited' } }, 503, cors);
+            return json({ error: { message: 'Quota de suivi atteint, réessayez plus tard', code: 'rate_limited' } }, 503, cors);
         }
-        return json({ error: { message: 'Service de suivi ADS-B injoignable' } }, 502, cors);
+        return json({ error: { message: 'Position du vol indisponible' } }, 502, cors);
     }
 
-    // Un vol absent (null) est aussi mis en cache, pour ne pas solliciter adsb.lol à chaque rafraîchissement
+    // Un vol absent (null) est aussi mis en cache, pour ne pas solliciter AirLabs à chaque rafraîchissement
     const text = JSON.stringify({ response: track });
     if (kv) ctx.waitUntil(kv.put(cacheKey, text, { expirationTtl: TRACK_TTL }));
     return new Response(text, {

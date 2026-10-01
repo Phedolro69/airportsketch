@@ -22,10 +22,10 @@ Cas particuliers pour tester l'interface :
     numéro 1 à 9 ..... statut forcé, pour retrouver chaque cas facilement :
                        1 en vol · 2 prévu · 3 atterri · 4 annulé · 5 en vol retardé de 45 min
 
-Route /track?callsign=AFR1 (trajectoire ADS-B du vol en cours) : trajectoire simulée le long du grand
-cercle avec un léger écart latéral, et une lacune de couverture au milieu des vols longs.
+Route /track?callsign=AFR1 (position actuelle du vol en cours, comme AirLabs en production) :
+position simulée le long du grand cercle avec un léger écart latéral ; pas d'historique (track vide).
     vol pas en l'air ou compagnie ZZZ ... réponse null
-    numéro 429 ....................... erreur « saturé » (HTTP 503)
+    numéro 429 ....................... erreur « quota atteint » (HTTP 503)
 """
 
 import argparse
@@ -276,7 +276,7 @@ def generate_track(airline, number: int, now):
         "type": f["aircraft_icao"],
         "now": {"lat": round(cur[0], 4), "lon": round(cur[1], 4), "alt": alt(progress), "gs": r.randint(430, 490),
                 "track": bearing(prev, cur), "vs": 0, "ts": track[-1][3]},
-        "track": track,
+        "track": [],  # comme en production : position seule, sans historique
         "source": "mock",
     }
 
@@ -340,12 +340,12 @@ class Handler(BaseHTTPRequestHandler):
 
         if url.path == "/track":
             if value.startswith(("XXX", "XX")):
-                return self._send(502, {"error": {"message": "Service de suivi ADS-B injoignable"}})
+                return self._send(502, {"error": {"message": "Position du vol indisponible"}})
             m = re.match(r"^([A-Z]{3})(\d{1,4})", value)
             if not m or m.group(1) == "ZZZ":
                 return self._send(200, {"response": None})
             if int(m.group(2)) == 429:
-                return self._send(503, {"error": {"message": "Suivi ADS-B momentanément saturé, réessayez dans une minute", "code": "rate_limited"}})
+                return self._send(503, {"error": {"message": "Quota de suivi atteint, réessayez plus tard", "code": "rate_limited"}})
             return self._send(200, {"response": generate_track(find_airline(m.group(1)), int(m.group(2)), now)})
 
         if url.path == "/live":

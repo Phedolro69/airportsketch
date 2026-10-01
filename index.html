@@ -3335,7 +3335,7 @@
             if (!/^[A-Z0-9]{3,8}$/.test(callsign)) return { data: null, notice: 'Vol non suivi : route directe estimée' };
             try {
                 const data = await callFlightApi(`/track?callsign=${encodeURIComponent(callsign)}`);
-                return data ? { data, notice: '' } : { data: null, notice: 'Vol pas encore reçu en ADS-B : route directe estimée' };
+                return data ? { data, notice: '' } : { data: null, notice: 'Position actuelle indisponible : route directe estimée' };
             } catch (err) {
                 return { data: null, notice: `${err.message} : route directe estimée` };
             }
@@ -3345,8 +3345,9 @@
         function buildFlightRoute() {
             const { track: t, dep, arr, flight: f } = flightMap;
             const route = {
-                solid: new Path2D(), dashed: new Path2D(), remaining: new Path2D(), direct: new Path2D(),
-                hasTrack: false, hasGap: false, hasRemaining: false, plane: null, dep: null, arr: null, points: []
+                solid: new Path2D(), dashed: new Path2D(), remaining: new Path2D(), direct: new Path2D(), flownEst: new Path2D(),
+                hasTrack: false, hasGap: false, hasRemaining: false, hasPosition: false,
+                plane: null, dep: null, arr: null, points: []
             };
             const depLabel = (f.dep_iata || f.dep_icao || '').toUpperCase();
             const arrLabel = (f.arr_iata || f.arr_icao || '').toUpperCase();
@@ -3390,6 +3391,24 @@
                 if (dep) route.dep = { lat: dep.lat, lon: unwrapLon(dep.lon, pts[0].lon), label: depLabel, icao: dep.ident };
                 if (arr) {
                     const arc = greatCircle(lat, lon, arr.lat, arr.lon);
+                    draw(route.remaining, arc);
+                    route.hasRemaining = true;
+                    route.arr = { lat: arr.lat, lon: arc[arc.length - 1][1], label: arrLabel, icao: arr.ident };
+                }
+            } else if (t && t.now && typeof t.now.lat === 'number' && dep) {
+                // Position réelle de l'avion sans historique : parcouru et reste estimés en grand cercle
+                route.hasPosition = true;
+                const flown = greatCircle(dep.lat, dep.lon, t.now.lat, t.now.lon);
+                draw(route.flownEst, flown);
+                const plane = flown[flown.length - 1];
+                const before = flown[Math.max(0, flown.length - 2)];
+                route.plane = {
+                    lat: plane[0], lon: plane[1],
+                    heading: t.now.track ?? bearingDeg(before[0], before[1], plane[0], plane[1])
+                };
+                route.dep = { lat: dep.lat, lon: dep.lon, label: depLabel, icao: dep.ident };
+                if (arr) {
+                    const arc = greatCircle(plane[0], plane[1], arr.lat, arr.lon);
                     draw(route.remaining, arc);
                     route.hasRemaining = true;
                     route.arr = { lat: arr.lat, lon: arc[arc.length - 1][1], label: arrLabel, icao: arr.ident };
@@ -3552,6 +3571,20 @@
                             mctx.lineWidth = 2.4 / s;
                             mctx.stroke(route.remaining);
                         }
+                    } else if (route.hasPosition) {
+                        // Parcouru estimé : trait plein plus discret que la route réelle
+                        mctx.setLineDash([]);
+                        mctx.strokeStyle = MAP_COLORS.casing;
+                        mctx.lineWidth = 5 / s;
+                        mctx.stroke(route.flownEst);
+                        mctx.strokeStyle = MAP_COLORS.routeSoft;
+                        mctx.lineWidth = 2.4 / s;
+                        mctx.stroke(route.flownEst);
+                        if (route.hasRemaining) {
+                            mctx.setLineDash([0.1 / s, 7 / s]);
+                            mctx.lineWidth = 2.4 / s;
+                            mctx.stroke(route.remaining);
+                        }
                     } else {
                         mctx.setLineDash([6 / s, 7 / s]);
                         mctx.strokeStyle = MAP_COLORS.direct;
@@ -3649,12 +3682,15 @@
                 items.push(line('stroke="#a78bfa" stroke-width="3" stroke-linecap="round"', 'Route suivie (ADS-B)'));
                 if (route.hasGap) items.push(line('stroke="#a78bfa" stroke-width="2" stroke-dasharray="5 4" opacity=".75"', 'Sans réception'));
                 if (route.hasRemaining) items.push(line('stroke="#a78bfa" stroke-width="2.4" stroke-dasharray="0.1 5" stroke-linecap="round" opacity=".75"', 'Reste à parcourir (estimé)'));
+            } else if (route && route.hasPosition) {
+                items.push(`<div><svg width="30" height="14" viewBox="0 0 30 14"><g transform="translate(8 0) scale(0.58) rotate(90 12 12)"><path fill="#c4b5fd" d="M12 1.5 L13.6 8.5 L22 13.5 L22 15.5 L13.6 12.8 L13.2 19 L16 21 L16 22.5 L12 21.5 L8 22.5 L8 21 L10.8 19 L10.4 12.8 L2 15.5 L2 13.5 L10.4 8.5 Z"/></g></svg>Position réelle de l'avion</div>`);
+                items.push(line('stroke="#a78bfa" stroke-width="2.4" stroke-linecap="round" opacity=".75"', 'Parcouru (estimé)'));
+                if (route.hasRemaining) items.push(line('stroke="#a78bfa" stroke-width="2.4" stroke-dasharray="0.1 5" stroke-linecap="round" opacity=".75"', 'Reste à parcourir (estimé)'));
             } else if (route) {
                 items.push(line('stroke="#64748b" stroke-width="2" stroke-dasharray="5 5"', 'Route directe (estimation)'));
             }
-            // Attribution : les positions adsb.lol sont sous licence ODbL
-            const credit = route && route.hasTrack && t && t.source === 'adsb.lol'
-                ? 'Positions ADS-B : adsb.lol (ODbL) · fond Natural Earth'
+            const credit = t && t.source === 'airlabs'
+                ? 'Position : AirLabs · fond Natural Earth'
                 : 'Fond de carte : Natural Earth';
             legend.innerHTML = items.length
                 ? `${items.join('')}<small>${credit}<br>Plan de vol non public · indicatif, ne pas utiliser pour la navigation</small>`

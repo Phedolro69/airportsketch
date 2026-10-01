@@ -12,6 +12,7 @@ import argparse
 import csv
 import io
 import json
+import math
 import os
 import re
 import shutil
@@ -37,6 +38,21 @@ TYPE_PRIORITY = {
     "balloonport": 6,
     "closed": 7
 }
+
+
+# Longueur de piste minimale d'un medium_airport pour figurer parmi les aéroports de la route (dégagements)
+ELIGIBLE_MIN_RUNWAY_M = 2500
+
+
+def longest_runway_m(runways):
+    """Plus longue piste, calculée depuis les coordonnées des seuils (comme le schéma du site)."""
+    best = 0.0
+    for r in runways:
+        p1, p2 = math.radians(r["le_lat"]), math.radians(r["he_lat"])
+        dl = math.radians(r["he_lon"] - r["le_lon"])
+        c = math.sin(p1) * math.sin(p2) + math.cos(p1) * math.cos(p2) * math.cos(dl)
+        best = max(best, math.acos(max(-1.0, min(1.0, c))) * 6371000)
+    return best
 
 
 def neighbour_runways(key: str):
@@ -267,7 +283,7 @@ def build_data(output_dir: str, copy_html: bool = True, faa_cache: str = None):
             json.dump(airport_data, f, separators=(",", ":"), ensure_ascii=False)
 
         # Add to search index
-        search_index.append({
+        entry = {
             "ident": ident,
             "name": meta["name"],
             "iata": meta["iata"] if meta["iata"] != "-" else "",
@@ -275,7 +291,16 @@ def build_data(output_dir: str, copy_html: bool = True, faa_cache: str = None):
             "country": meta["country"],
             "municipality": meta["municipality"],
             "runways": len(runways)
-        })
+        }
+        # Coordonnées des aéroports « éligibles » seulement (carte du vol : aéroports le long de la route,
+        # dégagements océaniques compris), sans alourdir l'index pour les ~10 000 autres :
+        # large_airport, ou medium_airport dont la plus longue piste fait au moins 2 500 m
+        eligible = meta["type"] == "large_airport" or (
+            meta["type"] == "medium_airport" and longest_runway_m(runways) >= ELIGIBLE_MIN_RUNWAY_M)
+        if eligible and (meta["lat"] or meta["lon"]):
+            entry["lat"] = round(meta["lat"], 4)
+            entry["lon"] = round(meta["lon"], 4)
+        search_index.append(entry)
         written_airports += 1
 
     # Sort search index:

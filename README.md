@@ -87,6 +87,9 @@ Pour un vol en cours, le dossier de vol affiche une **barre de progression** et 
 - **Parcouru** (trait plein discret) : grand cercle du départ jusqu'à l'avion, **estimation** ;
 - **Reste à parcourir** (pointillés) : grand cercle de l'avion jusqu'à l'arrivée, **estimation** ;
 - départ et arrivée : un clic ouvre le diagramme de pistes de l'aéroport ;
+- **aéroports le long de la route** (aussi listés dans le dossier de vol, dans l'ordre de passage, avec la distance latérale) : la route est échantillonnée tous les 50 nm, et en chaque point on retient les aéroports éligibles situés dans le **couloir** réglable de ± 100 à 300 nm, plus toujours les 2 plus proches (dégagements océaniques : Shannon, Keflavik, Gander…). Éligibles : `large_airport`, ou `medium_airport` dont la plus longue piste fait au moins 2 500 m (coordonnées ajoutées à `search_index.json` pour ces ~2 000 aéroports). Grands aéroports en jaune vif, moyens en jaune pâle ;
+- réglages (mémorisés dans le navigateur) : codes **OACI** (par défaut) ou IATA, largeur du couloir ;
+- au survol d'un aéroport : nom, codes, type, nombre de pistes et piste la plus longue (hors pistes de moins de 2 000 m), approches IFR pour les terrains américains, et mini-diagramme des pistes ;
 - pour un vol qui n'est pas en l'air (prévu, atterri, annulé) ou dont la position est indisponible : seule la **route directe estimée** est tracée, avec un message.
 
 > Ni le **plan de vol déposé** ni la **trajectoire depuis le décollage** ne sont affichés : le plan n'est pas public vol par vol, et les réseaux ADS-B ouverts (adsb.lol, adsb.fi, airplanes.live, OpenSky) refusent les requêtes venant de Cloudflare — testé en octobre 2026. Une vraie trajectoire nécessiterait une API commerciale (ex. FlightAware AeroAPI). Information indicative, à ne pas utiliser pour la navigation.

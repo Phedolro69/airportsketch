@@ -42,12 +42,20 @@ L'application utilise une architecture statique pré-compilée :
 
 Si le site est servi depuis un autre domaine que `https://phedolro69.github.io`, ajoutez-le à `ALLOWED_ORIGINS` dans `worker/wrangler.toml`.
 
-**En local**, le site appelle automatiquement `http://<hôte>:8787` :
-```bash
-cd worker
-echo "AIRLABS_API_KEY=votre_cle" > .dev.vars   # fichier ignoré par Git
-npx wrangler dev --ip 0.0.0.0                  # 0.0.0.0 pour tester aussi depuis un téléphone
-```
+**En local**, le site appelle automatiquement `http://<hôte>:8787`. Deux options (une seule à la fois sur ce port) :
+
+- **Simulateur (recommandé pour développer)** : vols générés localement, sans clé ni quota AirLabs, sans Node.
+  ```bash
+  python worker/mock_airlabs.py              # --delay 800 pour simuler un réseau lent
+  ```
+  Vols déterministes et cohérents avec l'heure courante. Cas de test : `AF1` en vol, `AF2` prévu, `AF3` atterri,
+  `AF4` annulé, `AF5` retardé de 45 min, `AF9999` inconnu, compagnie `ZZ` sans vol en cours, `XX` erreur AirLabs (502).
+- **Vraie API via le worker** (consomme le quota AirLabs) :
+  ```bash
+  cd worker
+  echo "AIRLABS_API_KEY=votre_cle" > .dev.vars   # fichier ignoré par Git
+  npx wrangler dev --ip 0.0.0.0                  # 0.0.0.0 pour tester aussi depuis un téléphone
+  ```
 
 ---
 

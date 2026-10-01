@@ -192,7 +192,7 @@
             border: 1px solid #374151;
         }
 
-        .canvas-area { flex: 1; position: relative; background-color: #080c14; display: flex; align-items: center; justify-content: center; }
+        .canvas-area { flex: 1; position: relative; background-color: #172033; display: flex; align-items: center; justify-content: center; }
         canvas { display: block; cursor: grab; }
         canvas:active { cursor: grabbing; }
 
@@ -813,7 +813,7 @@
         function draw() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            ctx.strokeStyle = '#111827';
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
             ctx.lineWidth = 1;
             for (let x = 0; x < canvas.width; x += 40) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); ctx.stroke(); }
             for (let y = 0; y < canvas.height; y += 40) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); ctx.stroke(); }

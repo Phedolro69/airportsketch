@@ -15,6 +15,7 @@ Résultat : {ident_aeroport: {piste_normalisee: [approche, ...]}}, où chaque ap
 
 import datetime
 import io
+import os
 import re
 import urllib.error
 import urllib.request
@@ -137,49 +138,130 @@ def parse_cifp_ils(cifp_text: str):
     return ils
 
 
-def fetch_cifp_text(effective: datetime.date) -> str:
-    """Télécharge le zip CIFP du cycle et retourne le fichier FAACIFP18."""
+def download_cifp_zip(effective: datetime.date) -> bytes:
+    """Télécharge le zip CIFP du cycle entré en vigueur à `effective`."""
     urls = [CIFP_ZIP_URL.format(date=effective)]
     try:
         page = _download(CIFP_PAGE_URL, timeout=60).decode("utf-8", errors="replace")
-        urls += [u for u in re.findall(r"https?://[^\"']+CIFP_\d{6}\.zip", page) if u not in urls]
+        wanted = f"CIFP_{effective:%y%m%d}.zip"
+        urls += [u for u in re.findall(r"https?://[^\"']+CIFP_\d{6}\.zip", page) if u.endswith(wanted) and u not in urls]
     except (urllib.error.URLError, TimeoutError):
         pass
     last_error = None
     for url in urls:
         try:
-            with zipfile.ZipFile(io.BytesIO(_download(url, timeout=180))) as z:
-                name = next(n for n in z.namelist() if n.upper().startswith("FAACIFP"))
-                print(f"[faa] CIFP: {url}")
-                return z.read(name).decode("latin-1")
-        except (urllib.error.URLError, TimeoutError, zipfile.BadZipFile, StopIteration) as e:
+            data = _download(url, timeout=180)
+            zipfile.ZipFile(io.BytesIO(data)).testzip()
+            print(f"[faa] CIFP: {url}")
+            return data
+        except (urllib.error.URLError, TimeoutError, zipfile.BadZipFile) as e:
             last_error = e
     raise RuntimeError(f"CIFP indisponible ({last_error})")
 
 
-def build_approaches(today: datetime.date = None):
+def cifp_text(zip_bytes: bytes) -> str:
+    with zipfile.ZipFile(io.BytesIO(zip_bytes)) as z:
+        name = next(n for n in z.namelist() if n.upper().startswith("FAACIFP"))
+        return z.read(name).decode("latin-1")
+
+
+class FaaCache:
+    """
+    Fichiers FAA bruts par cycle (dtpp_2610.xml, cifp_2610.zip) : un seul téléchargement
+    par cycle AIRAC, et repli sur le dernier cycle connu si la FAA est injoignable.
+    Sans dossier, rien n'est mis en cache.
+    """
+
+    def __init__(self, directory: str = None):
+        self.dir = directory
+        if self.dir:
+            os.makedirs(self.dir, exist_ok=True)
+
+    def _path(self, name):
+        return os.path.join(self.dir, name) if self.dir else None
+
+    def get(self, name):
+        path = self._path(name)
+        if path and os.path.exists(path):
+            with open(path, "rb") as f:
+                return f.read()
+        return None
+
+    def put(self, name, data):
+        path = self._path(name)
+        if path:
+            with open(path, "wb") as f:
+                f.write(data)
+
+    def latest_dtpp_cycle(self):
+        if not self.dir:
+            return None
+        cycles = sorted(m.group(1) for n in os.listdir(self.dir) if (m := re.match(r"^dtpp_(\d{4})\.xml$", n)))
+        return cycles[-1] if cycles else None
+
+    def keep_only(self, cycle):
+        """Supprime les fichiers des autres cycles et note le cycle utilisé (pour la clé de cache CI)."""
+        if not self.dir:
+            return
+        for n in os.listdir(self.dir):
+            if re.match(r"^(dtpp|cifp)_\d{4}\.", n) and f"_{cycle}." not in n:
+                os.remove(os.path.join(self.dir, n))
+        with open(os.path.join(self.dir, "CYCLE"), "w") as f:
+            f.write(cycle)
+
+
+def build_approaches(today: datetime.date = None, cache_dir: str = None):
     """
     Retourne (cycle, pdf_base, {ident_aeroport: {piste_normalisee: [approche, ...]}}).
-    En cas d'échec du d-TPP, lève une exception : l'appelant décide de continuer sans.
+    Lève une exception si aucun d-TPP n'est disponible (ni en ligne ni en cache) :
+    l'appelant décide de continuer sans.
     """
+    cache = FaaCache(cache_dir)
     today = today or datetime.datetime.now(datetime.timezone.utc).date()
-    cycle, effective = airac_cycle(today)
+    current = airac_cycle(today)
+    previous = airac_cycle(current[1] - datetime.timedelta(days=1))
 
-    # d-TPP du cycle en cours, sinon le précédent (publication en retard)
-    try:
-        meta = _download(DTPP_META_URL.format(cycle=cycle))
-    except urllib.error.HTTPError:
-        cycle, effective = airac_cycle(effective - datetime.timedelta(days=1))
-        meta = _download(DTPP_META_URL.format(cycle=cycle))
-    print(f"[faa] d-TPP cycle {cycle} ({len(meta):,} octets)")
+    # d-TPP : cycle en cours, sinon le précédent (publication en retard), sinon le dernier en cache
+    meta, cycle, effective = None, None, None
+    for c, eff in (current, previous):
+        meta = cache.get(f"dtpp_{c}.xml")
+        if meta:
+            print(f"[faa] d-TPP cycle {c} : cache")
+        else:
+            try:
+                meta = _download(DTPP_META_URL.format(cycle=c))
+                cache.put(f"dtpp_{c}.xml", meta)
+                print(f"[faa] d-TPP cycle {c} : téléchargé ({len(meta):,} octets)")
+            except (urllib.error.URLError, TimeoutError) as e:
+                print(f"[faa] d-TPP cycle {c} indisponible ({e})")
+        if meta:
+            cycle, effective = c, eff
+            break
+    if not meta:
+        cycle = cache.latest_dtpp_cycle()
+        if not cycle:
+            raise RuntimeError("d-TPP indisponible et aucun cycle en cache")
+        meta = cache.get(f"dtpp_{cycle}.xml")
+        print(f"[faa] FAA injoignable : repli sur le cycle {cycle} en cache")
     charts = parse_dtpp(meta)
 
     # CIFP : facultatif, enrichit les ILS (catégorie, fréquence, axe, pente)
-    try:
-        cifp_ils = parse_cifp_ils(fetch_cifp_text(effective))
-    except RuntimeError as e:
-        print(f"[faa] {e} : catégories ILS déduites des seuls noms de cartes")
-        cifp_ils = {}
+    cifp_ils = {}
+    zip_bytes = cache.get(f"cifp_{cycle}.zip")
+    if zip_bytes:
+        print(f"[faa] CIFP cycle {cycle} : cache")
+    elif effective:
+        try:
+            zip_bytes = download_cifp_zip(effective)
+            cache.put(f"cifp_{cycle}.zip", zip_bytes)
+        except RuntimeError as e:
+            print(f"[faa] {e}")
+    if zip_bytes:
+        cifp_ils = parse_cifp_ils(cifp_text(zip_bytes))
+    else:
+        print("[faa] sans CIFP : catégories ILS déduites des seuls noms de cartes")
+
+    cache.keep_only(cycle)
 
     result = {}
     for airport, records in charts.items():
@@ -210,7 +292,7 @@ def build_approaches(today: datetime.date = None):
 if __name__ == "__main__":
     import json
     import sys
-    cycle, base, data = build_approaches()
+    cycle, base, data = build_approaches(cache_dir=os.environ.get("FAA_CACHE_DIR"))
     ident = (sys.argv[1] if len(sys.argv) > 1 else "KJFK").upper()
     print(f"cycle {cycle} — {base}")
     print(json.dumps(data.get(ident, {}), indent=1, ensure_ascii=False))

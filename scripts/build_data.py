@@ -61,7 +61,7 @@ def download_csv(url: str, name: str) -> str:
     return content
 
 
-def build_data(output_dir: str, copy_html: bool = True):
+def build_data(output_dir: str, copy_html: bool = True, faa_cache: str = None):
     start_time = time.time()
     print(f"Starting data build into: {output_dir}")
 
@@ -199,7 +199,7 @@ def build_data(output_dir: str, copy_html: bool = True):
     print("Fetching FAA instrument approaches...")
     approaches_by_airport, approaches_cycle, approaches_pdf_base = {}, None, None
     try:
-        approaches_cycle, approaches_pdf_base, approaches_by_airport = build_approaches()
+        approaches_cycle, approaches_pdf_base, approaches_by_airport = build_approaches(cache_dir=faa_cache)
     except Exception as e:
         print(f"[faa] WARNING: approaches skipped ({e})")
 
@@ -326,5 +326,10 @@ if __name__ == "__main__":
         action="store_true",
         help="Do not copy index.html into the output directory"
     )
+    parser.add_argument(
+        "--faa-cache",
+        default=".cache/faa",
+        help="Cache directory for raw FAA files, one download per AIRAC cycle (default: '.cache/faa', '' to disable)"
+    )
     args = parser.parse_args()
-    build_data(output_dir=args.output, copy_html=not args.no_html)
+    build_data(output_dir=args.output, copy_html=not args.no_html, faa_cache=args.faa_cache or None)

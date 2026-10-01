@@ -41,8 +41,34 @@ jobs:
         with:
           python-version: '3.12'
 
+      # Fichiers FAA bruts mis en cache par cycle AIRAC : un seul téléchargement tous les 28 jours,
+      # et repli sur le cycle précédent (restore-keys) si la FAA est injoignable
+      - name: Compute current AIRAC cycle
+        id: airac
+        run: echo "cycle=$(cd scripts && python -c 'import datetime, faa_approaches as f; print(f.airac_cycle(datetime.datetime.now(datetime.timezone.utc).date())[0])')" >> "$GITHUB_OUTPUT"
+
+      - name: Restore FAA cache
+        id: faa-cache
+        uses: actions/cache/restore@v4
+        with:
+          path: .cache/faa
+          key: faa-${{ steps.airac.outputs.cycle }}
+          restore-keys: faa-
+
       - name: Build static data and website
-        run: python scripts/build_data.py --output dist
+        run: python scripts/build_data.py --output dist --faa-cache .cache/faa
+
+      # Clé = cycle réellement obtenu (peut être l'ancien si la FAA était en panne)
+      - name: Read FAA cycle used
+        id: faa-used
+        run: echo "cycle=$(cat .cache/faa/CYCLE 2>/dev/null)" >> "$GITHUB_OUTPUT"
+
+      - name: Save FAA cache
+        if: steps.faa-used.outputs.cycle != '' && steps.faa-cache.outputs.cache-matched-key != format('faa-{0}', steps.faa-used.outputs.cycle)
+        uses: actions/cache/save@v4
+        with:
+          path: .cache/faa
+          key: faa-${{ steps.faa-used.outputs.cycle }}
 
       - name: Setup Pages
         uses: actions/configure-pages@v5

@@ -15,3 +15,6 @@ env/
 Thumbs.db
 .vscode/
 .idea/
+
+# Cache des fichiers FAA (un téléchargement par cycle AIRAC)
+.cache/

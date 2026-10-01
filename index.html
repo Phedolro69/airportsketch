@@ -467,8 +467,9 @@
         .appr-rnav { background: rgba(217, 70, 239, 0.18); border-color: #d946ef; color: #f0abfc; }
         .appr-vor, .appr-ndb { background: rgba(245, 158, 11, 0.16); border-color: #f59e0b; color: #fcd34d; }
         .appr-vis  { background: transparent; border-color: #475569; color: #94a3b8; }
+        .approach-info { padding: 2px 2px 4px; }
         .approach-legend {
-            margin-top: 10px;
+            margin-top: 2px;
             display: flex;
             flex-wrap: wrap;
             gap: 5px;
@@ -1166,7 +1167,6 @@
                 </div>
 
                 <div id="runwayList" class="runway-list"></div>
-                <div id="approachInfo" hidden></div>
             </div>
         </div>
 
@@ -2079,18 +2079,16 @@
             return tags.map(t => `<span class="appr-tag ${t.cls}" title="${escapeHtml(t.names.join('\n'))}">${t.label}</span>`).join('');
         }
 
-        function updateApproachInfo() {
-            const box = document.getElementById('approachInfo');
+        // Légende et source, en dernier élément de la liste scrollable des pistes
+        function appendApproachInfo(listEl) {
             const data = currentAirportData;
-            if (!data || !data.approaches) {
-                box.hidden = true;
-                box.innerHTML = '';
-                return;
-            }
+            if (!data || !data.approaches) return;
             const used = new Set(currentRunways.flatMap(r => [r.le_ident, r.he_ident]).flatMap(id => approachTags(id).map(t => t.key)));
             const legend = Object.entries(APPROACH_STYLES)
                 .filter(([key]) => used.has(key))
                 .map(([, s]) => `<span class="appr-tag ${s.cls}">${s.label}</span>`).join('');
+            const box = document.createElement('div');
+            box.className = 'approach-info';
             box.innerHTML = `
                 <div class="approach-legend">${legend}</div>
                 <div class="approach-source">
@@ -2098,7 +2096,7 @@
                     Survolez une pastille pour voir les procédures. Information indicative —
                     ne pas utiliser pour la navigation.
                 </div>`;
-            box.hidden = false;
+            listEl.appendChild(box);
         }
 
         function updateSidebarInfo(code) {
@@ -2136,7 +2134,7 @@
                 `;
                 listEl.appendChild(item);
             });
-            updateApproachInfo();
+            appendApproachInfo(listEl);
         }
 
         function calculateBounds() {

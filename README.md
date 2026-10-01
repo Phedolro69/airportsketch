@@ -1,4 +1,6 @@
-# AirportSketch - Airport Diagram Generator
+# Plein Axe — diagrammes de pistes et suivi de vols
+
+> Anciennement *AirportSketch* : le dépôt, l'adresse du site (`/airportsketch/`) et le worker (`airportsketch-flights`) gardent ce nom technique.
 
 Générateur et visualiseur interactif de schémas de pistes d'aéroports avec orientation géographique réelle, seuils décalés, dimensions à l'échelle et fréquences radio, approches IFR par piste pour les aéroports américains, dossier de vol en direct et carte du vol (position de l'avion et aéroports le long de la route).
 

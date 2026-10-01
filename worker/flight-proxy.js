@@ -1,5 +1,5 @@
 /**
- * AirportSketch - Proxy Cloudflare Worker pour l'API AirLabs
+ * Plein Axe (ex-AirportSketch) - Proxy Cloudflare Worker pour l'API AirLabs
  *
  * Garde la clé AirLabs côté serveur (secret AIRLABS_API_KEY) et met les
  * réponses en cache (Workers KV, partagé entre visiteurs) pour économiser le quota.

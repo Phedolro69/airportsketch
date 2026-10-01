@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-AirportSketch - Simulateur local du proxy de vols (worker/flight-proxy.js)
+Plein Axe - Simulateur local du proxy de vols (worker/flight-proxy.js)
 
 Remplace `wrangler dev` pour le développement : mêmes routes, même validation,
 même format de réponse, mais des vols générés localement. Aucune clé AirLabs,
@@ -368,7 +368,7 @@ class Handler(BaseHTTPRequestHandler):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Simulateur local du proxy AirLabs d'AirportSketch")
+    parser = argparse.ArgumentParser(description="Simulateur local du proxy AirLabs de Plein Axe")
     parser.add_argument("--port", type=int, default=8787, help="port d'écoute (défaut 8787, celui attendu par le site)")
     parser.add_argument("--host", default="0.0.0.0", help="interface (défaut 0.0.0.0 : accessible depuis un téléphone du réseau local)")
     parser.add_argument("--delay", type=int, default=300, help="latence simulée en ms (défaut 300)")

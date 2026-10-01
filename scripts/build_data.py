@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-AirportSketch Data Builder
+Plein Axe (ex-AirportSketch) - Data Builder
 Downloads CSV datasets from OurAirports, extracts airports with valid runway coordinates,
 and generates:
   1. data/search_index.json (lightweight search index for fast autocomplete)
@@ -69,7 +69,7 @@ def download_csv(url: str, name: str) -> str:
     t0 = time.time()
     req = urllib.request.Request(
         url,
-        headers={"User-Agent": "AirportSketch-DataBuilder/1.0"}
+        headers={"User-Agent": "PleinAxe-DataBuilder/1.0"}
     )
     with urllib.request.urlopen(req, timeout=60) as resp:
         content = resp.read().decode("utf-8", errors="replace")
@@ -347,7 +347,7 @@ def build_data(output_dir: str, copy_html: bool = True, faa_cache: str = None):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Build AirportSketch static datasets")
+    parser = argparse.ArgumentParser(description="Build Plein Axe static datasets")
     parser.add_argument(
         "--output",
         "-o",

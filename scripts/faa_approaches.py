@@ -22,7 +22,7 @@ import urllib.request
 import xml.etree.ElementTree as ET
 import zipfile
 
-USER_AGENT = "Mozilla/5.0 (AirportSketch-DataBuilder)"
+USER_AGENT = "Mozilla/5.0 (PleinAxe-DataBuilder)"
 DTPP_META_URL = "https://aeronav.faa.gov/d-tpp/{cycle}/xml_data/d-TPP_Metafile.xml"
 DTPP_PDF_BASE = "https://aeronav.faa.gov/d-tpp/{cycle}/"
 CIFP_ZIP_URL = "https://aeronav.faa.gov/Upload_313-d/cifp/CIFP_{date:%y%m%d}.zip"

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes, viewport-fit=cover">
-    <title>AirportSketch - Schémas d'Aéroports en Direct</title>
+    <title>Plein Axe · Diagrammes de pistes et suivi de vols</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
@@ -1662,7 +1662,7 @@
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"/>
             </svg>
-            <h1>AirportSketch</h1>
+            <h1>Plein Axe</h1>
         </div>
         <button class="btn-help" onclick="openHelp()" title="Que faire avec cette app ?" aria-haspopup="dialog">
             <span class="btn-help-icon" aria-hidden="true">?</span>
@@ -1675,7 +1675,7 @@
         <div class="help-hero">
             <h2 id="helpTitle">
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"/></svg>
-                Bienvenue sur AirportSketch
+                Bienvenue sur Plein Axe
             </h2>
             <p>Le schéma des pistes de plus de 11 000 aéroports dans le monde, à l'échelle et orienté au nord, avec fréquences, approches aux instruments et suivi de vols en direct.</p>
             <button class="help-close" onclick="closeHelp()" title="Fermer" aria-label="Fermer l'aide">
@@ -2798,6 +2798,7 @@
             }
             flightMap.overflown = list;
             renderOverflownList(f, list, !!(dep && arr));
+            if (flightMap.flight === f) updateMapOverlay();
             if (fit && viewMode === 'map' && flightMap.flight === f && !flightMap.userMoved) fitFlightMap();
             else scheduleMapDraw();
         }
@@ -3857,11 +3858,9 @@
             const w = mapCanvas.clientWidth, h = mapCanvas.clientHeight;
             if (!w || !h) { flightMap.needsFit = true; return; }
             flightMap.needsFit = false;
+            // Cadrage sur la trajectoire seule (route, départ, arrivée, avion), centrée : les aéroports
+            // le long de la route n'y entrent pas (un dégagement lointain comme Keflavik peut sortir du cadre)
             const pts = flightMap.route ? flightMap.route.points.slice() : [];
-            if (pts.length && flightMap.overflown.length) {
-                const refLon = pts[0][0];
-                flightMap.overflown.forEach(o => pts.push([unwrapLon(o.ap.lon, refLon), mapY(o.ap.lat)]));
-            }
             flightMap.userMoved = false;
             if (!pts.length) {
                 flightMap.cx = 0;
@@ -3873,18 +3872,91 @@
                     minX = Math.min(minX, x); maxX = Math.max(maxX, x);
                     minY = Math.min(minY, y); maxY = Math.max(maxY, y);
                 });
-                // Marges : étiquettes d'aéroport et boutons de zoom à droite, résumé en haut, légende en bas
-                const padL = Math.min(Math.max(w * 0.1, 60), w * 0.25);
-                const padR = Math.min(Math.max(w * 0.1, 60) + 70, w * 0.32);
-                const padT = Math.min(Math.max(h * 0.1, 70), h * 0.25);
-                const padB = Math.min(Math.max(h * 0.1, 70) + 60, h * 0.35);
-                flightMap.scale = clampMapScale(Math.min((w - padL - padR) / Math.max(maxX - minX, 3), (h - padT - padB) / Math.max(maxY - minY, 3)));
-                // Centre la route dans la zone libre plutôt que dans tout le canvas
-                flightMap.cx = (minX + maxX) / 2 - ((padL - padR) / 2) / flightMap.scale;
-                flightMap.cy = (minY + maxY) / 2 - ((padT - padB) / 2) / flightMap.scale;
+                // Marges de départ : étiquettes d'aéroport à droite des points, boutons de zoom à droite
+                let pads = {
+                    L: Math.min(Math.max(w * 0.06, 40), w * 0.2),
+                    R: Math.min(Math.max(w * 0.06, 40) + 70, w * 0.3),
+                    T: Math.min(Math.max(h * 0.08, 50), h * 0.25),
+                    B: Math.min(Math.max(h * 0.08, 50), h * 0.25)
+                };
+                const apply = pd => {
+                    const scale = clampMapScale(Math.min((w - pd.L - pd.R) / Math.max(maxX - minX, 3), (h - pd.T - pd.B) / Math.max(maxY - minY, 3)));
+                    // Centre la route dans la zone libre plutôt que dans tout le canvas
+                    return { scale, cx: (minX + maxX) / 2 - ((pd.L - pd.R) / 2) / scale, cy: (minY + maxY) / 2 - ((pd.T - pd.B) / 2) / scale };
+                };
+
+                // Éléments posés sur la carte (légende, réglages, résumé, boutons) : rien d'important dessous.
+                // Si un point de la route, un aéroport ou l'étiquette départ/arrivée tombe sous l'un d'eux, on
+                // élargit la marge de ce côté (verticale ou horizontale, celle qui garde le plus grand zoom).
+                const obstacles = mapObstacles();
+                const boxes = mapFitBoxes(pts);
+                let view = apply(pads);
+                for (let iter = 0; iter < 20 && obstacles.length; iter++) {
+                    const hit = mapFirstOverlap(boxes, obstacles, view, w, h);
+                    if (!hit) break;
+                    const { box, ob } = hit;
+                    // Étendue de l'élément masqué autour de son point, pour que la marge le dégage entièrement
+                    const m = 12;
+                    const vertical = { ...pads }, horizontal = { ...pads };
+                    if (ob.y + ob.h / 2 > h / 2) vertical.B = Math.max(pads.B, h - ob.y + m + box.b);
+                    else vertical.T = Math.max(pads.T, ob.y + ob.h + m + box.t);
+                    if (ob.x + ob.w / 2 < w / 2) horizontal.L = Math.max(pads.L, ob.x + ob.w + m + box.l);
+                    else horizontal.R = Math.max(pads.R, w - ob.x + m + box.r);
+                    const usable = pd => pd.L + pd.R < w * 0.85 && pd.T + pd.B < h * 0.85;
+                    const frees = v => !mapFirstOverlap([box], [ob], v, w, h);
+                    const cands = [vertical, horizontal].filter(usable).map(pd => ({ pd, v: apply(pd) }));
+                    // De préférence une marge qui dégage vraiment cet élément, puis celle qui garde le plus grand zoom
+                    cands.sort((a, b) => (frees(b.v) - frees(a.v)) || (b.v.scale - a.v.scale));
+                    if (!cands.length) break;
+                    pads = cands[0].pd;
+                    view = cands[0].v;
+                }
+                flightMap.scale = view.scale;
+                flightMap.cx = view.cx;
+                flightMap.cy = view.cy;
             }
             clampMapCenter();
             scheduleMapDraw();
+        }
+
+        // Rectangles (pixels du canvas) des éléments visibles posés sur la carte
+        function mapObstacles() {
+            const base = mapCanvas.getBoundingClientRect();
+            return ['#mapLegend', '#mapSettings', '#mapHud', '#viewToggle', '.canvas-top-actions', '.controls-overlay', '#fullscreenHeader']
+                .map(sel => document.querySelector(sel))
+                .filter(el => el && !el.hidden && el.offsetParent !== null && getComputedStyle(el).display !== 'none')
+                .map(el => {
+                    const r = el.getBoundingClientRect();
+                    return { x: r.left - base.left, y: r.top - base.top, w: r.width, h: r.height };
+                })
+                .filter(r => r.w > 0 && r.h > 0);
+        }
+
+        // Ce qui doit rester visible, en coordonnées du monde avec une taille en pixels :
+        // points de la route et aéroports (petit carré), avion, étiquettes départ/arrivée (à droite du point)
+        function mapFitBoxes(pts) {
+            const boxes = pts.map(([x, y]) => ({ x, y, l: 4, r: 4, t: 4, b: 4 }));
+            const route = flightMap.route;
+            if (route) {
+                mctx.font = 'bold 11px sans-serif';
+                [route.dep, route.arr].forEach(m => {
+                    if (!m) return;
+                    boxes.push({ x: m.lon, y: mapY(m.lat), l: 6, r: 9 + mctx.measureText(m.label).width + 16, t: 12, b: 12 });
+                });
+                if (route.plane) boxes.push({ x: route.plane.lon, y: mapY(route.plane.lat), l: 18, r: 18, t: 18, b: 18 });
+            }
+            return boxes;
+        }
+
+        function mapFirstOverlap(boxes, obstacles, view, w, h) {
+            const m = 6;
+            for (const bx of boxes) {
+                const px = w / 2 + (bx.x - view.cx) * view.scale, py = h / 2 + (bx.y - view.cy) * view.scale;
+                const x1 = px - bx.l, x2 = px + bx.r, y1 = py - bx.t, y2 = py + bx.b;
+                const ob = obstacles.find(o => x1 < o.x + o.w + m && x2 > o.x - m && y1 < o.y + o.h + m && y2 > o.y - m);
+                if (ob) return { box: bx, ob };
+            }
+            return null;
         }
 
         function mapZoomAt(factor, px, py) {

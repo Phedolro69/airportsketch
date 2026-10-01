@@ -35,7 +35,7 @@ export async function fetchPosition(callsign, apiKey, fetchImpl = fetch) {
     const data = await res.json();
     if (data && data.error) {
         const err = new Error(data.error.message || 'Erreur AirLabs');
-        err.status = /limit/i.test(data.error.code || data.error.message || '') ? 429 : 502;
+        err.status = /limit|quota|exceed/i.test(`${data.error.code || ''} ${data.error.message || ''}`) ? 429 : 502;
         throw err;
     }
 

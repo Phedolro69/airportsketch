@@ -2348,7 +2348,7 @@
         // En local (PC ou téléphone sur le même réseau), on utilise `wrangler dev` sur le port 8787
         const IS_LOCAL_HOST = /^(localhost|127\.0\.0\.1|192\.168\.\d+\.\d+|10\.\d+\.\d+\.\d+)$/.test(location.hostname);
         const FLIGHT_API_BASE = IS_LOCAL_HOST ? `http://${location.hostname}:8787` : FLIGHT_API_PROD;
-        const LIVE_CACHE_TTL_MS = 2 * 60 * 1000;
+        const LIVE_CACHE_TTL_MS = 10 * 60 * 1000;   // comme le cache du worker (quota AirLabs)
         const MAX_FLIGHT_RESULTS = 30;
 
         const FLIGHT_STATUS = {
@@ -3701,7 +3701,6 @@
         const MAP_MAX_LAT = 84;
         const MAP_MAX_SCALE = 80;       // pixels par degré
         const MAP_GAP_S = 1200;         // au-delà de 20 min sans position, le tracé est interpolé (pointillé)
-        const MAP_REFRESH_MS = 60000;
         const MAP_COLORS = {
             sea: '#0d1322', land: '#1a2438', coast: '#2e3f5e', border: 'rgba(100, 116, 139, 0.32)',
             grid: 'rgba(255, 255, 255, 0.035)', route: '#a78bfa', routeSoft: 'rgba(167, 139, 250, 0.75)',
@@ -3806,6 +3805,25 @@
                 cancelled: 'Vol annulé : route directe estimée'
             };
             if (f.status !== 'en-route') return { data: null, notice: notices[f.status] || 'Vol non suivi : route directe estimée' };
+            // La fiche AirLabs (/flight) d'un vol en cours contient déjà sa position : aucun appel de plus
+            if (typeof f.lat === 'number' && typeof f.lng === 'number') {
+                const num = v => (typeof v === 'number' && Number.isFinite(v) ? v : null);
+                return {
+                    data: {
+                        callsign: f.flight_icao || f.flight_iata, hex: f.hex || null, reg: f.reg_number || null, type: f.aircraft_icao || null,
+                        now: {
+                            lat: f.lat, lon: f.lng,
+                            alt: num(f.alt) === null ? null : Math.round(f.alt * 3.28084),       // m -> ft
+                            gs: num(f.speed) === null ? null : Math.round(f.speed * 0.539957),   // km/h -> kt
+                            track: num(f.dir) === null ? null : Math.round(f.dir),
+                            vs: null,
+                            ts: num(f.updated) || Math.round(Date.now() / 1000)
+                        },
+                        track: [], source: 'airlabs'
+                    },
+                    notice: ''
+                };
+            }
             const callsign = (f.flight_icao || `${f.airline_icao || ''}${f.flight_number || ''}`).toUpperCase();
             if (!/^[A-Z0-9]{3,8}$/.test(callsign)) return { data: null, notice: 'Vol non suivi : route directe estimée' };
             try {
@@ -4323,7 +4341,7 @@
                     n.alt != null ? `${n.alt.toLocaleString('fr-FR')} ft` : '',
                     n.gs != null ? `${n.gs} kt` : '',
                     n.track != null ? `cap ${String(n.track).padStart(3, '0')}°` : '',
-                    time ? `<span class="dim">MàJ ${time}</span>` : ''
+                    time ? `<span class="dim">position à ${time}</span>` : ''
                 ].filter(Boolean).join('<i></i>');
                 hud.hidden = false;
             } else {
@@ -4400,33 +4418,19 @@
             if (flightMap.timer) { clearInterval(flightMap.timer); flightMap.timer = null; }
         }
 
-        async function refreshFlightTrack() {
-            if (viewMode !== 'map' || document.hidden || !flightMap.flight) return;
-            const seq = flightMap.seq;
-            const res = await loadFlightTrack(flightMap.flight);
-            if (seq !== flightMap.seq || viewMode !== 'map' || !res.data) return;
-            flightMap.track = res.data;
-            flightMap.route = buildFlightRoute();
-            refreshOverflown();
-            flightMap.loadedAt = Date.now();
-            flightMap.notice = '';
-            updateMapOverlay();
-            scheduleMapDraw();
-        }
-
-        // Affiche la carte du vol sélectionné ; `reuse` réutilise les données si elles ont moins d'une minute
+        // Affiche la carte du vol sélectionné ; `reuse` réutilise les données déjà chargées pour ce vol.
+        // Pas d'actualisation automatique de la position (quota AirLabs) : rechercher à nouveau le vol la met à jour.
         async function showFlightMap(reuse = false) {
             const f = currentFlight;
             if (!f) return;
             // La carte appartient au vol : on revient sur l'onglet « Vol » (dossier de vol visible)
             if (document.body.dataset.searchMode !== 'flight') setSearchMode('flight', false);
-            const fresh = reuse && flightMap.flight === f && flightMap.route && Date.now() - flightMap.loadedAt < MAP_REFRESH_MS;
+            const fresh = reuse && flightMap.flight === f && flightMap.route;
             setViewMode('map');
             if (isMobileLayout()) switchMobileTab('diagram');
             if (fresh) {
                 updateMapOverlay();
                 resizeMapCanvas();
-                if (f.status === 'en-route' && !flightMap.timer) flightMap.timer = setInterval(refreshFlightTrack, MAP_REFRESH_MS);
                 return;
             }
 
@@ -4456,7 +4460,6 @@
             updateMapOverlay();
             flightMap.needsFit = true;
             resizeMapCanvas();
-            if (f.status === 'en-route') flightMap.timer = setInterval(refreshFlightTrack, MAP_REFRESH_MS);
         }
 
         // --- Interactions : souris, tactile (déplacement, pincement), clic sur un aéroport ----

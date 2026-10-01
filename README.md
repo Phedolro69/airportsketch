@@ -37,7 +37,7 @@ L'application utilise une architecture statique pré-compilée :
 
 4. **Recherche de vols & dossier de vol (AirLabs)** :
    - Le mode **Vol** de la recherche propose les vols en direct de la compagnie saisie (ex : `AF1…`), et le vol connu le plus proche (dernier ou prochain) quand le vol n'est pas en l'air.
-   - Les données viennent de l'API [AirLabs](https://airlabs.co), appelée via un petit proxy **Cloudflare Worker** (`worker/`) qui garde la clé secrète et met les réponses en cache partagé Workers KV (2 min pour les vols en direct, 1 min pour un vol).
+   - Les données viennent de l'API [AirLabs](https://airlabs.co), appelée via un petit proxy **Cloudflare Worker** (`worker/`) qui garde la clé secrète et met les réponses en cache partagé Workers KV (10 min pour les vols en direct et pour un vol, 5 min pour une position) et protège le quota AirLabs (voir [Quota AirLabs](#quota-airlabs)).
    - Un vol peut être partagé par URL : `?flight=AF173`.
    - Un vol s'affiche sur une **carte** : position réelle de l'avion et aéroports le long de la route (voir [Carte du vol](#carte-du-vol)).
 
@@ -93,7 +93,7 @@ Quand un vol est sélectionné, des boutons en haut de la zone principale bascul
 Pour un vol en cours, le dossier de vol affiche une **barre de progression** et le **temps de vol restant**, calculés à partir du décollage réel et de l'arrivée estimée (actualisés toutes les 30 s), ainsi que la liste repliable des **aéroports le long de la route**.
 
 **Ce que la carte montre**
-- **l'avion à sa position réelle**, orienté selon son cap, avec altitude, vitesse sol et cap en haut à gauche (actualisés toutes les 60 s) ;
+- **l'avion à sa position réelle**, orienté selon son cap, avec altitude, vitesse sol et cap en haut à gauche (position chargée à l'ouverture de la carte, sans actualisation automatique pour préserver le quota ; l'heure de la position est affichée) ;
 - **Parcouru** (trait plein discret) : grand cercle du départ jusqu'à l'avion, **estimation** ;
 - **Reste à parcourir** (pointillés) : grand cercle de l'avion jusqu'à l'arrivée, **estimation** ;
 - départ et arrivée : un clic ouvre le diagramme de pistes de l'aéroport ;
@@ -104,7 +104,7 @@ Pour un vol en cours, le dossier de vol affiche une **barre de progression** et 
 
 > Ni le **plan de vol déposé** ni la **trajectoire depuis le décollage** ne sont affichés : le plan n'est pas public vol par vol, et les réseaux ADS-B ouverts (adsb.lol, adsb.fi, airplanes.live, OpenSky) refusent les requêtes venant de Cloudflare — testé en octobre 2026. Une vraie trajectoire nécessiterait une API commerciale (ex. FlightAware AeroAPI). Information indicative, à ne pas utiliser pour la navigation.
 
-**Données de position** : route `/track?callsign=AFR556` du worker (`worker/position.js`), qui interroge AirLabs `/flights` (même clé que la recherche de vols) : position, altitude, vitesse et cap actuels de l'avion. Cache KV partagé de 60 s : un vol affiché par plusieurs visiteurs ne coûte qu'un appel AirLabs par minute.
+**Données de position** : route `/track?callsign=AFR556` du worker (`worker/position.js`), qui interroge AirLabs `/flights` (même clé que la recherche de vols) : position, altitude, vitesse et cap actuels de l'avion. Quand la fiche du vol (`/flight`) contient déjà la position (cas d'AirLabs pour un vol en cours), le site l'utilise directement, sans appeler `/track`. Cache KV partagé de 5 min.
 
 **Fond de carte** : dessiné par le site, sans tuiles, clé ni bibliothèque. Source [Natural Earth](https://www.naturalearthdata.com) 1:50m (domaine public, via le paquet `world-atlas`), converti par `scripts/make_world.py` en `scripts/assets/world.json` (255 Ko, ~90 Ko gzippé, versionné), copié dans `data/world.json` par `build_data.py` et chargé seulement à l'ouverture de la carte. Projection Mercator, répétée en longitude (les vols transpacifiques traversent la ligne de changement de date sans coupure). Pour régénérer le fond (changer la résolution) : `python scripts/make_world.py`.
 
@@ -127,7 +127,18 @@ Pour un vol en cours, le dossier de vol affiche une **barre de progression** et 
 
 Si le site est servi depuis un autre domaine que `https://phedolro69.github.io`, ajoutez-le à `ALLOWED_ORIGINS` dans `worker/wrangler.toml`.
 
-Routes du worker : `/live`, `/flight` et `/track` (toutes via AirLabs, clé requise). Le worker est déployé à la main (`npx wrangler deploy`) : le workflow GitHub ne met à jour que le site.
+Routes du worker : `/live`, `/flight` et `/track` (toutes via AirLabs, clé requise), et `/usage` (appels AirLabs du jour et budget). Le worker est déployé à la main (`npx wrangler deploy`) : le workflow GitHub ne met à jour que le site.
+
+### Quota AirLabs
+
+L'offre gratuite d'AirLabs est de **1 000 requêtes par mois**. Seules les requêtes absentes du cache comptent ; le worker les protège (`worker/budget.js`) :
+- **caches partagés** (Workers KV) : 10 min pour la liste des vols d'une compagnie et pour une fiche de vol, 5 min pour une position ; le site garde aussi la liste 10 min ;
+- **pas d'actualisation automatique** de la position sur la carte ; la position fournie par `/flight` est réutilisée ;
+- **budget quotidien** `DAILY_BUDGET` (30 par défaut, dans `wrangler.toml`) : au-delà, plus aucun appel à AirLabs jusqu'au lendemain (UTC), les vols déjà en cache restent servis et le site affiche « Limite quotidienne de suivi des vols atteinte » ;
+- **limite par visiteur** : 10 appels réels par minute et par adresse IP (binding Cloudflare Rate Limiting `LIMITER`) ;
+- **quota mensuel épuisé** côté AirLabs : message « Quota mensuel du service de vols épuisé ».
+
+Suivi de la consommation du jour : `https://airportsketch-flights.<compte>.workers.dev/usage`. Pour plus de volume, AirLabs propose une offre payante (25 000 requêtes/mois).
 
 **En local**, le site appelle automatiquement `http://<hôte>:8787`. Deux options (une seule à la fois sur ce port) :
 

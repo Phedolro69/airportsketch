@@ -6,6 +6,8 @@ compatibility_date = "2026-09-01"
 # Origines autorisées à appeler le proxy (séparées par des virgules).
 # localhost et le réseau local sont toujours autorisés pour le développement.
 ALLOWED_ORIGINS = "https://phedolro69.github.io"
+# Appels AirLabs autorisés par jour (UTC), cache exclu. Offre gratuite : 1 000/mois ≈ 30/jour.
+DAILY_BUDGET = "30"
 
 # La clé AirLabs est un secret, jamais dans ce fichier :
 #   npx wrangler secret put AIRLABS_API_KEY
@@ -16,3 +18,12 @@ ALLOWED_ORIGINS = "https://phedolro69.github.io"
 [[kv_namespaces]]
 binding = "FLIGHT_CACHE"
 id = "ec217b6f95bf493991524c8e3d1d7aa0"
+
+# Limite par visiteur (adresse IP) des appels réels à AirLabs : 10 par minute
+[[ratelimits]]
+name = "LIMITER"
+namespace_id = "1001"
+
+  [ratelimits.simple]
+  limit = 10
+  period = 60

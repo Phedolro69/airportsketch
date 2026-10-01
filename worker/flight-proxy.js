@@ -8,9 +8,14 @@
  *   GET /live?airline_iata=AF   | /live?airline_icao=AFR    -> vols en direct de la compagnie
  *   GET /flight?flight_iata=AF173 | /flight?flight_icao=AFR173 -> vol le plus proche (en vol, prévu ou atterri)
  *   GET /track?callsign=AFR173                                 -> position actuelle du vol en cours (AirLabs /flights)
+ *   GET /usage                                                 -> appels AirLabs du jour et budget quotidien
+ *
+ * Quota AirLabs (offre gratuite, 1 000 requêtes/mois) : caches longs, limite par visiteur et budget
+ * quotidien (budget.js) ; seules les requêtes absentes du cache comptent.
  */
 
 import { fetchPosition } from './position.js';
+import { checkBudget, isAirLabsQuotaError, budgetUsage, QUOTA_MESSAGES } from './budget.js';
 
 const AIRLABS_BASE = 'https://airlabs.co/api/v9';
 
@@ -25,7 +30,7 @@ const LIVE_FIELDS = [
 const ROUTES = {
     '/live': {
         upstream: '/flights',
-        ttl: 120,
+        ttl: 600,   // 10 min : la liste des vols d'une compagnie bouge peu
         params: {
             airline_iata: /^[A-Z0-9]{2}$/,
             airline_icao: /^[A-Z]{3}$/
@@ -34,7 +39,7 @@ const ROUTES = {
     },
     '/flight': {
         upstream: '/flight',
-        ttl: 60,
+        ttl: 600,   // 10 min : horaires, portes, retards
         params: {
             flight_iata: /^[A-Z0-9]{2}\d{1,4}[A-Z]?$/,
             flight_icao: /^[A-Z]{3}\d{1,4}[A-Z]?$/
@@ -44,7 +49,7 @@ const ROUTES = {
 };
 
 const TRACK_CALLSIGN = /^[A-Z0-9]{3,8}$/;
-const TRACK_TTL = 60;
+const TRACK_TTL = 300;   // 5 min : position de l'avion
 
 // Origines de développement local (localhost et réseau privé, tous ports)
 const DEV_ORIGIN = /^http:\/\/(localhost|127\.0\.0\.1|192\.168\.\d+\.\d+|10\.\d+\.\d+\.\d+)(:\d+)?$/;
@@ -68,7 +73,7 @@ function json(body, status, extraHeaders = {}) {
 }
 
 // Position d'un vol en cours (AirLabs). Même cache KV partagé que les autres routes.
-async function handleTrack(url, env, ctx, cors) {
+async function handleTrack(request, url, env, ctx, cors) {
     const callsign = (url.searchParams.get('callsign') || '').toUpperCase();
     if (!TRACK_CALLSIGN.test(callsign)) {
         return json({ error: { message: 'Paramètre invalide' } }, 400, cors);
@@ -88,12 +93,14 @@ async function handleTrack(url, env, ctx, cors) {
     if (!env.AIRLABS_API_KEY) {
         return json({ error: { message: 'AIRLABS_API_KEY non configurée sur le Worker' } }, 500, cors);
     }
+    const blocked = await checkBudget(request, env, ctx);
+    if (blocked) return json({ error: blocked }, 503, cors);
     let track;
     try {
         track = await fetchPosition(callsign, env.AIRLABS_API_KEY);
     } catch (err) {
-        if (err && err.status === 429) {
-            return json({ error: { message: 'Quota de suivi atteint, réessayez plus tard', code: 'rate_limited' } }, 503, cors);
+        if (err && (err.status === 429 || isAirLabsQuotaError(err))) {
+            return json({ error: { message: QUOTA_MESSAGES.monthly, code: 'monthly_quota' } }, 503, cors);
         }
         return json({ error: { message: 'Position du vol indisponible' } }, 502, cors);
     }
@@ -120,7 +127,10 @@ export default {
 
         const url = new URL(request.url);
         if (url.pathname === '/track') {
-            return handleTrack(url, env, ctx, cors);
+            return handleTrack(request, url, env, ctx, cors);
+        }
+        if (url.pathname === '/usage') {
+            return json(await budgetUsage(env), 200, { ...cors, 'Cache-Control': 'no-store' });
         }
         const route = ROUTES[url.pathname];
         if (!route) {
@@ -152,6 +162,9 @@ export default {
             });
         }
 
+        const blocked = await checkBudget(request, env, ctx);
+        if (blocked) return json({ error: blocked }, 503, cors);
+
         const upstreamUrl = new URL(AIRLABS_BASE + route.upstream);
         upstreamUrl.searchParams.set(paramName, paramValue);
         for (const [k, v] of Object.entries(route.extra)) upstreamUrl.searchParams.set(k, v);
@@ -166,10 +179,12 @@ export default {
         }
 
         // On ne renvoie que la réponse ou l'erreur (jamais l'écho de la requête, qui contient la clé)
+        const quota = data && data.error && isAirLabsQuotaError(data.error);
         const body = data && data.error
-            ? { error: { message: data.error.message || 'Erreur AirLabs', code: data.error.code } }
+            ? { error: quota ? { message: QUOTA_MESSAGES.monthly, code: 'monthly_quota' }
+                             : { message: data.error.message || 'Erreur AirLabs', code: data.error.code } }
             : { response: data ? data.response ?? null : null };
-        const status = body.error ? 502 : 200;
+        const status = body.error ? (quota ? 503 : 502) : 200;
 
         const text = JSON.stringify(body);
         if (status === 200 && kv) {

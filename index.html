@@ -2,60 +2,209 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Générateur de Schéma d'Aéroport</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes, viewport-fit=cover">
+    <title>AirportSketch - Schémas d'Aéroports en Direct</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; }
+        :root {
+            --bg-base: #0b0f19;
+            --bg-surface: #111827;
+            --bg-card: #1e293b;
+            --bg-elevated: #283548;
+            --border-subtle: #1f2937;
+            --border-card: #334155;
+            --border-highlight: #3b82f6;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --text-dim: #64748b;
+            --accent-blue: #38bdf8;
+            --accent-green: #10b981;
+            --accent-amber: #f59e0b;
+            --accent-red: #ef4444;
+            --safe-top: env(safe-area-inset-top, 0px);
+            --safe-bottom: env(safe-area-inset-bottom, 0px);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            background-color: #0b0f19;
-            color: #e2e8f0;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg-base);
+            color: var(--text-main);
             display: flex;
             flex-direction: column;
             height: 100vh;
+            height: 100dvh;
             overflow: hidden;
         }
+
+        /* En-tête principal */
         header {
-            background-color: #111827;
-            border-bottom: 1px solid #1f2937;
-            padding: 12px 24px;
+            background-color: var(--bg-surface);
+            border-bottom: 1px solid var(--border-subtle);
+            padding: calc(10px + var(--safe-top)) 16px 10px 16px;
             display: flex;
             align-items: center;
             justify-content: space-between;
+            flex-shrink: 0;
+            z-index: 25;
         }
-        h1 { font-size: 18px; font-weight: 600; color: #f3f4f6; }
-        
-        .main-container { display: flex; flex: 1; height: calc(100vh - 57px); }
+
+        .header-brand {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .header-brand svg {
+            color: var(--accent-blue);
+            flex-shrink: 0;
+        }
+        .header-brand h1 {
+            font-size: 16px;
+            font-weight: 700;
+            letter-spacing: -0.3px;
+            color: #ffffff;
+            white-space: nowrap;
+        }
+        .header-badge {
+            display: inline-block;
+            font-size: 10px;
+            font-weight: 700;
+            background: rgba(56, 189, 248, 0.15);
+            color: var(--accent-blue);
+            border: 1px solid rgba(56, 189, 248, 0.3);
+            padding: 2px 6px;
+            border-radius: 9999px;
+            margin-left: 4px;
+        }
+
+        /* Bouton agrandir dans le header */
+        .btn-header-fullscreen {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(30, 58, 138, 0.4);
+            border: 1px solid rgba(59, 130, 246, 0.4);
+            color: #93c5fd;
+            border-radius: 8px;
+            padding: 7px 12px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+        .btn-header-fullscreen:hover, .btn-header-fullscreen:active {
+            background: #1e3a8a;
+            color: #ffffff;
+            border-color: #3b82f6;
+        }
+
+        /* Barre d'onglets mobile */
+        .mobile-tab-bar {
+            display: none;
+            padding: 4px 14px 8px 14px;
+            flex-shrink: 0;
+            z-index: 20;
+        }
+        .mobile-tabs-inner {
+            display: flex;
+            background: #0f172a;
+            border-radius: 8px;
+            padding: 3px;
+            gap: 4px;
+            border: 1px solid var(--border-subtle);
+        }
+        .mobile-tab-btn {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            background: transparent;
+            color: var(--text-muted);
+            border: none;
+            border-radius: 6px;
+            padding: 8px 12px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+        .mobile-tab-btn.active {
+            background-color: #1e293b;
+            color: #ffffff;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+        }
+        .tab-badge {
+            background-color: var(--accent-blue);
+            color: #0b0f19;
+            font-size: 10px;
+            font-weight: 700;
+            padding: 1px 6px;
+            border-radius: 9999px;
+        }
+
+        /* Conteneur principal */
+        .main-container {
+            display: flex;
+            flex: 1;
+            height: calc(100vh - 57px);
+            height: calc(100dvh - 57px);
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* Sidebar : contient la recherche et les détails */
         .sidebar {
             width: 380px;
-            background-color: #111827;
-            border-right: 1px solid #1f2937;
+            background-color: var(--bg-surface);
+            border-right: 1px solid var(--border-subtle);
             display: flex;
             flex-direction: column;
             z-index: 10;
+            flex-shrink: 0;
+            overflow: hidden;
         }
-        .sidebar-content { padding: 16px; flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 14px; }
 
-        .search-box { position: relative; }
+        /* Section de recherche (toujours accessible) */
+        .search-section {
+            padding: 16px 16px 12px 16px;
+            flex-shrink: 0;
+            position: relative;
+        }
+        .search-box {
+            position: relative;
+        }
         
         input[type="text"] {
             width: 100%;
             background-color: #1f2937;
-            color: #38bdf8;
+            color: var(--accent-blue);
             border: 1px solid #374151;
-            border-radius: 6px;
-            padding: 10px 12px;
+            border-radius: 8px;
+            padding: 11px 12px;
             font-size: 13px;
             font-weight: 600;
             outline: none;
             text-transform: uppercase;
+            transition: border-color 0.15s ease, box-shadow 0.15s ease;
         }
         input[type="text"]::placeholder {
             color: #6b7280;
             text-transform: none;
             font-weight: normal;
         }
-        input[type="text"]:focus { border-color: #3b82f6; }
+        input[type="text"]:focus {
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+        }
 
         .autocomplete-results {
             position: absolute;
@@ -65,189 +214,653 @@
             background-color: #1f2937;
             border: 1px solid #374151;
             border-top: none;
-            border-bottom-left-radius: 6px;
-            border-bottom-right-radius: 6px;
-            max-height: 220px;
+            border-bottom-left-radius: 8px;
+            border-bottom-right-radius: 8px;
+            max-height: 240px;
             overflow-y: auto;
-            z-index: 20;
+            z-index: 50;
             display: none;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.6);
+            -webkit-overflow-scrolling: touch;
         }
         .autocomplete-item {
-            padding: 8px 12px;
+            padding: 10px 12px;
             font-size: 12px;
             cursor: pointer;
             display: flex;
             flex-direction: column;
             gap: 2px;
             border-bottom: 1px solid #2d3748;
+            touch-action: manipulation;
         }
         .autocomplete-item:last-child { border-bottom: none; }
-        .autocomplete-item:hover { background-color: #374151; color: #fff; }
+        .autocomplete-item:hover, .autocomplete-item:active {
+            background-color: #374151;
+            color: #fff;
+        }
 
-        .quick-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+        .quick-tags-container {
+            margin-top: 8px;
+        }
+        .quick-tags {
+            display: flex;
+            gap: 6px;
+            overflow-x: auto;
+            padding-bottom: 2px;
+            scrollbar-width: none;
+            -webkit-overflow-scrolling: touch;
+        }
+        .quick-tags::-webkit-scrollbar { display: none; }
         .tag-btn {
             background-color: #1f2937;
             color: #9ca3af;
             border: 1px solid #374151;
-            border-radius: 4px;
-            padding: 4px 8px;
+            border-radius: 6px;
+            padding: 6px 10px;
             font-size: 11px;
             font-weight: 600;
             cursor: pointer;
+            white-space: nowrap;
+            flex-shrink: 0;
+            transition: all 0.15s ease;
         }
-        .tag-btn:hover { color: #38bdf8; border-color: #3b82f6; }
+        .tag-btn:hover, .tag-btn:active {
+            color: var(--accent-blue);
+            border-color: #3b82f6;
+            background-color: #283548;
+        }
+
+        /* Section détails et pistes de l'aéroport */
+        .details-section {
+            padding: 0 16px 16px 16px;
+            flex: 1;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            -webkit-overflow-scrolling: touch;
+        }
 
         /* Carte d'informations aéroport */
         .info-card {
-            background-color: #1e293b;
-            border: 1px solid #334155;
-            border-radius: 8px;
-            padding: 12px;
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-card);
+            border-radius: 10px;
+            padding: 14px;
             display: flex;
             flex-direction: column;
+            gap: 10px;
+        }
+        .info-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
             gap: 8px;
         }
         .info-card h2 {
-            font-size: 14px;
+            font-size: 15px;
             font-weight: 700;
             color: #f8fafc;
             line-height: 1.3;
         }
+        .ident-badge {
+            background: linear-gradient(135deg, #2563eb, #3b82f6);
+            color: #fff;
+            font-size: 12px;
+            font-weight: 700;
+            padding: 3px 8px;
+            border-radius: 6px;
+            letter-spacing: 0.5px;
+            flex-shrink: 0;
+            box-shadow: 0 2px 4px rgba(37, 99, 235, 0.3);
+        }
+
         .info-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 6px 12px;
+            gap: 8px 12px;
             font-size: 11px;
             align-items: center;
         }
-        .info-label { color: #94a3b8; font-weight: 500; }
+        .info-label { color: var(--text-muted); font-weight: 500; }
         .info-val { color: #e2e8f0; font-weight: 600; }
 
         /* Section rétractable des fréquences */
         .freq-details {
-            margin-top: 6px;
-            border-top: 1px solid #334155;
-            padding-top: 6px;
+            margin-top: 4px;
+            border-top: 1px solid var(--border-card);
+            padding-top: 8px;
         }
         .freq-details summary {
-            font-size: 11px;
+            font-size: 12px;
             font-weight: 600;
-            color: #38bdf8;
+            color: var(--accent-blue);
             cursor: pointer;
             user-select: none;
             outline: none;
+            display: flex;
+            align-items: center;
+            gap: 4px;
         }
         .freq-details summary:hover { color: #60a5fa; }
         .freq-list {
             display: flex;
             flex-direction: column;
             gap: 4px;
-            margin-top: 6px;
-            max-height: 140px;
+            margin-top: 8px;
+            max-height: 150px;
             overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
         }
         .freq-item {
             display: flex;
             justify-content: space-between;
+            align-items: center;
             font-size: 11px;
             background: #0f172a;
-            padding: 4px 6px;
-            border-radius: 4px;
+            padding: 6px 8px;
+            border-radius: 6px;
         }
         .freq-type { color: #94a3b8; font-weight: 500; }
-        .freq-mhz { color: #10b981; font-weight: 700; font-family: monospace; }
+        .freq-mhz { color: var(--accent-green); font-weight: 700; font-family: 'JetBrains Mono', monospace; }
 
         /* Bouton de filtre de pistes */
         .filter-btn {
             width: 100%;
-            background-color: #374151;
+            background-color: #1f2937;
             color: #f3f4f6;
-            border: 1px solid #4b5563;
-            border-radius: 6px;
-            padding: 8px 12px;
-            font-size: 11px;
+            border: 1px solid #374151;
+            border-radius: 8px;
+            padding: 10px 14px;
+            font-size: 12px;
             font-weight: 600;
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 6px;
-            transition: background-color 0.2s, border-color 0.2s;
+            gap: 8px;
+            transition: all 0.2s;
         }
-        .filter-btn:hover { background-color: #4b5563; border-color: #6b7280; }
+        .filter-btn:hover { background-color: #374151; border-color: #4b5563; }
         .filter-btn.active {
             background-color: #1e3a8a;
             color: #93c5fd;
             border-color: #3b82f6;
         }
 
-        .runway-list { display: flex; flex-direction: column; gap: 8px; max-height: 260px; overflow-y: auto; }
-        .runway-item {
-            background-color: #1f2937;
-            padding: 10px;
-            border-radius: 6px;
+        /* Liste des pistes */
+        .stats-box {
+            background: var(--bg-card);
+            padding: 10px 14px;
+            border-radius: 8px;
+            font-size: 12px;
+            border: 1px solid var(--border-card);
             display: flex;
             justify-content: space-between;
+            align-items: center;
+        }
+        .stats-title { font-weight: 700; color: #60a5fa; }
+
+        .runway-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            max-height: 280px;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+        .runway-item {
+            background-color: #1f2937;
+            padding: 12px;
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
             font-size: 12px;
             border: 1px solid #374151;
         }
+        .runway-ident {
+            font-weight: 700;
+            color: var(--accent-green);
+            font-size: 13px;
+        }
 
-        .canvas-area { flex: 1; position: relative; background-color: #172033; display: flex; align-items: center; justify-content: center; }
-        canvas { display: block; cursor: grab; }
+        /* Bouton bascule mobile vers le schéma */
+        .btn-view-diagram {
+            display: none;
+            width: 100%;
+            background: linear-gradient(135deg, #1d4ed8, #2563eb);
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            padding: 11px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+            margin-top: 4px;
+        }
+
+        /* Zone Canvas / Diagramme */
+        .canvas-area {
+            flex: 1;
+            position: relative;
+            background-color: #0d1322;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            width: 100%;
+            height: 100%;
+        }
+        canvas {
+            display: block;
+            cursor: grab;
+            touch-action: none;
+        }
         canvas:active { cursor: grabbing; }
 
-        .controls-overlay {
-            position: absolute; bottom: 20px; right: 20px; display: flex; gap: 8px;
-            background-color: rgba(17, 24, 39, 0.85); padding: 6px; border-radius: 8px; border: 1px solid #374151;
+        /* Indicateur Nord */
+        .compass-indicator {
+            position: absolute;
+            top: 16px;
+            left: 16px;
+            background: rgba(17, 24, 39, 0.85);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            padding: 6px 10px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 11px;
+            font-weight: 700;
+            color: #94a3b8;
+            pointer-events: none;
+            user-select: none;
+            z-index: 5;
         }
-        .ctrl-btn { background: #1f2937; color: #fff; border: 1px solid #374151; width: 34px; height: 34px; border-radius: 6px; cursor: pointer; font-weight: bold; }
-        .error-msg { background-color: #7f1d1d; color: #fecaca; padding: 10px; border-radius: 6px; font-size: 12px; display: none; }
-        .loading-msg { background-color: #1e293b; color: #38bdf8; padding: 10px; border-radius: 6px; font-size: 12px; }
+        .compass-arrow {
+            color: var(--accent-red);
+            font-size: 12px;
+            line-height: 1;
+        }
+
+        /* Pillule d'info rapide flottante sur le schéma (mobile) */
+        .quick-airport-pill {
+            display: none;
+            position: absolute;
+            top: 14px;
+            left: 72px;
+            right: 14px;
+            background: rgba(17, 24, 39, 0.88);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 20px;
+            padding: 6px 12px;
+            font-size: 11px;
+            color: #f8fafc;
+            align-items: center;
+            justify-content: space-between;
+            z-index: 5;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            white-space: nowrap;
+            overflow: hidden;
+        }
+
+        /* Overlay des contrôles zoom / plein écran */
+        .controls-overlay {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            background-color: rgba(17, 24, 39, 0.85);
+            backdrop-filter: blur(12px);
+            padding: 6px;
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+            z-index: 15;
+        }
+        .ctrl-btn {
+            background: #1f2937;
+            color: #ffffff;
+            border: 1px solid #374151;
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 15px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.15s ease;
+            touch-action: manipulation;
+        }
+        .ctrl-btn:hover { background-color: #374151; border-color: #4b5563; }
+        .ctrl-btn:active { transform: scale(0.94); }
+        .ctrl-btn.btn-fullscreen {
+            background: #1e3a8a;
+            border-color: #3b82f6;
+            color: #93c5fd;
+        }
+
+        /* Bouton Agrandir en haut à droite du Canvas (Desktop & Normal) */
+        .canvas-top-actions {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            display: flex;
+            gap: 8px;
+            z-index: 15;
+        }
+        .btn-expand-full {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(17, 24, 39, 0.88);
+            backdrop-filter: blur(10px);
+            color: #f8fafc;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 8px;
+            padding: 8px 12px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            transition: all 0.2s ease;
+        }
+        .btn-expand-full:hover {
+            background: rgba(30, 58, 138, 0.9);
+            border-color: var(--accent-blue);
+            color: #ffffff;
+        }
+        .btn-expand-full:active { transform: scale(0.96); }
+
+        /* Toast d'aide aux gestes tactiles */
+        .touch-gesture-hint {
+            position: absolute;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%) translateY(10px);
+            background: rgba(15, 23, 42, 0.94);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(56, 189, 248, 0.4);
+            color: #e2e8f0;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+            pointer-events: none;
+            z-index: 20;
+            opacity: 0;
+            transition: opacity 0.3s ease, transform 0.3s ease;
+            white-space: nowrap;
+        }
+        .touch-gesture-hint.visible {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        /* ========================================================
+           MODE PLEIN ÉCRAN DÉDIÉ (FULLSCREEN / MODAL IMMERSIF)
+           ======================================================== */
+        .canvas-area.is-fullscreen {
+            position: fixed !important;
+            inset: 0 !important;
+            width: 100vw !important;
+            height: 100vh !important;
+            height: 100dvh !important;
+            z-index: 9999 !important;
+            background-color: var(--bg-base) !important;
+            padding: var(--safe-top) env(safe-area-inset-right, 0px) var(--safe-bottom) env(safe-area-inset-left, 0px);
+        }
+
+        .fullscreen-header {
+            position: absolute;
+            top: max(12px, var(--safe-top));
+            left: 12px;
+            right: 12px;
+            display: none;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(15, 23, 42, 0.92);
+            backdrop-filter: blur(14px);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 12px;
+            padding: 8px 14px;
+            z-index: 25;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+        }
+        .is-fullscreen .fullscreen-header {
+            display: flex;
+        }
+        .is-fullscreen .canvas-top-actions {
+            display: none;
+        }
+        .is-fullscreen .compass-indicator {
+            top: 72px;
+        }
+        .fullscreen-title {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            overflow: hidden;
+        }
+        .fullscreen-title h3 {
+            font-size: 13px;
+            font-weight: 700;
+            color: #ffffff;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .fullscreen-actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-shrink: 0;
+        }
+        .btn-exit-fullscreen {
+            background: #ef4444;
+            color: #ffffff;
+            border: none;
+            border-radius: 6px;
+            padding: 7px 12px;
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            transition: background 0.15s ease;
+        }
+        .btn-exit-fullscreen:hover { background: #dc2626; }
+        .btn-exit-fullscreen:active { transform: scale(0.95); }
+
+        .error-msg {
+            background-color: rgba(127, 29, 29, 0.8);
+            border: 1px solid var(--accent-red);
+            color: #fecaca;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 12px;
+            display: none;
+        }
+        .loading-msg {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-card);
+            color: var(--accent-blue);
+            padding: 10px 14px;
+            border-radius: 8px;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* ========================================================
+           ADAPTATION MOBILE (< 768px)
+           ======================================================== */
+        @media (max-width: 768px) {
+            header {
+                padding: calc(8px + var(--safe-top)) 12px 8px 12px;
+            }
+            .header-brand h1 {
+                font-size: 15px;
+            }
+
+            .mobile-tab-bar {
+                display: block;
+            }
+
+            .main-container {
+                flex-direction: column;
+                height: calc(100vh - 53px);
+                height: calc(100dvh - 53px);
+            }
+
+            .sidebar {
+                width: 100%;
+                border-right: none;
+                flex-shrink: 0;
+            }
+
+            .search-section {
+                padding: 10px 14px 6px 14px;
+            }
+
+            /* Selon l'onglet actif : Schéma ou Détails */
+            body[data-mobile-tab="diagram"] .sidebar {
+                height: auto;
+                flex: 0 0 auto;
+            }
+            body[data-mobile-tab="diagram"] .details-section {
+                display: none;
+            }
+            body[data-mobile-tab="diagram"] .canvas-area {
+                display: flex;
+                flex: 1;
+                height: 100%;
+                min-height: 0;
+            }
+
+            body[data-mobile-tab="details"] .sidebar {
+                flex: 1;
+                height: 100%;
+                min-height: 0;
+                overflow-y: auto;
+            }
+            body[data-mobile-tab="details"] .details-section {
+                display: flex;
+                flex: 1;
+                padding: 0 14px calc(16px + var(--safe-bottom)) 14px;
+            }
+            body[data-mobile-tab="details"] .canvas-area {
+                display: none;
+            }
+
+            .btn-view-diagram {
+                display: flex;
+            }
+            .quick-airport-pill {
+                display: flex;
+            }
+            .canvas-top-actions {
+                display: none; /* Le bouton plein écran est déjà dans le header mobile et les contrôles */
+            }
+
+            /* Cibles tactiles agrandies pour ergonomie mobile */
+            .ctrl-btn {
+                width: 44px;
+                height: 44px;
+                font-size: 16px;
+            }
+            .tag-btn {
+                padding: 8px 12px;
+                font-size: 12px;
+            }
+            .controls-overlay {
+                bottom: calc(16px + var(--safe-bottom));
+                right: 14px;
+                gap: 10px;
+                padding: 6px;
+            }
+        }
     </style>
 </head>
-<body>
+<body data-mobile-tab="diagram">
 
     <header>
-        <h1>Airport Diagram Generator (Info Live)</h1>
+        <div class="header-brand">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"/>
+            </svg>
+            <h1>AirportSketch</h1>
+        </div>
     </header>
 
     <div class="main-container">
+        <!-- Sidebar : Recherche + Navigation Mobile + Détails de l'aéroport -->
         <div class="sidebar">
-            <div class="sidebar-content">
-                <div>
-                    <label style="font-size: 11px; font-weight: bold; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 8px;">
-                        Rechercher un aéroport (ICAO / Nom)
-                    </label>
-                    <div class="search-box">
-                        <input type="text" id="airportInput" placeholder="Ex: LFPG, Nice, KLAX..." oninput="handleInput(this.value)" autocomplete="off" disabled>
-                        <div id="autocompleteResults" class="autocomplete-results"></div>
-                    </div>
-                    
-                    <div class="quick-tags" id="quickTags">
-                        <button class="tag-btn" onclick="selectAirport('LFMN')">LFMN</button>
-                        <button class="tag-btn" onclick="selectAirport('LFPG')">LFPG</button>
-                        <button class="tag-btn" onclick="selectAirport('KJFK')">KJFK</button>
-                        <button class="tag-btn" onclick="selectAirport('KLAX')">KLAX</button>
-                        <button class="tag-btn" onclick="selectAirport('KSEA')">KSEA</button>
-                    </div>
+            <!-- Barre de recherche (toujours accessible) -->
+            <div class="search-section">
+                <label style="font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 8px;">
+                    Rechercher un aéroport (ICAO / IATA / Nom)
+                </label>
+                <div class="search-box">
+                    <input type="text" id="airportInput" placeholder="Ex: LFPG, Nice, KJFK, CDG..." oninput="handleInput(this.value)" autocomplete="off" disabled>
+                    <div id="autocompleteResults" class="autocomplete-results"></div>
                 </div>
+            </div>
 
+            <!-- Barre d'onglets Mobile (Schéma vs Détails) -->
+            <div class="mobile-tab-bar" id="mobileTabBar">
+                <div class="mobile-tabs-inner">
+                    <button class="mobile-tab-btn active" id="tabBtnDiagram" onclick="switchMobileTab('diagram')">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+                        <span>Schéma Pistes</span>
+                    </button>
+                    <button class="mobile-tab-btn" id="tabBtnDetails" onclick="switchMobileTab('details')">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                        <span>Détails & Pistes</span>
+                        <span class="tab-badge" id="tabRunwayBadge">0</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Section des Détails & Pistes -->
+            <div class="details-section" id="detailsSection">
                 <div id="statusBox" class="loading-msg">Téléchargement des bases de données...</div>
                 <div id="fileError" class="error-msg"></div>
 
                 <!-- Informations Générales de l'Aéroport -->
                 <div id="airportCard" class="info-card" style="display: none;">
-                    <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-                        <h2 id="apName">Nice-Côte d'Azur</h2>
-                        <span id="apIdent" style="background:#3b82f6; color:#fff; font-size:11px; font-weight:bold; padding:2px 6px; border-radius:4px;">LFMN</span>
+                    <div class="info-card-header">
+                        <div>
+                            <h2 id="apName">Nice-Côte d'Azur</h2>
+                            <div style="margin-top: 4px;" id="apTypeBadge"></div>
+                        </div>
+                        <span id="apIdent" class="ident-badge">LFMN</span>
                     </div>
+
                     <div class="info-grid">
                         <div><span class="info-label">IATA : </span><span id="apIata" class="info-val">-</span></div>
-                        <div><span class="info-label">Type : </span><span id="apType" class="info-val">-</span></div>
                         <div><span class="info-label">Ville : </span><span id="apMunicipality" class="info-val">-</span></div>
                         <div><span class="info-label">Pays : </span><span id="apCountry" class="info-val">-</span></div>
                         <div><span class="info-label">Altitude : </span><span id="apElev" class="info-val">-</span></div>
-                        <div><span class="info-label">Coordonnées : </span><span id="apCoords" class="info-val">-</span></div>
+                        <div style="grid-column: span 2;"><span class="info-label">Coordonnées : </span><span id="apCoords" class="info-val">-</span></div>
                     </div>
                     
                     <details class="freq-details">
@@ -255,30 +868,85 @@
                         <div id="freqList" class="freq-list"></div>
                     </details>
 
-                    <div style="margin-top: 4px; text-align: right;">
+                    <button class="btn-view-diagram" onclick="switchMobileTab('diagram')">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg>
+                        <span>Afficher le schéma graphique</span>
+                    </button>
+
+                    <div style="display: flex; justify-content: flex-end; margin-top: 2px;">
                         <a id="apLink" href="#" target="_blank" rel="noopener" style="color: #38bdf8; font-size: 11px; text-decoration: none; font-weight: 600;">Fiche OurAirports ↗</a>
                     </div>
                 </div>
 
-                <!-- Bouton optionnel de filtrage des petites pistes -->
+                <!-- Bouton de filtrage des pistes courtes -->
                 <button id="filterRunwaysBtn" class="filter-btn" style="display: none;" onclick="toggleShortRunways()">
-                    <span>Masquer les pistes < 2000m</span>
+                    <span>Masquer les pistes &lt; 2000m</span>
                 </button>
 
-                <div id="statsBox" style="display:none; background:#1e293b; padding:10px; border-radius:6px; font-size:12px;">
-                    <div id="statsTitle" style="font-weight:bold; color:#60a5fa;">Pistes chargées</div>
+                <div id="statsBox" class="stats-box" style="display: none;">
+                    <div id="statsTitle" class="stats-title">Pistes chargées</div>
                 </div>
 
                 <div id="runwayList" class="runway-list"></div>
             </div>
         </div>
 
+        <!-- Zone interactive du Canvas / Diagramme -->
         <div class="canvas-area" id="canvasContainer">
+            <!-- Header dédié au mode Plein Écran -->
+            <div class="fullscreen-header" id="fullscreenHeader">
+                <div class="fullscreen-title">
+                    <span id="fsIdent" class="ident-badge">LFMN</span>
+                    <h3 id="fsName">Nice-Côte d'Azur</h3>
+                    <span id="fsRunwaysCount" style="font-size: 11px; color: #94a3b8;">2 pistes</span>
+                </div>
+                <div class="fullscreen-actions">
+                    <button id="fsFilterBtn" class="filter-btn" style="display: none; padding: 6px 10px; font-size: 11px; width: auto;" onclick="toggleShortRunways()">
+                        <span>≥ 2000m</span>
+                    </button>
+                    <button class="btn-exit-fullscreen" onclick="toggleFullscreen()" title="Quitter le plein écran">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6 6 18M6 6l12 12"/></svg>
+                        <span>Fermer</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Indicateur Nord Géographique -->
+            <div class="compass-indicator" title="Orientation Nord géographique (Haut = 000°)">
+                <span class="compass-arrow">▲</span>
+                <span>N</span>
+            </div>
+
+            <!-- Pillule d'info aéroport rapide (Mobile) -->
+            <div class="quick-airport-pill" id="quickAirportPill" onclick="switchMobileTab('details')">
+                <span id="quickPillText">LFMN • 2 pistes</span>
+                <span style="color: var(--accent-blue); font-weight: 700; margin-left: 8px;">Détails ➔</span>
+            </div>
+
+            <!-- Bouton Agrandir en haut à droite du Canvas (Desktop) -->
+            <div class="canvas-top-actions">
+                <button class="btn-expand-full" onclick="toggleFullscreen()" title="Agrandir en plein écran">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                        <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/>
+                    </svg>
+                    <span>Plein écran</span>
+                </button>
+            </div>
+
+            <!-- Canvas Haute Définition -->
             <canvas id="diagramCanvas"></canvas>
+
+            <!-- Notification Toast pour gestes tactiles -->
+            <div class="touch-gesture-hint" id="touchHint">
+                <span>👆 Glissez pour déplacer • ✌️ Pincez pour zoomer</span>
+            </div>
+
+            <!-- Contrôles flottants de navigation & zoom -->
             <div class="controls-overlay">
-                <button class="ctrl-btn" onclick="zoom(1.2)">+</button>
-                <button class="ctrl-btn" onclick="zoom(0.8)">-</button>
-                <button class="ctrl-btn" onclick="resetView()">⟲</button>
+                <button class="ctrl-btn" onclick="zoom(1.25)" title="Zoomer">+</button>
+                <button class="ctrl-btn" onclick="zoom(0.8)" title="Dézoomer">-</button>
+                <button class="ctrl-btn" onclick="resetView()" title="Réinitialiser la vue">⟲</button>
+                <button class="ctrl-btn btn-fullscreen" onclick="toggleFullscreen()" title="Basculer plein écran">⛶</button>
             </div>
         </div>
     </div>
@@ -295,20 +963,148 @@
         let searchIndexMap = new Map();
         let airportCache = new Map();
 
-        let rawRunways = [];         // Toutes les pistes brutes traitées
-        let currentRunways = [];     // Pistes actuellement visibles à l'écran
-        let hideShortRunways = false; // État du filtre
+        let rawRunways = [];
+        let currentRunways = [];
+        let hideShortRunways = false;
         let currentAirportCode = '';
+        let currentAirportData = null;
 
-        let viewState = { scale: 1, offsetX: 0, offsetY: 0, isDragging: false, startX: 0, startY: 0, baseBounds: null };
+        // État de la vue (zoom, translation)
+        let viewState = {
+            scale: 1,
+            offsetX: 0,
+            offsetY: 0,
+            isDragging: false,
+            startX: 0,
+            startY: 0,
+            baseBounds: null
+        };
 
-        function resizeCanvas() {
-            canvas.width = canvasContainer.clientWidth;
-            canvas.height = canvasContainer.clientHeight;
-            if (currentRunways.length > 0) draw();
+        // État multi-touch pour zoom pincé et déplacement tactile
+        let touchState = {
+            initialDistance: 0,
+            initialScale: 1,
+            lastMidpoint: null,
+            lastTapTime: 0
+        };
+
+        // Redimensionnement du Canvas adapté Retina / HiDPI
+        function resizeCanvas(triggerDraw = true) {
+            const dpr = window.devicePixelRatio || 1;
+            const width = canvasContainer.clientWidth;
+            const height = canvasContainer.clientHeight;
+            
+            if (width === 0 || height === 0) return false;
+
+            const targetW = Math.round(width * dpr);
+            const targetH = Math.round(height * dpr);
+
+            if (canvas.width !== targetW || canvas.height !== targetH) {
+                canvas.width = targetW;
+                canvas.height = targetH;
+                canvas.style.width = width + 'px';
+                canvas.style.height = height + 'px';
+            }
+
+            ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+            if (triggerDraw && currentRunways.length > 0) {
+                draw();
+            }
+            return true;
         }
-        window.addEventListener('resize', resizeCanvas);
+
+        // Observer réactif pour détecter tout changement de dimension (flexbox, responsive, plein écran)
+        if (window.ResizeObserver) {
+            const ro = new ResizeObserver(() => {
+                resizeCanvas();
+            });
+            ro.observe(canvasContainer);
+        } else {
+            window.addEventListener('resize', () => resizeCanvas());
+        }
+
+        window.addEventListener('orientationchange', () => {
+            setTimeout(resizeCanvas, 150);
+        });
+
+        // Initialisation immédiate des dimensions du canvas
         resizeCanvas();
+
+        window.addEventListener('load', () => {
+            resizeCanvas();
+            if (currentRunways.length > 0) {
+                resetView();
+            }
+        });
+
+
+        // Navigation mobile par onglets
+        function switchMobileTab(tab) {
+            document.body.setAttribute('data-mobile-tab', tab);
+            const tabDiagramBtn = document.getElementById('tabBtnDiagram');
+            const tabDetailsBtn = document.getElementById('tabBtnDetails');
+
+            if (tab === 'diagram') {
+                tabDiagramBtn.classList.add('active');
+                tabDetailsBtn.classList.remove('active');
+                setTimeout(() => {
+                    resizeCanvas();
+                    resetView();
+                }, 50);
+            } else {
+                tabDiagramBtn.classList.remove('active');
+                tabDetailsBtn.classList.add('active');
+            }
+        }
+
+        // Bascule Plein Écran
+        function toggleFullscreen() {
+            const isFs = canvasContainer.classList.toggle('is-fullscreen');
+
+            if (isFs) {
+                // Tenter le mode plein écran natif si disponible
+                if (canvasContainer.requestFullscreen) {
+                    canvasContainer.requestFullscreen().catch(() => {});
+                } else if (canvasContainer.webkitRequestFullscreen) {
+                    canvasContainer.webkitRequestFullscreen();
+                }
+                showTouchHint();
+            } else {
+                if (document.fullscreenElement && document.exitFullscreen) {
+                    document.exitFullscreen().catch(() => {});
+                }
+            }
+
+            setTimeout(() => {
+                resizeCanvas();
+                resetView();
+            }, 60);
+        }
+
+        // Écouter la sortie du plein écran natif (touche Échap ou geste système)
+        document.addEventListener('fullscreenchange', () => {
+            if (!document.fullscreenElement && canvasContainer.classList.contains('is-fullscreen')) {
+                toggleFullscreen();
+            }
+        });
+
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && canvasContainer.classList.contains('is-fullscreen')) {
+                toggleFullscreen();
+            }
+        });
+
+        let toastTimer = null;
+        function showTouchHint() {
+            const hint = document.getElementById('touchHint');
+            if (!hint) return;
+            hint.classList.add('visible');
+            clearTimeout(toastTimer);
+            toastTimer = setTimeout(() => {
+                hint.classList.remove('visible');
+            }, 3200);
+        }
 
         function getAirportTypeBadge(type) {
             const config = {
@@ -321,7 +1117,7 @@
             };
 
             const cfg = config[type] || { label: type || 'N/A', bg: '#4b5563', color: '#ffffff' };
-            return `<span style="background-color: ${cfg.bg}; color: ${cfg.color}; font-size: 10px; font-weight: bold; padding: 2px 6px; border-radius: 4px; display: inline-block;">${cfg.label}</span>`;
+            return `<span style="background-color: ${cfg.bg}; color: ${cfg.color}; font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 4px; display: inline-block;">${cfg.label}</span>`;
         }
 
         async function initApp() {
@@ -345,7 +1141,7 @@
 
                 statusBox.style.display = 'none';
                 inputEl.disabled = false;
-                inputEl.placeholder = "Taper un ICAO, IATA ou Nom (ex: LFPG, Nice, CDG)...";
+                inputEl.placeholder = "ICAO, IATA ou Nom (ex: LFPG, Nice, CDG)...";
 
                 // Vérifier si un paramètre d'URL est fourni, sinon défaut à LFMN
                 const urlParams = new URLSearchParams(window.location.search);
@@ -416,7 +1212,6 @@
                 resultsBox.style.display = 'none';
             }
 
-            // Si correspondance exacte ICAO tapée
             if (searchIndexMap.has(query)) {
                 selectAirport(query);
             }
@@ -440,7 +1235,7 @@
             let data = airportCache.get(upperCode);
 
             if (!data) {
-                statusBox.style.display = 'block';
+                statusBox.style.display = 'flex';
                 statusBox.innerText = `Chargement des données de ${upperCode}...`;
 
                 try {
@@ -461,6 +1256,7 @@
             }
 
             currentAirportCode = upperCode;
+            currentAirportData = data;
             hideShortRunways = false;
 
             displayAirportInfo(data);
@@ -479,14 +1275,13 @@
 
         function updateFilterButtonVisibility() {
             const filterBtn = document.getElementById('filterRunwaysBtn');
+            const fsFilterBtn = document.getElementById('fsFilterBtn');
             const hasShortRunways = rawRunways.some(r => r.length_m < MIN_RUNWAY_LENGTH_M);
             const hasLongRunways = rawRunways.some(r => r.length_m >= MIN_RUNWAY_LENGTH_M);
 
-            if (hasShortRunways && hasLongRunways) {
-                filterBtn.style.display = 'flex';
-            } else {
-                filterBtn.style.display = 'none';
-            }
+            const isApplicable = hasShortRunways && hasLongRunways;
+            filterBtn.style.display = isApplicable ? 'flex' : 'none';
+            if (fsFilterBtn) fsFilterBtn.style.display = isApplicable ? 'flex' : 'none';
         }
 
         function toggleShortRunways() {
@@ -496,15 +1291,24 @@
 
         function applyFilterAndRefresh() {
             const filterBtn = document.getElementById('filterRunwaysBtn');
+            const fsFilterBtn = document.getElementById('fsFilterBtn');
             
             if (hideShortRunways) {
                 currentRunways = rawRunways.filter(r => r.length_m >= MIN_RUNWAY_LENGTH_M);
                 filterBtn.classList.add('active');
                 filterBtn.innerHTML = `<span>Afficher toutes les pistes</span>`;
+                if (fsFilterBtn) {
+                    fsFilterBtn.classList.add('active');
+                    fsFilterBtn.innerHTML = `<span>Toutes pistes</span>`;
+                }
             } else {
                 currentRunways = [...rawRunways];
                 filterBtn.classList.remove('active');
-                filterBtn.innerHTML = `<span>Masquer les pistes < 2000m</span>`;
+                filterBtn.innerHTML = `<span>Masquer les pistes &lt; 2000m</span>`;
+                if (fsFilterBtn) {
+                    fsFilterBtn.classList.remove('active');
+                    fsFilterBtn.innerHTML = `<span>≥ 2000m</span>`;
+                }
             }
 
             updateSidebarInfo(currentAirportCode);
@@ -521,10 +1325,19 @@
             document.getElementById('apName').innerText = data.name || data.ident;
             document.getElementById('apIdent').innerText = data.ident;
             document.getElementById('apIata').innerText = (data.iata && data.iata !== '-') ? data.iata : '-';
-            document.getElementById('apType').innerHTML = getAirportTypeBadge(data.type);
+            document.getElementById('apTypeBadge').innerHTML = getAirportTypeBadge(data.type);
             document.getElementById('apMunicipality').innerText = data.municipality || '-';
             document.getElementById('apCountry').innerText = data.country || '-';
             
+            // Header plein écran
+            document.getElementById('fsIdent').innerText = data.ident;
+            document.getElementById('fsName').innerText = data.name || data.ident;
+            document.getElementById('fsRunwaysCount').innerText = `${(data.runways || []).length} piste(s)`;
+            
+            // Badge onglet mobile
+            document.getElementById('tabRunwayBadge').innerText = (data.runways || []).length;
+            document.getElementById('quickPillText').innerText = `${data.ident} • ${(data.runways || []).length} piste(s)`;
+
             if (data.elev_ft !== null && data.elev_ft !== undefined) {
                 const elevM = Math.round(data.elev_ft * FT_TO_M);
                 document.getElementById('apElev').innerText = `${data.elev_ft} ft (${elevM} m)`;
@@ -561,6 +1374,8 @@
         }
 
         function processRunwayCoordinates(runways) {
+            if (!runways || runways.length === 0) return [];
+
             let centerLat = 0, centerLon = 0;
             runways.forEach(r => {
                 centerLat += (r.le_lat + r.he_lat) / 2;
@@ -595,7 +1410,7 @@
         }
 
         function updateSidebarInfo(code) {
-            document.getElementById('statsBox').style.display = 'block';
+            document.getElementById('statsBox').style.display = 'flex';
             const filterNotice = hideShortRunways ? ' (filtrées)' : '';
             document.getElementById('statsTitle').innerText = `${code} : ${currentRunways.length} Piste(s)${filterNotice}`;
             
@@ -613,13 +1428,13 @@
                 item.className = 'runway-item';
                 item.innerHTML = `
                     <div>
-                        <span style="font-weight:bold; color:#10b981;">${r.le_ident}/${r.he_ident}</span>
-                        <div style="color:#6b7280; font-size:11px;">Largeur: ${Math.round(r.width_m)}m (${Math.round(r.width_ft)}ft)</div>
-                        ${hasDisp ? `<div style="color:#f59e0b; font-size:10px; margin-top:2px;">${dispInfo}</div>` : ''}
+                        <span class="runway-ident">${r.le_ident}/${r.he_ident}</span>
+                        <div style="color:#94a3b8; font-size:11px; margin-top:2px;">Largeur: ${Math.round(r.width_m)}m (${Math.round(r.width_ft)}ft)</div>
+                        ${hasDisp ? `<div style="color:#f59e0b; font-size:10px; margin-top:3px; font-weight:500;">${dispInfo}</div>` : ''}
                     </div>
                     <div style="text-align:right;">
-                        <div>${lengthM} m</div>
-                        <div style="color:#6b7280; font-size:11px;">${Math.round(lengthM / FT_TO_M)} ft</div>
+                        <div style="font-weight:700; color:#f8fafc;">${lengthM} m</div>
+                        <div style="color:#94a3b8; font-size:11px;">${Math.round(lengthM / FT_TO_M)} ft</div>
                     </div>
                 `;
                 listEl.appendChild(item);
@@ -639,24 +1454,49 @@
 
         function resetView() {
             if (currentRunways.length === 0) return;
+
+            // Synchroniser les dimensions physiques et logiques du canvas
+            resizeCanvas(false);
+
+            const width = canvasContainer.clientWidth;
+            const height = canvasContainer.clientHeight;
+            if (width === 0 || height === 0) {
+                requestAnimationFrame(() => resetView());
+                return;
+            }
+
             viewState.baseBounds = calculateBounds();
-            const padding = 100;
-            const scaleX = (canvas.width - 2 * padding) / viewState.baseBounds.width;
-            const scaleY = (canvas.height - 2 * padding) / viewState.baseBounds.height;
+            const padding = Math.min(width, height) * 0.15;
+            const scaleX = (width - 2 * padding) / viewState.baseBounds.width;
+            const scaleY = (height - 2 * padding) / viewState.baseBounds.height;
             viewState.scale = Math.min(scaleX, scaleY);
-            viewState.offsetX = 0; viewState.offsetY = 0;
+            viewState.offsetX = 0;
+            viewState.offsetY = 0;
             draw();
         }
 
-        function zoom(factor) { viewState.scale *= factor; draw(); }
+        function zoom(factor, clientX, clientY) {
+            const rect = canvas.getBoundingClientRect();
+            const cx = (clientX !== undefined) ? (clientX - rect.left) : (canvasContainer.clientWidth / 2);
+            const cy = (clientY !== undefined) ? (clientY - rect.top) : (canvasContainer.clientHeight / 2);
+            const centerX = canvasContainer.clientWidth / 2;
+            const centerY = canvasContainer.clientHeight / 2;
+
+            const newScale = Math.max(0.0001, viewState.scale * factor);
+            viewState.offsetX = cx - centerX - (cx - centerX - viewState.offsetX) * factor;
+            viewState.offsetY = cy - centerY - (cy - centerY - viewState.offsetY) * factor;
+            viewState.scale = newScale;
+            draw();
+        }
 
         function toCanvasCoords(m) {
             const b = viewState.baseBounds;
+            if (!b) return { x: 0, y: 0 };
             const centerX = (b.minX + b.maxX) / 2;
             const centerY = (b.minY + b.maxY) / 2;
             return {
-                x: canvas.width / 2 + (m.x - centerX) * viewState.scale + viewState.offsetX,
-                y: canvas.height / 2 - (m.y - centerY) * viewState.scale + viewState.offsetY
+                x: canvasContainer.clientWidth / 2 + (m.x - centerX) * viewState.scale + viewState.offsetX,
+                y: canvasContainer.clientHeight / 2 - (m.y - centerY) * viewState.scale + viewState.offsetY
             };
         }
 
@@ -699,12 +1539,21 @@
         }
 
         function draw() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            const width = canvasContainer.clientWidth;
+            const height = canvasContainer.clientHeight;
+            ctx.clearRect(0, 0, width, height);
 
-            ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
+            // Grille d'arrière-plan
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.04)';
             ctx.lineWidth = 1;
-            for (let x = 0; x < canvas.width; x += 40) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); ctx.stroke(); }
-            for (let y = 0; y < canvas.height; y += 40) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); ctx.stroke(); }
+            for (let x = 0; x < width; x += 40) {
+                ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, height); ctx.stroke();
+            }
+            for (let y = 0; y < height; y += 40) {
+                ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(width, y); ctx.stroke();
+            }
+
+            if (!viewState.baseBounds) return;
 
             currentRunways.forEach(r => {
                 const p1 = toCanvasCoords(r.le_m);
@@ -717,6 +1566,7 @@
                 const nx = -uy, ny = ux;
                 const halfWidthPx = Math.max((r.width_m * viewState.scale) / 2, 3);
 
+                // Corps de la piste
                 ctx.fillStyle = '#374151';
                 ctx.strokeStyle = '#64748b';
                 ctx.lineWidth = 1;
@@ -726,20 +1576,26 @@
                 ctx.lineTo(p2.x - nx * halfWidthPx, p2.y - ny * halfWidthPx);
                 ctx.lineTo(p1.x - nx * halfWidthPx, p1.y - ny * halfWidthPx);
                 ctx.closePath();
-                ctx.fill(); ctx.stroke();
+                ctx.fill();
+                ctx.stroke();
 
+                // Ligne axiale
                 ctx.strokeStyle = '#f8fafc';
                 ctx.lineWidth = 1.5;
                 ctx.setLineDash([8, 8]);
-                ctx.beginPath(); ctx.moveTo(p1.x, p1.y); ctx.lineTo(p2.x, p2.y); ctx.stroke();
+                ctx.beginPath();
+                ctx.moveTo(p1.x, p1.y);
+                ctx.lineTo(p2.x, p2.y);
+                ctx.stroke();
                 ctx.setLineDash([]);
 
+                // Seuils décalés
                 const leDispPx = r.le_disp_m * viewState.scale;
                 const heDispPx = r.he_disp_m * viewState.scale;
-
                 drawDisplacedThreshold(p1, ux, uy, nx, ny, leDispPx, halfWidthPx);
                 drawDisplacedThreshold(p2, -ux, -uy, -nx, -ny, heDispPx, halfWidthPx);
 
+                // Identifiants de pistes
                 ctx.fillStyle = '#10b981';
                 ctx.font = 'bold 12px sans-serif';
                 ctx.textAlign = 'center';
@@ -747,6 +1603,7 @@
                 ctx.fillText(r.le_ident, p1.x - ux * 28, p1.y - uy * 28);
                 ctx.fillText(r.he_ident, p2.x + ux * 28, p2.y + uy * 28);
 
+                // Dimensions et étiquette orientée
                 const midX = (p1.x + p2.x) / 2;
                 const midY = (p1.y + p2.y) / 2;
                 const lengthM = Math.round(r.length_m);
@@ -765,7 +1622,7 @@
                 ctx.font = '10px monospace';
                 const textWidth = ctx.measureText(label).width;
                 
-                ctx.fillStyle = 'rgba(15, 23, 42, 0.85)';
+                ctx.fillStyle = 'rgba(15, 23, 42, 0.88)';
                 ctx.fillRect(-textWidth / 2 - 4, -18, textWidth + 8, 14);
 
                 ctx.fillStyle = '#38bdf8';
@@ -776,6 +1633,9 @@
             });
         }
 
+        // ========================================================
+        // INTERACTIONS SOURIS (DESKTOP)
+        // ========================================================
         canvas.addEventListener('mousedown', (e) => {
             viewState.isDragging = true;
             viewState.startX = e.clientX - viewState.offsetX;
@@ -790,9 +1650,121 @@
             }
         });
 
-        window.addEventListener('mouseup', () => viewState.isDragging = false);
-        canvas.addEventListener('wheel', (e) => { e.preventDefault(); zoom(e.deltaY < 0 ? 1.1 : 0.9); });
+        window.addEventListener('mouseup', () => {
+            viewState.isDragging = false;
+        });
 
+        canvas.addEventListener('wheel', (e) => {
+            e.preventDefault();
+            const factor = e.deltaY < 0 ? 1.15 : 0.85;
+            zoom(factor, e.clientX, e.clientY);
+        }, { passive: false });
+
+        // ========================================================
+        // INTERACTIONS TACTILES MULTI-TOUCH (MOBILE)
+        // 1 DOIGT = DÉPLACEMENT / PAN
+        // 2 DOIGTS = ZOOM PINCÉ ANCRÉ / PINCH-TO-ZOOM
+        // DOUBLE TAP = RECENTRAGE / ZOOM RAPIDE
+        // ========================================================
+        canvas.addEventListener('touchstart', (e) => {
+            if (e.touches.length === 1) {
+                const touch = e.touches[0];
+                viewState.isDragging = true;
+                viewState.startX = touch.clientX - viewState.offsetX;
+                viewState.startY = touch.clientY - viewState.offsetY;
+
+                // Détection du double tap
+                const now = Date.now();
+                if (now - touchState.lastTapTime < 300) {
+                    zoom(1.4, touch.clientX, touch.clientY);
+                    touchState.lastTapTime = 0;
+                } else {
+                    touchState.lastTapTime = now;
+                }
+
+            } else if (e.touches.length === 2) {
+                viewState.isDragging = false;
+                const t1 = e.touches[0];
+                const t2 = e.touches[1];
+                touchState.initialDistance = Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
+                touchState.initialScale = viewState.scale;
+                touchState.lastMidpoint = {
+                    x: (t1.clientX + t2.clientX) / 2,
+                    y: (t1.clientY + t2.clientY) / 2
+                };
+            }
+        }, { passive: false });
+
+        canvas.addEventListener('touchmove', (e) => {
+            // Empêche le défilement et le rafraîchissement natif de la page lors du geste
+            e.preventDefault();
+
+            if (e.touches.length === 1 && viewState.isDragging) {
+                const touch = e.touches[0];
+                viewState.offsetX = touch.clientX - viewState.startX;
+                viewState.offsetY = touch.clientY - viewState.startY;
+                draw();
+
+            } else if (e.touches.length === 2 && touchState.initialDistance > 0) {
+                const t1 = e.touches[0];
+                const t2 = e.touches[1];
+                const currentDistance = Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
+                const currentMidpoint = {
+                    x: (t1.clientX + t2.clientX) / 2,
+                    y: (t1.clientY + t2.clientY) / 2
+                };
+
+                if (currentDistance > 10 && touchState.initialDistance > 10) {
+                    const ratio = currentDistance / touchState.initialDistance;
+                    const newScale = Math.max(0.0001, touchState.initialScale * ratio);
+                    const scaleFactor = newScale / viewState.scale;
+
+                    const rect = canvas.getBoundingClientRect();
+                    const midX = currentMidpoint.x - rect.left;
+                    const midY = currentMidpoint.y - rect.top;
+                    const centerX = canvasContainer.clientWidth / 2;
+                    const centerY = canvasContainer.clientHeight / 2;
+
+                    // Zoom centré sur le point médian entre les deux doigts
+                    viewState.offsetX = midX - centerX - (midX - centerX - viewState.offsetX) * scaleFactor;
+                    viewState.offsetY = midY - centerY - (midY - centerY - viewState.offsetY) * scaleFactor;
+                    viewState.scale = newScale;
+
+                    // Déplacement simultané si les deux doigts glissent
+                    if (touchState.lastMidpoint) {
+                        viewState.offsetX += (currentMidpoint.x - touchState.lastMidpoint.x);
+                        viewState.offsetY += (currentMidpoint.y - touchState.lastMidpoint.y);
+                    }
+                    touchState.lastMidpoint = currentMidpoint;
+
+                    draw();
+                }
+            }
+        }, { passive: false });
+
+        canvas.addEventListener('touchend', (e) => {
+            if (e.touches.length === 0) {
+                viewState.isDragging = false;
+                touchState.initialDistance = 0;
+                touchState.lastMidpoint = null;
+            } else if (e.touches.length === 1) {
+                // Passage fluide de 2 doigts à 1 doigt
+                const touch = e.touches[0];
+                viewState.isDragging = true;
+                viewState.startX = touch.clientX - viewState.offsetX;
+                viewState.startY = touch.clientY - viewState.offsetY;
+                touchState.initialDistance = 0;
+                touchState.lastMidpoint = null;
+            }
+        });
+
+        canvas.addEventListener('touchcancel', () => {
+            viewState.isDragging = false;
+            touchState.initialDistance = 0;
+            touchState.lastMidpoint = null;
+        });
+
+        // Initialisation de l'application
         initApp();
     </script>
 </body>

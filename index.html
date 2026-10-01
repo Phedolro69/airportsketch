@@ -1716,7 +1716,7 @@
                     <div class="help-card-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3.5 3 14.5 0 18M12 3c-3 3.5-3 14.5 0 18"/></svg></div>
                     <div>
                         <h3>Carte du vol</h3>
-                        <p>L'avion à sa <b>position réelle</b> (altitude, vitesse, cap), le trajet estimé et les <b>aéroports le long de la route</b> : grands en jaune vif, moyens à longue piste en jaune pâle, aussi listés dans le dossier de vol. Réglez le <b>couloir</b> de ± 100 à 300 nm et les codes <b>OACI / IATA</b> ; au-dessus des océans, les dégagements les plus proches (Shannon, Keflavik, Gander…) restent affichés. <b>Survolez</b> un aéroport pour sa fiche et son mini-schéma, <b>cliquez</b> pour ouvrir son diagramme.</p>
+                        <p>L'avion à sa <b>position réelle</b> (altitude, vitesse, cap), le trajet estimé et les <b>aéroports le long de la route</b> : grands en jaune vif, moyens à longue piste en jaune pâle, aussi listés dans le dossier de vol. Réglez le <b>couloir</b> de ± 100 à 300 nm ; au-dessus des océans, les dégagements les plus proches (Shannon, Keflavik, Gander…) restent affichés. <b>Survolez</b> un aéroport pour sa fiche et son mini-schéma, <b>cliquez</b> pour ouvrir son diagramme.</p>
                     </div>
                 </section>
                 <section class="help-card wide" style="--c: #d946ef">
@@ -3225,15 +3225,18 @@
             const hasApproaches = !!(currentAirportData && currentAirportData.approaches);
             const padX = hasApproaches ? Math.min(Math.max(padding, 175), width * 0.3) : padding;
             const padY = hasApproaches ? Math.min(Math.max(padding, 75), height * 0.3) : padding;
-            // Place pour le titre de l'aéroport affiché en haut à gauche (masqué en plein écran et sur mobile)
+            // Titre de l'aéroport en haut (masqué en plein écran et sur mobile) : les seuils du haut doivent
+            // commencer sous le titre, avec la place de leur identifiant et de leurs pastilles d'approche
+            // (jusqu'à ~65 px au-delà du seuil), sinon ces éléments débordent sur le titre
             const titleEl = document.getElementById('diagramTitle');
-            const titleInset = titleEl && !titleEl.hidden && titleEl.offsetParent !== null
-                ? Math.max(0, titleEl.offsetTop + titleEl.offsetHeight + 12 - padY) : 0;
+            const titleBottom = titleEl && !titleEl.hidden && titleEl.offsetParent !== null
+                ? titleEl.offsetTop + titleEl.offsetHeight : 0;
+            const padTop = titleBottom ? Math.max(padY, titleBottom + (hasApproaches ? 75 : 45)) : padY;
             const scaleX = (width - 2 * padX) / viewState.baseBounds.width;
-            const scaleY = (height - 2 * padY - titleInset) / viewState.baseBounds.height;
+            const scaleY = (height - padTop - padY) / viewState.baseBounds.height;
             viewState.scale = Math.min(scaleX, scaleY);
             viewState.offsetX = 0;
-            viewState.offsetY = titleInset / 2;
+            viewState.offsetY = (padTop - padY) / 2;
             draw();
         }
 

@@ -1245,7 +1245,8 @@
             border-left: 3px solid transparent;
         }
         .search-section .autocomplete-item:hover,
-        .search-section .autocomplete-item:active {
+        .search-section .autocomplete-item:active,
+        .search-section .autocomplete-item.kb-active {
             background-color: var(--mode-soft);
             border-left-color: var(--mode-accent);
         }
@@ -1605,7 +1606,7 @@
                     </div>
                 </div>
                 <div class="search-box" id="airportSearchBox">
-                    <input type="text" id="airportInput" placeholder="Ex: LFPG, Nice, KJFK, CDG..." oninput="handleInput(this.value)" autocomplete="off" disabled>
+                    <input type="text" id="airportInput" placeholder="Ex: LFPG, Nice, KJFK, CDG..." oninput="handleInput(this.value)" onkeydown="handleListKeydown(event, 'autocompleteResults')" autocomplete="off" disabled>
                     <div id="autocompleteResults" class="autocomplete-results"></div>
                 </div>
                 <div class="search-box" id="flightSearchBox" hidden>
@@ -2296,9 +2297,44 @@
         }
 
         function handleFlightKeydown(e) {
+            if (handleListKeydown(e, 'flightResults')) return;
             if (e.key !== 'Enter') return;
             const p = parseFlightQuery(e.target.value);
             if (p && p.complete && FLIGHT_API_BASE) selectFlight(p.q, p.flightParam);
+        }
+
+        // Navigation clavier dans une liste de suggestions : flèches haut/bas, Entrée, Échap.
+        // Retourne true si la touche a été traitée.
+        function handleListKeydown(e, boxId) {
+            const box = document.getElementById(boxId);
+            const open = box.style.display !== 'none' && box.style.display !== '';
+            const items = open ? [...box.querySelectorAll('.autocomplete-item')] : [];
+            const current = items.findIndex(el => el.classList.contains('kb-active'));
+
+            if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+                if (!items.length) return false;
+                e.preventDefault();
+                const step = e.key === 'ArrowDown' ? 1 : -1;
+                const next = current === -1
+                    ? (step === 1 ? 0 : items.length - 1)
+                    : (current + step + items.length) % items.length;
+                items.forEach((el, i) => el.classList.toggle('kb-active', i === next));
+                items[next].scrollIntoView({ block: 'nearest' });
+                return true;
+            }
+            if (e.key === 'Enter' && items.length) {
+                // Élément surligné, sinon le premier de la liste (recherche d'aéroport)
+                const target = current !== -1 ? items[current] : (boxId === 'autocompleteResults' ? items[0] : null);
+                if (!target) return false;
+                e.preventDefault();
+                target.click();
+                return true;
+            }
+            if (e.key === 'Escape' && open) {
+                box.style.display = 'none';
+                return true;
+            }
+            return false;
         }
 
         async function selectFlight(code, param) {

@@ -33,7 +33,7 @@ L'application utilise une architecture statique pré-compilée :
    ```bash
    cd worker
    npx wrangler login
-   npx wrangler kv namespace create FLIGHT_CACHE   # puis reportez l'id' dans wrangler.toml
+   npx wrangler kv namespace create FLIGHT_CACHE   # puis reportez l'id dans wrangler.toml
    npx wrangler secret put AIRLABS_API_KEY   # collez la clé AirLabs
    npx wrangler deploy                       # affiche l'URL https://airportsketch-flights.<compte>.workers.dev
    ```

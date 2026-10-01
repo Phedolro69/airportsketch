@@ -805,9 +805,9 @@
         body[data-view="map"] .map-notice:not([hidden]) { display: block; }
         body[data-view="map"] .map-legend:not([hidden]) { display: flex; }
         .map-hud {
-            top: 16px;
+            top: 62px; /* sous la rangée de boutons du haut */
             left: 16px;
-            max-width: calc(50% - 110px);
+            max-width: calc(100% - 110px);
             flex-wrap: wrap;
             align-items: center;
             gap: 4px 0;
@@ -840,8 +840,8 @@
         .map-legend div { display: flex; align-items: center; gap: 8px; }
         .map-legend svg { flex: none; }
         .map-legend small { color: #64748b; font-size: 10px; margin-top: 3px; line-height: 1.3; }
-        .is-fullscreen .map-hud { top: 72px; }
-        .is-fullscreen .map-notice { top: 114px; }
+        .is-fullscreen .map-hud { top: 118px; }
+        .is-fullscreen .map-notice { top: 118px; }
         /* Progression d'un vol en cours */
         .flight-progress { margin: 2px 0 12px; }
         .flight-progress-bar {

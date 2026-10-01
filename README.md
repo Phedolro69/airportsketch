@@ -1,16 +1,24 @@
 # AirportSketch - Airport Diagram Generator
 
-Générateur et visualiseur interactif de schémas de pistes d'aéroports avec orientation géographique réelle, seuils décalés, dimensions à l'échelle et fréquences radio, approches IFR par piste pour les aéroports américains, dossier de vol en direct et carte de la route réellement suivie.
+Générateur et visualiseur interactif de schémas de pistes d'aéroports avec orientation géographique réelle, seuils décalés, dimensions à l'échelle et fréquences radio, approches IFR par piste pour les aéroports américains, dossier de vol en direct et carte du vol (position de l'avion et aéroports le long de la route).
 
 Un aéroport peut être ouvert directement par URL : `?icao=KJFK`.
+
+## Utilisation du site
+
+- **Recherche** : bascule **Vol / Aéroport** en haut du bandeau. En mode Aéroport, code OACI (`LFPG`), IATA (`CDG`), nom ou ville ; en mode Vol, numéro de vol (`AF173`, `AFR173`). Dans les listes de suggestions : **↑ / ↓** pour se déplacer, **Entrée** pour ouvrir (le premier aéroport si rien n'est surligné), **Échap** pour fermer.
+- **Diagramme** : nom de l'aéroport en titre (dans la pastille d'info sur mobile), pistes à l'échelle orientées au nord géographique. Glisser pour déplacer, molette ou pincement pour zoomer, ⟲ pour recentrer, ⛶ pour le plein écran. Les pistes de moins de 2 000 m sont en violet pâle, avec un bouton « Masquer petites pistes » en haut du diagramme.
+- **Vol sélectionné** : le dossier de vol (horaires, retards, portes, progression) s'affiche en mode Vol ; en mode Aéroport il est mis de côté et réapparaît en revenant sur Vol. Les boutons *Diagramme départ · Diagramme arrivée · Carte* en haut de la zone principale restent disponibles dans les deux modes ; *Carte* ramène sur l'onglet Vol.
+- **Aide** : le bouton « Que faire avec cette app ? » de l'en-tête présente toutes les fonctions.
+- **Partage** : l'adresse suit ce qui est affiché (`?icao=KJFK`, `?flight=AF173`).
 
 ## Architecture des données
 
 L'application utilise une architecture statique pré-compilée :
 
 1. **Index de recherche léger (`data/search_index.json`)** :
-   - Contient uniquement les métadonnées de base (ICAO, nom, IATA, type, pays, nombre de pistes) pour les ~11 400 aéroports avec pistes répertoriées.
-   - Pèse ~230 Ko gzippé (~1,5 Mo brut) pour un chargement instantané au lancement.
+   - Contient les métadonnées de base (ICAO, nom, IATA, type, pays, nombre de pistes) pour les ~11 400 aéroports avec pistes répertoriées, plus les coordonnées des ~2 000 aéroports « éligibles » de la carte du vol (voir [Carte du vol](#carte-du-vol)).
+   - Pèse ~250 Ko gzippé (~1,6 Mo brut) pour un chargement instantané au lancement.
    - Permet l'autocomplétion instantanée avec priorité aux grands aéroports internationaux.
 
 2. **Fiches unitaires par aéroport (`data/airports/{ICAO}.json`)** :
@@ -29,7 +37,7 @@ L'application utilise une architecture statique pré-compilée :
    - Le mode **Vol** de la recherche propose les vols en direct de la compagnie saisie (ex : `AF1…`), et le vol connu le plus proche (dernier ou prochain) quand le vol n'est pas en l'air.
    - Les données viennent de l'API [AirLabs](https://airlabs.co), appelée via un petit proxy **Cloudflare Worker** (`worker/`) qui garde la clé secrète et met les réponses en cache partagé Workers KV (2 min pour les vols en direct, 1 min pour un vol).
    - Un vol peut être partagé par URL : `?flight=AF173`.
-   - Un vol en cours s'affiche sur une **carte de sa route réelle** (voir [Carte du vol](#carte-du-vol-route-réellement-suivie)).
+   - Un vol s'affiche sur une **carte** : position réelle de l'avion et aéroports le long de la route (voir [Carte du vol](#carte-du-vol)).
 
 ---
 
@@ -76,18 +84,18 @@ Un clic sur une pastille ouvre la carte d'approche officielle (PDF FAA), ou prop
 
 ---
 
-## Carte du vol (route réellement suivie)
+## Carte du vol
 
 Quand un vol est sélectionné, des boutons en haut de la zone principale basculent entre les **diagrammes des aéroports de départ et d'arrivée** et la **carte du vol** (ex. *Diagramme CDG · Diagramme LYS · Carte*). Sur ordinateur, la carte s'ouvre toute seule à la sélection d'un vol ; sur mobile, via « Voir la route sur la carte » dans le dossier de vol.
 
-Pour un vol en cours, le dossier de vol affiche une **barre de progression** et le **temps de vol restant**, calculés à partir du décollage réel et de l'arrivée estimée (actualisés toutes les 30 s).
+Pour un vol en cours, le dossier de vol affiche une **barre de progression** et le **temps de vol restant**, calculés à partir du décollage réel et de l'arrivée estimée (actualisés toutes les 30 s), ainsi que la liste repliable des **aéroports le long de la route**.
 
 **Ce que la carte montre**
 - **l'avion à sa position réelle**, orienté selon son cap, avec altitude, vitesse sol et cap en haut à gauche (actualisés toutes les 60 s) ;
 - **Parcouru** (trait plein discret) : grand cercle du départ jusqu'à l'avion, **estimation** ;
 - **Reste à parcourir** (pointillés) : grand cercle de l'avion jusqu'à l'arrivée, **estimation** ;
 - départ et arrivée : un clic ouvre le diagramme de pistes de l'aéroport ;
-- **aéroports le long de la route** (aussi listés dans le dossier de vol, dans l'ordre de passage, avec la distance latérale) : la route est échantillonnée tous les 50 nm, et en chaque point on retient les aéroports éligibles situés dans le **couloir** réglable de ± 100 à 300 nm, plus toujours les 2 plus proches (dégagements océaniques : Shannon, Keflavik, Gander…). Éligibles : `large_airport`, ou `medium_airport` dont la plus longue piste fait au moins 2 500 m (coordonnées ajoutées à `search_index.json` pour ces ~2 000 aéroports). Grands aéroports en jaune vif, moyens en jaune pâle ;
+- **aéroports le long de la route** (étiquettes « Ville - CODE », aussi listés dans le dossier de vol dans l'ordre de passage, avec la distance latérale à gauche ou à droite ; un clic ouvre leur diagramme) : la route (départ → avion → arrivée si la position est connue) est échantillonnée tous les 50 nm, et en chaque point on retient les aéroports éligibles situés dans le **couloir** réglable de ± 100 à 300 nm, plus toujours les 2 plus proches (dégagements océaniques : Shannon, Keflavik, Gander…). Éligibles : `large_airport`, ou `medium_airport` dont la plus longue piste fait au moins 2 500 m (coordonnées ajoutées à `search_index.json` pour ces ~2 000 aéroports). Grands aéroports en jaune vif, moyens en jaune pâle ;
 - réglages (mémorisés dans le navigateur) : codes **OACI** (par défaut) ou IATA, largeur du couloir ;
 - au survol d'un aéroport : nom, codes, type, nombre de pistes et piste la plus longue (hors pistes de moins de 2 000 m), approches IFR pour les terrains américains, et mini-diagramme des pistes ;
 - pour un vol qui n'est pas en l'air (prévu, atterri, annulé) ou dont la position est indisponible : seule la **route directe estimée** est tracée, avec un message.

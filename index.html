@@ -1688,29 +1688,35 @@
                     <div class="help-card-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg></div>
                     <div>
                         <h3>Rechercher un aéroport</h3>
-                        <p>Tapez un code OACI (<code>LFPG</code>), IATA (<code>CDG</code>), un nom ou une ville. Les grands aéroports internationaux sortent en premier.</p>
+                        <p>Tapez un code OACI (<code>LFPG</code>), IATA (<code>CDG</code>), un nom ou une ville. Les grands aéroports internationaux sortent en premier. Au clavier : <b>↑ ↓</b> pour choisir, <b>Entrée</b> pour ouvrir.</p>
                     </div>
                 </section>
                 <section class="help-card" style="--c: var(--accent-green)">
                     <div class="help-card-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15 22 12 18 9 22 12 2"/></svg></div>
                     <div>
                         <h3>Un schéma fidèle</h3>
-                        <p>Pistes à l'échelle, orientées selon le <b>nord géographique</b>, avec leurs seuils décalés. Glissez pour déplacer, molette ou pincement pour zoomer, <b>⟲</b> pour recentrer, <b>⛶</b> pour le plein écran.</p>
+                        <p>Pistes à l'échelle, orientées selon le <b>nord géographique</b>, avec leurs seuils décalés et le nom de l'aéroport en titre. Glissez pour déplacer, molette ou pincement pour zoomer, <b>⟲</b> pour recentrer, <b>⛶</b> pour le plein écran.</p>
                     </div>
                 </section>
                 <section class="help-card" style="--c: var(--accent-amber)">
                     <div class="help-card-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.9 19.1a10 10 0 0 1 0-14.2M7.8 16.2a6 6 0 0 1 0-8.4M16.2 7.8a6 6 0 0 1 0 8.4M19.1 4.9a10 10 0 0 1 0 14.2"/><circle cx="12" cy="12" r="2"/></svg></div>
                     <div>
                         <h3>Pistes &amp; fréquences</h3>
-                        <p>La fiche détaille chaque piste (longueur, largeur, seuils) et les fréquences radio. Un filtre masque les pistes de moins de 2000 m sur les grands terrains.</p>
+                        <p>La fiche détaille chaque piste (longueur, largeur, seuils) et les fréquences radio. Les pistes de moins de 2 000 m sont en <b>violet pâle</b> ; le bouton « Masquer petites pistes » en haut du schéma les cache.</p>
                     </div>
                 </section>
                 <section class="help-card" style="--c: #c4b5fd">
                     <div class="help-card-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"/></svg></div>
                     <div>
                         <h3>Suivre un vol</h3>
-                        <p>Passez en mode <b>Vol</b> et tapez un numéro (<code>AF173</code>) : horaires, retards, portes et terminaux, puis un clic pour ouvrir le schéma de départ ou d'arrivée.</p>
-                        <p>La <b>carte du vol</b> montre l'avion à sa position réelle et les <b>aéroports le long de la route</b> (à 100 nm ou moins, et au-dessus des océans les dégagements les plus proches comme Shannon, Keflavik ou Gander), aussi listés dans le dossier de vol : un clic ouvre leur diagramme.</p>
+                        <p>Passez en mode <b>Vol</b> et tapez un numéro (<code>AF173</code>) : horaires, retards, portes et terminaux, et pour un vol en cours une <b>barre de progression</b> avec le temps restant. Les boutons <b>Diagramme départ · Diagramme arrivée · Carte</b>, en haut du schéma, passent d'une vue à l'autre.</p>
+                    </div>
+                </section>
+                <section class="help-card wide" style="--c: #facc15">
+                    <div class="help-card-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3.5 3 14.5 0 18M12 3c-3 3.5-3 14.5 0 18"/></svg></div>
+                    <div>
+                        <h3>Carte du vol</h3>
+                        <p>L'avion à sa <b>position réelle</b> (altitude, vitesse, cap), le trajet estimé et les <b>aéroports le long de la route</b> : grands en jaune vif, moyens à longue piste en jaune pâle, aussi listés dans le dossier de vol. Réglez le <b>couloir</b> de ± 100 à 300 nm et les codes <b>OACI / IATA</b> ; au-dessus des océans, les dégagements les plus proches (Shannon, Keflavik, Gander…) restent affichés. <b>Survolez</b> un aéroport pour sa fiche et son mini-schéma, <b>cliquez</b> pour ouvrir son diagramme.</p>
                     </div>
                 </section>
                 <section class="help-card wide" style="--c: #d946ef">
@@ -1739,7 +1745,7 @@
                 </section>
             </div>
             <div class="help-tips">
-                <span>Données OurAirports et FAA, mises à jour chaque nuit · vols AirLabs</span>
+                <span>Données OurAirports et FAA, mises à jour chaque nuit · vols et positions AirLabs · fond de carte Natural Earth</span>
                 <span><strong>Information indicative, ne pas utiliser pour la navigation.</strong></span>
             </div>
         </div>

@@ -1,0 +1,12 @@
+name = "airportsketch-flights"
+main = "flight-proxy.js"
+compatibility_date = "2026-09-01"
+
+[vars]
+# Origines autorisées à appeler le proxy (séparées par des virgules).
+# localhost et le réseau local sont toujours autorisés pour le développement.
+ALLOWED_ORIGINS = "https://phedolro69.github.io"
+
+# La clé AirLabs est un secret, jamais dans ce fichier :
+#   npx wrangler secret put AIRLABS_API_KEY
+# En local, la mettre dans worker/.dev.vars :  AIRLABS_API_KEY=xxxx

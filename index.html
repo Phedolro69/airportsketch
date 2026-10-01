@@ -533,6 +533,55 @@
         .freq-type { color: #94a3b8; font-weight: 500; }
         .freq-mhz { color: var(--accent-green); font-weight: 700; font-family: 'JetBrains Mono', monospace; }
 
+        /* Pistes de moins de 2000 m : couleur dédiée et bouton de masquage */
+        .short-rwy-btn {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            background: rgba(17, 24, 39, 0.88);
+            backdrop-filter: blur(10px);
+            color: #ddd6fe;
+            border: 1px solid rgba(167, 139, 250, 0.45);
+            border-radius: 8px;
+            padding: 8px 12px;
+            font-size: 12px;
+            font-weight: 600;
+            white-space: nowrap;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            touch-action: manipulation;
+            transition: background-color 0.15s ease, border-color 0.15s ease;
+        }
+        .short-rwy-btn[hidden] { display: none; }
+        .short-rwy-btn:hover { background: rgba(76, 29, 149, 0.55); border-color: #a78bfa; }
+        .short-rwy-btn.active { background: rgba(76, 29, 149, 0.7); border-color: #a78bfa; color: #fff; }
+        .short-rwy-swatch {
+            width: 16px;
+            height: 6px;
+            border-radius: 2px;
+            background: rgba(167, 139, 250, 0.4);
+            border: 1px solid #a78bfa;
+            flex: none;
+        }
+        .short-rwy-btn.active .short-rwy-swatch { opacity: 0.4; }
+        /* En plein écran, le bouton est dans l'en-tête ; sur la carte, il n'a pas de sens */
+        .is-fullscreen #shortRwyBtn,
+        body[data-view="map"] .short-rwy-btn { display: none !important; }
+        .runway-item.is-short .runway-ident { color: #c4b5fd; }
+        .short-rwy-tag {
+            display: inline-block;
+            margin-left: 6px;
+            padding: 1px 5px;
+            font-size: 9px;
+            font-weight: 700;
+            letter-spacing: 0.3px;
+            color: #ddd6fe;
+            background: rgba(167, 139, 250, 0.18);
+            border: 1px solid rgba(167, 139, 250, 0.5);
+            border-radius: 4px;
+            vertical-align: middle;
+        }
+
         /* Bouton de filtre de pistes */
         .filter-btn {
             width: 100%;
@@ -685,6 +734,171 @@
             color: var(--text-dim);
         }
         .approach-source a { color: var(--text-muted); }
+
+        /* Bascule Schéma de pistes / Carte du vol (visible quand un vol est sélectionné) */
+        .canvas-top-center {
+            position: absolute;
+            top: 16px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: max-content;
+            max-width: calc(100% - 300px);
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+            z-index: 16;
+            pointer-events: none;
+        }
+        .canvas-top-center > * { pointer-events: auto; }
+        .view-toggle {
+            display: none;
+            gap: 3px;
+            padding: 3px;
+            background: rgba(17, 24, 39, 0.9);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 10px;
+        }
+        body[data-flight="1"] .view-toggle { display: flex; }
+        .view-toggle button {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-size: 12px;
+            font-weight: 600;
+            padding: 6px 12px;
+            border-radius: 7px;
+            cursor: pointer;
+            touch-action: manipulation;
+            transition: background-color 0.15s ease, color 0.15s ease;
+        }
+        .view-toggle button:hover:not(.active) { background: #283548; color: var(--text-main); }
+        .view-toggle button.active { background: #7c3aed; color: #fff; }
+        .view-toggle button:disabled { opacity: 0.4; cursor: not-allowed; }
+        .is-fullscreen .canvas-top-center { top: 72px; max-width: calc(100% - 140px); }
+
+        /* Carte du vol */
+        #mapCanvas { display: none; }
+        body[data-view="map"] #diagramCanvas { display: none; }
+        body[data-view="map"] #mapCanvas { display: block; }
+        body[data-view="map"] .compass-indicator,
+        body[data-view="map"] .quick-airport-pill,
+        body[data-view="map"] .touch-gesture-hint,
+        body[data-view="map"] #fsFilterBtn { display: none !important; }
+        .map-hud, .map-notice, .map-legend {
+            display: none;
+            position: absolute;
+            z-index: 6;
+            pointer-events: none;
+            background: rgba(17, 24, 39, 0.88);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 8px;
+            color: #cbd5e1;
+        }
+        body[data-view="map"] .map-hud:not([hidden]) { display: flex; }
+        body[data-view="map"] .map-notice:not([hidden]) { display: block; }
+        body[data-view="map"] .map-legend:not([hidden]) { display: flex; }
+        .map-hud {
+            top: 16px;
+            left: 16px;
+            max-width: calc(50% - 110px);
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 4px 0;
+            padding: 6px 10px;
+            font-size: 11px;
+            font-weight: 600;
+            color: #e2e8f0;
+        }
+        .map-hud b { color: #c4b5fd; font-size: 12px; }
+        .map-hud i { width: 1px; height: 11px; background: rgba(255, 255, 255, 0.18); margin: 0 8px; }
+        .map-hud .dim { color: #94a3b8; font-weight: 500; }
+        .map-notice {
+            top: 58px;
+            left: 50%;
+            transform: translateX(-50%);
+            max-width: calc(100% - 40px);
+            padding: 6px 12px;
+            font-size: 11px;
+            text-align: center;
+        }
+        .map-legend {
+            left: 16px;
+            bottom: 20px;
+            max-width: calc(100% - 100px);
+            flex-direction: column;
+            gap: 5px;
+            padding: 8px 10px;
+            font-size: 11px;
+        }
+        .map-legend div { display: flex; align-items: center; gap: 8px; }
+        .map-legend svg { flex: none; }
+        .map-legend small { color: #64748b; font-size: 10px; margin-top: 3px; line-height: 1.3; }
+        .is-fullscreen .map-hud { top: 72px; }
+        .is-fullscreen .map-notice { top: 114px; }
+        /* Progression d'un vol en cours */
+        .flight-progress { margin: 2px 0 12px; }
+        .flight-progress-bar {
+            position: relative;
+            height: 6px;
+            border-radius: 3px;
+            background: #334155;
+        }
+        .flight-progress-fill {
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            border-radius: 3px;
+            background: linear-gradient(90deg, #6d28d9, #a78bfa);
+            transition: width 0.6s ease;
+        }
+        .flight-progress-plane {
+            position: absolute;
+            top: 50%;
+            width: 18px;
+            height: 18px;
+            margin-left: -9px;
+            margin-top: -9px;
+            color: #c4b5fd;
+            filter: drop-shadow(0 0 3px rgba(124, 58, 237, 0.8));
+            transition: left 0.6s ease;
+        }
+        .flight-progress-info {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 8px;
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+        .flight-progress-info b { color: #c4b5fd; font-weight: 700; }
+
+        /* Bouton « Voir la route sur la carte » : mobile seulement (sur ordinateur, la carte s'ouvre seule) */
+        .btn-flight-map { display: none !important; }
+        .btn-flight-map {
+            grid-column: 1 / -1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 7px;
+            background: linear-gradient(135deg, #6d28d9, #7c3aed);
+            color: #fff;
+            border: 1px solid #8b5cf6;
+            border-radius: 8px;
+            padding: 10px 8px;
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            touch-action: manipulation;
+            transition: filter 0.15s ease;
+        }
+        .btn-flight-map:hover { filter: brightness(1.12); }
 
         /* Bouton bascule mobile vers le schéma */
         .btn-view-diagram {
@@ -1214,6 +1428,15 @@
                 padding: 10px 14px 6px 14px;
             }
 
+            .btn-flight-map { display: flex !important; }
+
+            /* Carte du vol : le bandeau d'info mobile et la bascule se partagent le haut de l'écran */
+            .canvas-top-center { top: 54px; max-width: calc(100% - 20px); width: max-content; }
+            .view-toggle button { padding: 6px 8px; font-size: 11px; gap: 4px; white-space: nowrap; }
+            .map-hud { top: 14px; left: 14px; right: 14px; max-width: none; }
+            .map-notice { top: 96px; }
+            .map-legend { left: 14px; bottom: calc(16px + var(--safe-bottom)); }
+
             /* Selon l'onglet actif : Schéma ou Détails */
             body[data-mobile-tab="diagram"] .sidebar {
                 height: auto;
@@ -1253,6 +1476,7 @@
             .canvas-top-actions {
                 display: none; /* Le bouton plein écran est déjà dans le header mobile et les contrôles */
             }
+            .short-rwy-btn { padding: 6px 10px; font-size: 11px; }
 
             /* Cibles tactiles agrandies pour ergonomie mobile */
             .ctrl-btn {
@@ -1370,13 +1594,13 @@
                 <div class="search-header">
                     <label id="searchLabel" for="airportInput">Rechercher un aéroport</label>
                     <div class="search-mode-toggle" role="tablist">
-                        <button class="mode-btn mode-airport active" id="modeBtnAirport" onclick="setSearchMode('airport')" role="tab" aria-selected="true">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s-7-6.5-7-12a7 7 0 0 1 14 0c0 5.5-7 12-7 12z"/><circle cx="12" cy="10" r="2.5"/></svg>
-                            <span>Aéroport</span>
-                        </button>
                         <button class="mode-btn mode-flight" id="modeBtnFlight" onclick="setSearchMode('flight')" role="tab" aria-selected="false">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"/></svg>
                             <span>Vol</span>
+                        </button>
+                        <button class="mode-btn mode-airport active" id="modeBtnAirport" onclick="setSearchMode('airport')" role="tab" aria-selected="true">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s-7-6.5-7-12a7 7 0 0 1 14 0c0 5.5-7 12-7 12z"/><circle cx="12" cy="10" r="2.5"/></svg>
+                            <span>Aéroport</span>
                         </button>
                     </div>
                 </div>
@@ -1446,11 +1670,6 @@
                     </div>
                 </div>
 
-                <!-- Bouton de filtrage des pistes courtes -->
-                <button id="filterRunwaysBtn" class="filter-btn" style="display: none;" onclick="toggleShortRunways()">
-                    <span>Masquer les pistes &lt; 2000m</span>
-                </button>
-
                 <div id="statsBox" class="stats-box" style="display: none;">
                     <div id="statsTitle" class="stats-title">Pistes chargées</div>
                 </div>
@@ -1469,8 +1688,8 @@
                     <span id="fsRunwaysCount" style="font-size: 11px; color: #94a3b8;">2 pistes</span>
                 </div>
                 <div class="fullscreen-actions">
-                    <button id="fsFilterBtn" class="filter-btn" style="display: none; padding: 6px 10px; font-size: 11px; width: auto;" onclick="toggleShortRunways()">
-                        <span>≥ 2000m</span>
+                    <button id="fsFilterBtn" class="short-rwy-btn" hidden onclick="toggleShortRunways()" title="Pistes de moins de 2000 m">
+                        <span class="short-rwy-swatch"></span><span class="short-rwy-label">Masquer petites pistes</span>
                     </button>
                     <button class="btn-exit-fullscreen" onclick="toggleFullscreen()" title="Quitter le plein écran">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6 6 18M6 6l12 12"/></svg>
@@ -1492,6 +1711,29 @@
             </div>
 
             <!-- Bouton Agrandir en haut à droite du Canvas (Desktop) -->
+            <!-- Rangée du haut : bascule de vue (vol sélectionné) et masquage des petites pistes -->
+            <div class="canvas-top-center">
+                <!-- Bascule Diagramme départ / Diagramme arrivée / Carte du vol (visible quand un vol est sélectionné) -->
+                <div class="view-toggle" id="viewToggle" role="tablist">
+                    <button id="viewBtnDep" role="tab" aria-selected="false">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M3 6.5 9 4l6 2.5 6-2.5v13.5L15 20l-6-2.5L3 20z"/><path d="M9 4v13.5M15 6.5V20"/></svg>
+                        <span>Diagramme</span>
+                    </button>
+                    <button id="viewBtnArr" role="tab" aria-selected="false">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M3 6.5 9 4l6 2.5 6-2.5v13.5L15 20l-6-2.5L3 20z"/><path d="M9 4v13.5M15 6.5V20"/></svg>
+                        <span>Diagramme</span>
+                    </button>
+                    <button id="viewBtnMap" onclick="showFlightMap(true)" role="tab" aria-selected="false">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3.5 3 14.5 0 18M12 3c-3 3.5-3 14.5 0 18"/></svg>
+                        <span>Carte</span>
+                    </button>
+                </div>
+                <!-- Pistes de moins de 2000 m (affiché seulement si l'aéroport en a, à côté de pistes plus longues) -->
+                <button id="shortRwyBtn" class="short-rwy-btn" hidden onclick="toggleShortRunways()" title="Pistes de moins de 2000 m">
+                    <span class="short-rwy-swatch"></span><span class="short-rwy-label">Masquer petites pistes</span>
+                </button>
+            </div>
+
             <div class="canvas-top-actions">
                 <button class="btn-expand-full" onclick="toggleFullscreen()" title="Agrandir en plein écran">
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
@@ -1501,8 +1743,13 @@
                 </button>
             </div>
 
+            <div class="map-hud" id="mapHud" hidden></div>
+            <div class="map-notice" id="mapNotice" hidden></div>
+            <div class="map-legend" id="mapLegend" hidden></div>
+
             <!-- Canvas Haute Définition -->
             <canvas id="diagramCanvas"></canvas>
+            <canvas id="mapCanvas"></canvas>
 
             <!-- Notification Toast pour gestes tactiles -->
             <div class="touch-gesture-hint" id="touchHint">
@@ -1511,9 +1758,9 @@
 
             <!-- Contrôles flottants de navigation & zoom -->
             <div class="controls-overlay">
-                <button class="ctrl-btn" onclick="zoom(1.25)" title="Zoomer">+</button>
-                <button class="ctrl-btn" onclick="zoom(0.8)" title="Dézoomer">-</button>
-                <button class="ctrl-btn" onclick="resetView()" title="Réinitialiser la vue">⟲</button>
+                <button class="ctrl-btn" onclick="viewZoom(1.25)" title="Zoomer">+</button>
+                <button class="ctrl-btn" onclick="viewZoom(0.8)" title="Dézoomer">-</button>
+                <button class="ctrl-btn" onclick="viewReset()" title="Réinitialiser la vue">⟲</button>
                 <button class="ctrl-btn btn-fullscreen" onclick="toggleFullscreen()" title="Basculer plein écran">⛶</button>
             </div>
         </div>
@@ -1586,6 +1833,7 @@
         if (window.ResizeObserver) {
             const ro = new ResizeObserver(() => {
                 resizeCanvas();
+                if (viewMode === 'map') resizeMapCanvas();
             });
             ro.observe(canvasContainer);
         } else {
@@ -1619,6 +1867,7 @@
                 setTimeout(() => {
                     resizeCanvas();
                     resetView();
+                    if (viewMode === 'map') { resizeMapCanvas(); fitFlightMap(); }
                 }, 50);
             } else {
                 tabDiagramBtn.classList.remove('active');
@@ -1647,6 +1896,7 @@
             setTimeout(() => {
                 resizeCanvas();
                 resetView();
+                if (viewMode === 'map') { resizeMapCanvas(); fitFlightMap(); }
             }, 60);
         }
 
@@ -1806,6 +2056,7 @@
 
         async function selectAirport(code) {
             const upperCode = code.toUpperCase().trim();
+            setViewMode('diagram');
             const errorBox = document.getElementById('fileError');
             const statusBox = document.getElementById('statusBox');
             errorBox.style.display = 'none';
@@ -2072,6 +2323,7 @@
             document.getElementById('flightResults').style.display = 'none';
             currentFlight = flight;
             renderFlightCard(flight);
+            if (!isMobileLayout()) showFlightMap();
 
             if (window.history && window.history.replaceState) {
                 const url = new URL(window.location);
@@ -2163,13 +2415,79 @@
                     <div class="flight-route-arrow">✈</div>
                     ${renderFlightAirportBlock(f, 'arr')}
                 </div>
+                ${isLive ? '<div class="flight-progress" id="flightProgress"></div>' : ''}
                 <div class="flight-diagram-btns">
+                    <button class="btn-flight-map" onclick="showFlightMap(true)">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3.5 3 14.5 0 18M12 3c-3 3.5-3 14.5 0 18"/></svg>
+                        Voir la route sur la carte
+                    </button>
                     ${renderFlightDiagramButton(f, 'dep')}
                     ${renderFlightDiagramButton(f, 'arr')}
                 </div>
             `;
             card.hidden = false;
+            document.body.dataset.flight = '1';
             updateFlightCardActive();
+            startFlightProgress();
+        }
+
+        // --- Progression d'un vol en cours ---------------------------------------
+        let flightProgressTimer = null;
+
+        // Heure UTC AirLabs ("2026-10-01 20:30") -> millisecondes
+        function utcMs(s) {
+            if (!s || s.length < 16) return null;
+            const t = Date.parse(s.slice(0, 16).replace(' ', 'T') + ':00Z');
+            return Number.isNaN(t) ? null : t;
+        }
+
+        function formatDuration(min) {
+            const h = Math.floor(min / 60), m = min % 60;
+            return h ? `${h} h ${String(m).padStart(2, '0')}` : `${m} min`;
+        }
+
+        // Départ réel (sinon estimé, sinon prévu) et arrivée estimée (sinon prévue + retard connu)
+        function flightProgressInfo(f) {
+            const dep = utcMs(f.dep_actual_utc) || utcMs(f.dep_estimated_utc) || utcMs(f.dep_time_utc);
+            let arr = utcMs(f.arr_estimated_utc) || utcMs(f.arr_actual_utc);
+            if (!arr && utcMs(f.arr_time_utc)) arr = utcMs(f.arr_time_utc) + (f.arr_delayed || 0) * 60000;
+            if (!arr && dep && f.duration) arr = dep + f.duration * 60000;
+            if (!dep || !arr || arr <= dep) return null;
+            const now = Date.now();
+            return {
+                ratio: Math.max(0, Math.min(1, (now - dep) / (arr - dep))),
+                elapsed: Math.max(0, Math.round((now - dep) / 60000)),
+                remaining: Math.max(0, Math.round((arr - now) / 60000))
+            };
+        }
+
+        function renderFlightProgress() {
+            const box = document.getElementById('flightProgress');
+            if (!box || !currentFlight) return;
+            const info = flightProgressInfo(currentFlight);
+            if (!info) {
+                box.hidden = true;
+                return;
+            }
+            const pct = (info.ratio * 100).toFixed(1);
+            box.hidden = false;
+            box.innerHTML = `
+                <div class="flight-progress-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.round(info.ratio * 100)}">
+                    <div class="flight-progress-fill" style="width:${pct}%"></div>
+                    <svg class="flight-progress-plane" style="left:${pct}%" viewBox="0 0 24 24"><path fill="currentColor" transform="rotate(90 12 12)" d="M12 1.5 L13.6 8.5 L22 13.5 L22 15.5 L13.6 12.8 L13.2 19 L16 21 L16 22.5 L12 21.5 L8 22.5 L8 21 L10.8 19 L10.4 12.8 L2 15.5 L2 13.5 L10.4 8.5 Z"/></svg>
+                </div>
+                <div class="flight-progress-info">
+                    <span>${formatDuration(info.elapsed)} de vol · ${Math.round(info.ratio * 100)} %</span>
+                    <span>${info.remaining > 0 ? `Arrivée dans <b>${formatDuration(info.remaining)}</b>` : '<b>Arrivée imminente</b>'}</span>
+                </div>`;
+        }
+
+        function startFlightProgress() {
+            if (flightProgressTimer) clearInterval(flightProgressTimer);
+            flightProgressTimer = null;
+            if (!document.getElementById('flightProgress')) return;
+            renderFlightProgress();
+            flightProgressTimer = setInterval(renderFlightProgress, 30000);
         }
 
         function openFlightAirport(icao) {
@@ -2182,10 +2500,40 @@
             document.querySelectorAll('#flightCard .btn-ap-diagram[data-icao]').forEach(btn => {
                 btn.classList.toggle('active', btn.dataset.icao === currentAirportCode);
             });
+            updateViewToggle();
+        }
+
+        // Bascule au-dessus du schéma : « Diagramme <départ> », « Diagramme <arrivée> », « Carte »
+        function updateViewToggle() {
+            const f = currentFlight;
+            const isMap = viewMode === 'map';
+            [['viewBtnDep', 'dep'], ['viewBtnArr', 'arr']].forEach(([id, side]) => {
+                const btn = document.getElementById(id);
+                if (!f) return;
+                const ap = findAirport(f[`${side}_icao`], f[`${side}_iata`]);
+                const label = (f[`${side}_iata`] || f[`${side}_icao`] || '?').toUpperCase();
+                btn.querySelector('span').textContent = `Diagramme ${label}`;
+                btn.disabled = !ap;
+                btn.title = ap ? `Diagramme de pistes de ${ap.name}` : 'Diagramme indisponible pour cet aéroport';
+                btn.onclick = ap ? () => openFlightAirport(ap.ident) : null;
+                const active = !isMap && !!ap && ap.ident === currentAirportCode;
+                btn.classList.toggle('active', active);
+                btn.setAttribute('aria-selected', String(active));
+            });
+            const mapBtn = document.getElementById('viewBtnMap');
+            mapBtn.classList.toggle('active', isMap);
+            mapBtn.setAttribute('aria-selected', String(isMap));
         }
 
         function closeFlightCard() {
             currentFlight = null;
+            if (flightProgressTimer) { clearInterval(flightProgressTimer); flightProgressTimer = null; }
+            delete document.body.dataset.flight;
+            setViewMode('diagram');
+            flightMap.seq++;
+            flightMap.flight = null;
+            flightMap.route = null;
+            stopMapRefresh();
             document.getElementById('flightCard').hidden = true;
             document.getElementById('flightInput').value = '';
             if (window.history && window.history.replaceState) {
@@ -2195,15 +2543,12 @@
             }
         }
 
+        // Le bouton n'a de sens que si l'aéroport a à la fois des petites et des grandes pistes
         function updateFilterButtonVisibility() {
-            const filterBtn = document.getElementById('filterRunwaysBtn');
-            const fsFilterBtn = document.getElementById('fsFilterBtn');
             const hasShortRunways = rawRunways.some(r => r.length_m < MIN_RUNWAY_LENGTH_M);
             const hasLongRunways = rawRunways.some(r => r.length_m >= MIN_RUNWAY_LENGTH_M);
-
             const isApplicable = hasShortRunways && hasLongRunways;
-            filterBtn.style.display = isApplicable ? 'flex' : 'none';
-            if (fsFilterBtn) fsFilterBtn.style.display = isApplicable ? 'flex' : 'none';
+            ['shortRwyBtn', 'fsFilterBtn'].forEach(id => { document.getElementById(id).hidden = !isApplicable; });
         }
 
         function toggleShortRunways() {
@@ -2212,26 +2557,14 @@
         }
 
         function applyFilterAndRefresh() {
-            const filterBtn = document.getElementById('filterRunwaysBtn');
-            const fsFilterBtn = document.getElementById('fsFilterBtn');
-            
-            if (hideShortRunways) {
-                currentRunways = rawRunways.filter(r => r.length_m >= MIN_RUNWAY_LENGTH_M);
-                filterBtn.classList.add('active');
-                filterBtn.innerHTML = `<span>Afficher toutes les pistes</span>`;
-                if (fsFilterBtn) {
-                    fsFilterBtn.classList.add('active');
-                    fsFilterBtn.innerHTML = `<span>Toutes pistes</span>`;
-                }
-            } else {
-                currentRunways = [...rawRunways];
-                filterBtn.classList.remove('active');
-                filterBtn.innerHTML = `<span>Masquer les pistes &lt; 2000m</span>`;
-                if (fsFilterBtn) {
-                    fsFilterBtn.classList.remove('active');
-                    fsFilterBtn.innerHTML = `<span>≥ 2000m</span>`;
-                }
-            }
+            currentRunways = hideShortRunways
+                ? rawRunways.filter(r => r.length_m >= MIN_RUNWAY_LENGTH_M)
+                : [...rawRunways];
+            ['shortRwyBtn', 'fsFilterBtn'].forEach(id => {
+                const btn = document.getElementById(id);
+                btn.classList.toggle('active', hideShortRunways);
+                btn.querySelector('.short-rwy-label').textContent = hideShortRunways ? 'Afficher petites pistes' : 'Masquer petites pistes';
+            });
 
             updateSidebarInfo(currentAirportCode);
             resetView();
@@ -2437,10 +2770,11 @@
                 if (r.he_disp_ft > 0) dispInfo += `Seuil ${r.he_ident}: ${Math.round(r.he_disp_ft)}ft`;
 
                 const item = document.createElement('div');
-                item.className = 'runway-item';
+                const isShort = r.length_m < MIN_RUNWAY_LENGTH_M;
+                item.className = isShort ? 'runway-item is-short' : 'runway-item';
                 item.innerHTML = `
                     <div>
-                        <span class="runway-ident">${r.le_ident}/${r.he_ident}</span>
+                        <span class="runway-ident">${r.le_ident}/${r.he_ident}</span>${isShort ? '<span class="short-rwy-tag">PETITE PISTE</span>' : ''}
                         <div style="color:#94a3b8; font-size:11px; margin-top:2px;">Largeur: ${Math.round(r.width_m)}m (${Math.round(r.width_ft)}ft)</div>
                         ${hasDisp ? `<div style="color:#f59e0b; font-size:10px; margin-top:3px; font-weight:500;">${dispInfo}</div>` : ''}
                     </div>
@@ -2641,9 +2975,10 @@
                 const nx = -uy, ny = ux;
                 const halfWidthPx = Math.max((r.width_m * viewState.scale) / 2, 3);
 
-                // Corps de la piste
-                ctx.fillStyle = '#374151';
-                ctx.strokeStyle = '#64748b';
+                // Corps de la piste (violet pâle pour les pistes de moins de 2000 m)
+                const isShort = r.length_m < MIN_RUNWAY_LENGTH_M;
+                ctx.fillStyle = isShort ? 'rgba(167, 139, 250, 0.35)' : '#374151';
+                ctx.strokeStyle = isShort ? '#a78bfa' : '#64748b';
                 ctx.lineWidth = 1;
                 ctx.beginPath();
                 ctx.moveTo(p1.x + nx * halfWidthPx, p1.y + ny * halfWidthPx);
@@ -2655,7 +2990,7 @@
                 ctx.stroke();
 
                 // Ligne axiale
-                ctx.strokeStyle = '#f8fafc';
+                ctx.strokeStyle = isShort ? '#ede9fe' : '#f8fafc';
                 ctx.lineWidth = 1.5;
                 ctx.setLineDash([8, 8]);
                 ctx.beginPath();
@@ -2671,7 +3006,7 @@
                 drawDisplacedThreshold(p2, -ux, -uy, -nx, -ny, heDispPx, halfWidthPx);
 
                 // Identifiants de pistes
-                ctx.fillStyle = '#10b981';
+                ctx.fillStyle = isShort ? '#c4b5fd' : '#10b981';
                 ctx.font = 'bold 12px sans-serif';
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'middle';
@@ -2883,6 +3218,611 @@
             viewState.isDragging = false;
             touchState.initialDistance = 0;
             touchState.lastMidpoint = null;
+        });
+
+        // ========================================================
+        // CARTE DU VOL : route réellement suivie (positions ADS-B)
+        // Fond de carte vectoriel Natural Earth dessiné ici : ni tuiles, ni clé, ni bibliothèque.
+        // Projection Mercator ; coordonnées du monde = (longitude, -mercY(latitude)) en degrés.
+        // ========================================================
+        const mapCanvas = document.getElementById('mapCanvas');
+        const mctx = mapCanvas.getContext('2d');
+        const MAP_MAX_LAT = 84;
+        const MAP_MAX_SCALE = 80;       // pixels par degré
+        const MAP_GAP_S = 1200;         // au-delà de 20 min sans position, le tracé est interpolé (pointillé)
+        const MAP_REFRESH_MS = 60000;
+        const MAP_COLORS = {
+            sea: '#0d1322', land: '#1a2438', coast: '#2e3f5e', border: 'rgba(100, 116, 139, 0.32)',
+            grid: 'rgba(255, 255, 255, 0.035)', route: '#a78bfa', routeSoft: 'rgba(167, 139, 250, 0.75)',
+            direct: '#64748b', casing: 'rgba(13, 19, 34, 0.85)', plane: '#c4b5fd'
+        };
+        const PLANE_PATH = new Path2D('M12 1.5 L13.6 8.5 L22 13.5 L22 15.5 L13.6 12.8 L13.2 19 L16 21 L16 22.5 L12 21.5 L8 22.5 L8 21 L10.8 19 L10.4 12.8 L2 15.5 L2 13.5 L10.4 8.5 Z');
+
+        let viewMode = 'diagram';        // 'diagram' (schéma de pistes) | 'map' (carte du vol)
+        const flightMap = {
+            world: null, worldPromise: null,   // fonds de carte : { land, borders } (Path2D)
+            cx: 0, cy: 0, scale: 3,            // centre de la vue (monde) et pixels par degré
+            flight: null, dep: null, arr: null, track: null, route: null,
+            notice: '', loadedAt: 0, seq: 0, timer: null, needsFit: false, raf: 0, hits: []
+        };
+
+        function mercY(lat) {
+            const p = Math.max(-MAP_MAX_LAT, Math.min(MAP_MAX_LAT, lat)) * Math.PI / 180;
+            return Math.log(Math.tan(Math.PI / 4 + p / 2)) * 180 / Math.PI;
+        }
+        const mapY = lat => -mercY(lat);
+        const unwrapLon = (lon, ref) => lon + 360 * Math.round((ref - lon) / 360);
+
+        // Grand cercle échantillonné ; la longitude reste continue (peut dépasser ±180) à partir de lon1
+        function greatCircle(lat1, lon1, lat2, lon2) {
+            const r = Math.PI / 180;
+            const [la1, lo1, la2, lo2] = [lat1 * r, lon1 * r, lat2 * r, lon2 * r];
+            const d = 2 * Math.asin(Math.sqrt(Math.sin((la2 - la1) / 2) ** 2 + Math.cos(la1) * Math.cos(la2) * Math.sin((lo2 - lo1) / 2) ** 2));
+            if (!d) return [[lat1, lon1], [lat2, unwrapLon(lon2, lon1)]];
+            const steps = Math.max(8, Math.min(120, Math.ceil(d / r / 2)));
+            const out = [[lat1, lon1]];
+            let prev = lon1;
+            for (let i = 1; i <= steps; i++) {
+                const f = i / steps, A = Math.sin((1 - f) * d) / Math.sin(d), B = Math.sin(f * d) / Math.sin(d);
+                const x = A * Math.cos(la1) * Math.cos(lo1) + B * Math.cos(la2) * Math.cos(lo2);
+                const y = A * Math.cos(la1) * Math.sin(lo1) + B * Math.cos(la2) * Math.sin(lo2);
+                const z = A * Math.sin(la1) + B * Math.sin(la2);
+                const lon = unwrapLon(Math.atan2(y, x) / r, prev);
+                prev = lon;
+                out.push([Math.atan2(z, Math.hypot(x, y)) / r, lon]);
+            }
+            return out;
+        }
+
+        function bearingDeg(lat1, lon1, lat2, lon2) {
+            const r = Math.PI / 180, dl = (lon2 - lon1) * r;
+            const y = Math.sin(dl) * Math.cos(lat2 * r);
+            const x = Math.cos(lat1 * r) * Math.sin(lat2 * r) - Math.sin(lat1 * r) * Math.cos(lat2 * r) * Math.cos(dl);
+            return (Math.atan2(y, x) / r + 360) % 360;
+        }
+
+        // Charge une seule fois le fond de carte (data/world.json) et le convertit en Path2D
+        function loadWorld() {
+            if (!flightMap.worldPromise) {
+                flightMap.worldPromise = fetch('./data/world.json')
+                    .then(res => { if (!res.ok) throw new Error('Fond de carte indisponible'); return res.json(); })
+                    .then(w => {
+                        const u = w.unit, land = new Path2D(), borders = new Path2D();
+                        const add = (path, a, close) => {
+                            let x = a[0], y = a[1];
+                            path.moveTo(x * u, mapY(y * u));
+                            for (let i = 2; i < a.length; i += 2) {
+                                x += a[i]; y += a[i + 1];
+                                path.lineTo(x * u, mapY(y * u));
+                            }
+                            if (close) path.closePath();
+                        };
+                        w.land.forEach(r => add(land, r, true));
+                        w.borders.forEach(b => add(borders, b, false));
+                        flightMap.world = { land, borders };
+                    })
+                    .catch(err => { flightMap.worldPromise = null; throw err; });
+            }
+            return flightMap.worldPromise;
+        }
+
+        async function getAirportData(icao) {
+            if (!icao) return null;
+            const code = icao.toUpperCase();
+            let data = airportCache.get(code);
+            if (!data) {
+                try {
+                    const res = await fetch(`./data/airports/${code}.json`);
+                    if (!res.ok) return null;
+                    data = await res.json();
+                    airportCache.set(code, data);
+                } catch (err) {
+                    return null;
+                }
+            }
+            return data;
+        }
+
+        // Trajectoire du vol en cours via le worker (ADS-B). Ne lève jamais d'exception.
+        async function loadFlightTrack(f) {
+            const notices = {
+                scheduled: 'Vol pas encore parti : route directe estimée',
+                landed: 'Vol atterri : route directe estimée',
+                cancelled: 'Vol annulé : route directe estimée'
+            };
+            if (f.status !== 'en-route') return { data: null, notice: notices[f.status] || 'Vol non suivi : route directe estimée' };
+            const callsign = (f.flight_icao || `${f.airline_icao || ''}${f.flight_number || ''}`).toUpperCase();
+            if (!/^[A-Z0-9]{3,8}$/.test(callsign)) return { data: null, notice: 'Vol non suivi : route directe estimée' };
+            try {
+                const data = await callFlightApi(`/track?callsign=${encodeURIComponent(callsign)}`);
+                return data ? { data, notice: '' } : { data: null, notice: 'Vol pas encore reçu en ADS-B : route directe estimée' };
+            } catch (err) {
+                return { data: null, notice: `${err.message} : route directe estimée` };
+            }
+        }
+
+        // Géométrie de la route (chemins en coordonnées du monde) à partir de la trajectoire et des aéroports
+        function buildFlightRoute() {
+            const { track: t, dep, arr, flight: f } = flightMap;
+            const route = {
+                solid: new Path2D(), dashed: new Path2D(), remaining: new Path2D(), direct: new Path2D(),
+                hasTrack: false, hasGap: false, hasRemaining: false, plane: null, dep: null, arr: null, points: []
+            };
+            const depLabel = (f.dep_iata || f.dep_icao || '').toUpperCase();
+            const arrLabel = (f.arr_iata || f.arr_icao || '').toUpperCase();
+            const draw = (path, pts) => pts.forEach(([lat, lon], i) => {
+                const y = mapY(lat);
+                if (i === 0) path.moveTo(lon, y); else path.lineTo(lon, y);
+                route.points.push([lon, y]);
+            });
+
+            if (t && Array.isArray(t.track) && t.track.length >= 2) {
+                route.hasTrack = true;
+                let prev = t.track[0][1];
+                const pts = t.track.map((p, i) => {
+                    const lon = i ? unwrapLon(p[1], prev) : p[1];
+                    prev = lon;
+                    return { lat: p[0], lon, ts: p[3] };
+                });
+                route.solid.moveTo(pts[0].lon, mapY(pts[0].lat));
+                route.points.push([pts[0].lon, mapY(pts[0].lat)]);
+                for (let i = 1; i < pts.length; i++) {
+                    const a = pts[i - 1], b = pts[i];
+                    if (b.ts - a.ts > MAP_GAP_S) {
+                        // Aucune réception (océan) : arc de grand cercle en pointillé
+                        route.hasGap = true;
+                        draw(route.dashed, greatCircle(a.lat, a.lon, b.lat, b.lon));
+                        route.solid.moveTo(b.lon, mapY(b.lat));
+                    } else {
+                        route.solid.lineTo(b.lon, mapY(b.lat));
+                    }
+                    route.points.push([b.lon, mapY(b.lat)]);
+                }
+                const last = pts[pts.length - 1], now = t.now || {};
+                const lat = now.lat ?? last.lat;
+                const lon = unwrapLon(now.lon ?? last.lon, last.lon);
+                const before = pts[pts.length - 2];
+                route.plane = {
+                    lat, lon,
+                    heading: now.track ?? bearingDeg(before.lat, before.lon, last.lat, last.lon)
+                };
+                route.points.push([lon, mapY(lat)]);
+                if (dep) route.dep = { lat: dep.lat, lon: unwrapLon(dep.lon, pts[0].lon), label: depLabel, icao: dep.ident };
+                if (arr) {
+                    const arc = greatCircle(lat, lon, arr.lat, arr.lon);
+                    draw(route.remaining, arc);
+                    route.hasRemaining = true;
+                    route.arr = { lat: arr.lat, lon: arc[arc.length - 1][1], label: arrLabel, icao: arr.ident };
+                }
+            } else if (dep && arr) {
+                // Pas de trajectoire : route directe estimée
+                const arc = greatCircle(dep.lat, dep.lon, arr.lat, arr.lon);
+                draw(route.direct, arc);
+                route.dep = { lat: dep.lat, lon: dep.lon, label: depLabel, icao: dep.ident };
+                route.arr = { lat: arr.lat, lon: arc[arc.length - 1][1], label: arrLabel, icao: arr.ident };
+            }
+            return route;
+        }
+
+        // --- Vue : cadrage, zoom, déplacement ---------------------------------
+        const mapMinScale = () => Math.max(1, mapCanvas.clientWidth / 540);
+        const clampMapScale = s => Math.min(MAP_MAX_SCALE, Math.max(mapMinScale(), s));
+
+        function clampMapCenter() {
+            const maxY = -mapY(MAP_MAX_LAT) - 2;
+            const half = (mapCanvas.clientHeight / 2) / flightMap.scale;
+            const lim = Math.max(0, maxY - half);
+            flightMap.cy = Math.max(-lim, Math.min(lim, flightMap.cy));
+        }
+
+        function fitFlightMap() {
+            const w = mapCanvas.clientWidth, h = mapCanvas.clientHeight;
+            if (!w || !h) { flightMap.needsFit = true; return; }
+            flightMap.needsFit = false;
+            const pts = flightMap.route ? flightMap.route.points : [];
+            if (!pts.length) {
+                flightMap.cx = 0;
+                flightMap.cy = mapY(25);
+                flightMap.scale = clampMapScale(w / 330);
+            } else {
+                let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+                pts.forEach(([x, y]) => {
+                    minX = Math.min(minX, x); maxX = Math.max(maxX, x);
+                    minY = Math.min(minY, y); maxY = Math.max(maxY, y);
+                });
+                // Marges : étiquettes d'aéroport et boutons de zoom à droite, résumé en haut, légende en bas
+                const padL = Math.min(Math.max(w * 0.1, 60), w * 0.25);
+                const padR = Math.min(Math.max(w * 0.1, 60) + 70, w * 0.32);
+                const padT = Math.min(Math.max(h * 0.1, 70), h * 0.25);
+                const padB = Math.min(Math.max(h * 0.1, 70) + 60, h * 0.35);
+                flightMap.scale = clampMapScale(Math.min((w - padL - padR) / Math.max(maxX - minX, 3), (h - padT - padB) / Math.max(maxY - minY, 3)));
+                // Centre la route dans la zone libre plutôt que dans tout le canvas
+                flightMap.cx = (minX + maxX) / 2 - ((padL - padR) / 2) / flightMap.scale;
+                flightMap.cy = (minY + maxY) / 2 - ((padT - padB) / 2) / flightMap.scale;
+            }
+            clampMapCenter();
+            scheduleMapDraw();
+        }
+
+        function mapZoomAt(factor, px, py) {
+            const w = mapCanvas.clientWidth, h = mapCanvas.clientHeight;
+            const s = flightMap.scale, next = clampMapScale(s * factor);
+            if (next === s) return;
+            const wx = flightMap.cx + (px - w / 2) / s, wy = flightMap.cy + (py - h / 2) / s;
+            flightMap.scale = next;
+            flightMap.cx = wx - (px - w / 2) / next;
+            flightMap.cy = wy - (py - h / 2) / next;
+            clampMapCenter();
+            scheduleMapDraw();
+        }
+
+        // Boutons + / - / recentrer, communs au schéma de pistes et à la carte
+        function viewZoom(factor) {
+            if (viewMode === 'map') mapZoomAt(factor, mapCanvas.clientWidth / 2, mapCanvas.clientHeight / 2);
+            else zoom(factor);
+        }
+        function viewReset() {
+            if (viewMode === 'map') fitFlightMap();
+            else resetView();
+        }
+
+        function resizeMapCanvas() {
+            const dpr = window.devicePixelRatio || 1;
+            const w = canvasContainer.clientWidth, h = canvasContainer.clientHeight;
+            if (!w || !h) return false;
+            const tw = Math.round(w * dpr), th = Math.round(h * dpr);
+            if (mapCanvas.width !== tw || mapCanvas.height !== th) {
+                mapCanvas.width = tw;
+                mapCanvas.height = th;
+                mapCanvas.style.width = w + 'px';
+                mapCanvas.style.height = h + 'px';
+            }
+            if (flightMap.needsFit) fitFlightMap(); else scheduleMapDraw();
+            return true;
+        }
+
+        function scheduleMapDraw() {
+            if (flightMap.raf || viewMode !== 'map') return;
+            flightMap.raf = requestAnimationFrame(() => { flightMap.raf = 0; drawFlightMap(); });
+        }
+
+        // --- Dessin -----------------------------------------------------------
+        function pathRoundRect(c, x, y, w, h, r) {
+            c.beginPath();
+            if (c.roundRect) c.roundRect(x, y, w, h, r); else c.rect(x, y, w, h);
+        }
+
+        function drawFlightMap() {
+            const w = mapCanvas.clientWidth, h = mapCanvas.clientHeight;
+            if (!w || !h) return;
+            const dpr = window.devicePixelRatio || 1;
+            const s = flightMap.scale, route = flightMap.route, world = flightMap.world;
+            const ox = w / 2 - flightMap.cx * s, oy = h / 2 - flightMap.cy * s;
+
+            mctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+            mctx.fillStyle = MAP_COLORS.sea;
+            mctx.fillRect(0, 0, w, h);
+
+            // Copies du monde visibles (la carte se répète en longitude)
+            const k0 = Math.floor((flightMap.cx - w / 2 / s + 180) / 360);
+            const k1 = Math.floor((flightMap.cx + w / 2 / s + 180) / 360);
+            for (let k = k0; k <= k1; k++) {
+                mctx.save();
+                mctx.setTransform(dpr * s, 0, 0, dpr * s, dpr * (ox + k * 360 * s), dpr * oy);
+                mctx.lineJoin = 'round';
+                mctx.lineCap = 'round';
+
+                // Graticule tous les 30°
+                mctx.strokeStyle = MAP_COLORS.grid;
+                mctx.lineWidth = 1 / s;
+                mctx.beginPath();
+                for (let lon = -180; lon <= 180; lon += 30) { mctx.moveTo(lon, mapY(MAP_MAX_LAT)); mctx.lineTo(lon, mapY(-MAP_MAX_LAT)); }
+                for (let lat = -60; lat <= 60; lat += 30) { mctx.moveTo(-180, mapY(lat)); mctx.lineTo(180, mapY(lat)); }
+                mctx.stroke();
+
+                if (world) {
+                    mctx.fillStyle = MAP_COLORS.land;
+                    mctx.fill(world.land, 'evenodd');
+                    mctx.strokeStyle = MAP_COLORS.border;
+                    mctx.lineWidth = 0.7 / s;
+                    mctx.stroke(world.borders);
+                    mctx.strokeStyle = MAP_COLORS.coast;
+                    mctx.lineWidth = 0.9 / s;
+                    mctx.stroke(world.land);
+                }
+
+                if (route) {
+                    if (route.hasTrack) {
+                        mctx.setLineDash([]);
+                        mctx.strokeStyle = MAP_COLORS.casing;
+                        mctx.lineWidth = 6 / s;
+                        mctx.stroke(route.solid);
+                        mctx.strokeStyle = MAP_COLORS.route;
+                        mctx.lineWidth = 3 / s;
+                        mctx.stroke(route.solid);
+                        if (route.hasGap) {
+                            mctx.setLineDash([7 / s, 6 / s]);
+                            mctx.strokeStyle = MAP_COLORS.routeSoft;
+                            mctx.lineWidth = 2.2 / s;
+                            mctx.stroke(route.dashed);
+                        }
+                        if (route.hasRemaining) {
+                            mctx.setLineDash([0.1 / s, 7 / s]);
+                            mctx.strokeStyle = MAP_COLORS.routeSoft;
+                            mctx.lineWidth = 2.4 / s;
+                            mctx.stroke(route.remaining);
+                        }
+                    } else {
+                        mctx.setLineDash([6 / s, 7 / s]);
+                        mctx.strokeStyle = MAP_COLORS.direct;
+                        mctx.lineWidth = 2 / s;
+                        mctx.stroke(route.direct);
+                    }
+                    mctx.setLineDash([]);
+                }
+                mctx.restore();
+            }
+
+            // Repères en pixels : aéroports puis avion
+            flightMap.hits = [];
+            if (!route) return;
+            mctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+            for (let k = k0; k <= k1; k++) {
+                const at = m => ({ x: ox + (m.lon + k * 360) * s, y: oy + mapY(m.lat) * s });
+                [route.dep, route.arr].forEach(m => {
+                    if (!m) return;
+                    const p = at(m);
+                    if (p.x < -60 || p.x > w + 60 || p.y < -30 || p.y > h + 30) return;
+                    mctx.font = 'bold 11px sans-serif';
+                    const tw = mctx.measureText(m.label).width, bw = tw + 14, bh = 20;
+                    const bx = p.x + 9, by = p.y - bh / 2;
+                    pathRoundRect(mctx, bx, by, bw, bh, 6);
+                    mctx.fillStyle = 'rgba(15, 23, 42, 0.92)';
+                    mctx.fill();
+                    mctx.strokeStyle = MAP_COLORS.route;
+                    mctx.lineWidth = 1.2;
+                    mctx.stroke();
+                    mctx.fillStyle = '#f8fafc';
+                    mctx.textAlign = 'left';
+                    mctx.textBaseline = 'middle';
+                    mctx.fillText(m.label, bx + 7, p.y + 0.5);
+                    mctx.beginPath();
+                    mctx.arc(p.x, p.y, 4.5, 0, Math.PI * 2);
+                    mctx.fillStyle = '#0d1322';
+                    mctx.fill();
+                    mctx.strokeStyle = MAP_COLORS.plane;
+                    mctx.lineWidth = 2;
+                    mctx.stroke();
+                    if (m.icao) flightMap.hits.push({ x: p.x - 8, y: by - 2, w: bw + 17, h: bh + 4, icao: m.icao });
+                });
+
+                if (route.plane) {
+                    const p = at(route.plane);
+                    if (p.x > -40 && p.x < w + 40 && p.y > -40 && p.y < h + 40) {
+                        mctx.save();
+                        mctx.translate(p.x, p.y);
+                        mctx.rotate((route.plane.heading || 0) * Math.PI / 180);
+                        mctx.scale(1.3, 1.3);
+                        mctx.translate(-12, -12);
+                        mctx.shadowColor = 'rgba(167, 139, 250, 0.65)';
+                        mctx.shadowBlur = 10;
+                        mctx.fillStyle = MAP_COLORS.plane;
+                        mctx.fill(PLANE_PATH);
+                        mctx.shadowBlur = 0;
+                        mctx.strokeStyle = '#0d1322';
+                        mctx.lineWidth = 1.3;
+                        mctx.stroke(PLANE_PATH);
+                        mctx.restore();
+                    }
+                }
+            }
+        }
+
+        // --- Bandeaux : résumé du vol, message, légende ------------------------
+        function updateMapOverlay() {
+            const f = flightMap.flight, t = flightMap.track, route = flightMap.route;
+            const hud = document.getElementById('mapHud');
+            const notice = document.getElementById('mapNotice');
+            const legend = document.getElementById('mapLegend');
+
+            if (f && t && t.now) {
+                const n = t.now;
+                const time = n.ts ? new Date(n.ts * 1000).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) : '';
+                hud.innerHTML = [
+                    `<b>${escapeHtml(f.flight_iata || f.flight_icao || '')}</b>`,
+                    n.alt != null ? `${n.alt.toLocaleString('fr-FR')} ft` : '',
+                    n.gs != null ? `${n.gs} kt` : '',
+                    n.track != null ? `cap ${String(n.track).padStart(3, '0')}°` : '',
+                    time ? `<span class="dim">MàJ ${time}</span>` : ''
+                ].filter(Boolean).join('<i></i>');
+                hud.hidden = false;
+            } else {
+                hud.hidden = true;
+            }
+
+            notice.textContent = flightMap.notice;
+            notice.hidden = !flightMap.notice;
+
+            const line = (css, text) => `<div><svg width="30" height="6"><line x1="1" y1="3" x2="29" y2="3" ${css}/></svg>${text}</div>`;
+            const items = [];
+            if (route && route.hasTrack) {
+                items.push(line('stroke="#a78bfa" stroke-width="3" stroke-linecap="round"', 'Route suivie (ADS-B)'));
+                if (route.hasGap) items.push(line('stroke="#a78bfa" stroke-width="2" stroke-dasharray="5 4" opacity=".75"', 'Sans réception'));
+                if (route.hasRemaining) items.push(line('stroke="#a78bfa" stroke-width="2.4" stroke-dasharray="0.1 5" stroke-linecap="round" opacity=".75"', 'Reste à parcourir (estimé)'));
+            } else if (route) {
+                items.push(line('stroke="#64748b" stroke-width="2" stroke-dasharray="5 5"', 'Route directe (estimation)'));
+            }
+            // Attribution : les positions adsb.lol sont sous licence ODbL
+            const credit = route && route.hasTrack && t && t.source === 'adsb.lol'
+                ? 'Positions ADS-B : adsb.lol (ODbL) · fond Natural Earth'
+                : 'Fond de carte : Natural Earth';
+            legend.innerHTML = items.length
+                ? `${items.join('')}<small>${credit}<br>Plan de vol non public · indicatif, ne pas utiliser pour la navigation</small>`
+                : '';
+            legend.hidden = !items.length;
+        }
+
+        function syncFullscreenHeader() {
+            const f = flightMap.flight;
+            if (viewMode === 'map' && f) {
+                const status = FLIGHT_STATUS[f.status] ? FLIGHT_STATUS[f.status].label : '';
+                document.getElementById('fsIdent').innerText = f.flight_iata || f.flight_icao || '';
+                document.getElementById('fsName').innerText = `${f.dep_iata || f.dep_icao || '?'} → ${f.arr_iata || f.arr_icao || '?'}`;
+                document.getElementById('fsRunwaysCount').innerText = status;
+            } else if (currentAirportData) {
+                document.getElementById('fsIdent').innerText = currentAirportData.ident;
+                document.getElementById('fsName').innerText = currentAirportData.name || currentAirportData.ident;
+                document.getElementById('fsRunwaysCount').innerText = `${(currentAirportData.runways || []).length} piste(s)`;
+            }
+        }
+
+        // --- Bascule Schéma / Carte -------------------------------------------
+        function setViewMode(mode) {
+            if (viewMode === mode) return;
+            viewMode = mode;
+            document.body.dataset.view = mode;
+            const isMap = mode === 'map';
+            updateViewToggle();
+            const tabLabel = document.querySelector('#tabBtnDiagram span');
+            if (tabLabel) tabLabel.textContent = isMap ? 'Carte du vol' : 'Schéma Pistes';
+            syncFullscreenHeader();
+            if (isMap) {
+                resizeMapCanvas();
+            } else {
+                stopMapRefresh();
+                resizeCanvas();
+            }
+        }
+
+        function stopMapRefresh() {
+            if (flightMap.timer) { clearInterval(flightMap.timer); flightMap.timer = null; }
+        }
+
+        async function refreshFlightTrack() {
+            if (viewMode !== 'map' || document.hidden || !flightMap.flight) return;
+            const seq = flightMap.seq;
+            const res = await loadFlightTrack(flightMap.flight);
+            if (seq !== flightMap.seq || viewMode !== 'map' || !res.data) return;
+            flightMap.track = res.data;
+            flightMap.route = buildFlightRoute();
+            flightMap.loadedAt = Date.now();
+            flightMap.notice = '';
+            updateMapOverlay();
+            scheduleMapDraw();
+        }
+
+        // Affiche la carte du vol sélectionné ; `reuse` réutilise les données si elles ont moins d'une minute
+        async function showFlightMap(reuse = false) {
+            const f = currentFlight;
+            if (!f) return;
+            const fresh = reuse && flightMap.flight === f && flightMap.route && Date.now() - flightMap.loadedAt < MAP_REFRESH_MS;
+            setViewMode('map');
+            if (isMobileLayout()) switchMobileTab('diagram');
+            if (fresh) {
+                updateMapOverlay();
+                resizeMapCanvas();
+                if (f.status === 'en-route' && !flightMap.timer) flightMap.timer = setInterval(refreshFlightTrack, MAP_REFRESH_MS);
+                return;
+            }
+
+            const seq = ++flightMap.seq;
+            stopMapRefresh();
+            Object.assign(flightMap, { flight: f, dep: null, arr: null, track: null, route: null, notice: 'Chargement de la carte…' });
+            syncFullscreenHeader();
+            updateMapOverlay();
+            scheduleMapDraw();
+
+            const [world, dep, arr, tracked] = await Promise.allSettled([
+                loadWorld(), getAirportData(f.dep_icao), getAirportData(f.arr_icao), loadFlightTrack(f)
+            ]);
+            if (seq !== flightMap.seq) return;
+
+            flightMap.dep = dep.value || null;
+            flightMap.arr = arr.value || null;
+            flightMap.track = tracked.value ? tracked.value.data : null;
+            flightMap.route = buildFlightRoute();
+            flightMap.loadedAt = Date.now();
+            flightMap.notice = world.status === 'rejected' ? 'Fond de carte indisponible'
+                : (tracked.value ? tracked.value.notice : '');
+            if (!flightMap.route.points.length && !flightMap.notice) {
+                flightMap.notice = 'Position des aéroports indisponible : route non affichable';
+            }
+            updateMapOverlay();
+            flightMap.needsFit = true;
+            resizeMapCanvas();
+            if (f.status === 'en-route') flightMap.timer = setInterval(refreshFlightTrack, MAP_REFRESH_MS);
+        }
+
+        // --- Interactions : souris, tactile (déplacement, pincement), clic sur un aéroport ----
+        const mapPointers = new Map();
+        let mapPinch = null, mapDown = null;
+
+        function mapHitAt(clientX, clientY) {
+            const rect = mapCanvas.getBoundingClientRect();
+            const x = clientX - rect.left, y = clientY - rect.top;
+            return flightMap.hits.find(a => x >= a.x && x <= a.x + a.w && y >= a.y && y <= a.y + a.h);
+        }
+
+        mapCanvas.addEventListener('pointerdown', (e) => {
+            try { mapCanvas.setPointerCapture(e.pointerId); } catch (err) { /* pointeur déjà relâché */ }
+            mapPointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+            mapDown = mapPointers.size === 1 ? { x: e.clientX, y: e.clientY, t: Date.now() } : null;
+            if (mapPointers.size === 2) {
+                const [a, b] = [...mapPointers.values()];
+                mapPinch = { dist: Math.hypot(a.x - b.x, a.y - b.y), mx: (a.x + b.x) / 2, my: (a.y + b.y) / 2 };
+            }
+        });
+
+        mapCanvas.addEventListener('pointermove', (e) => {
+            const p = mapPointers.get(e.pointerId);
+            if (!p) {
+                mapCanvas.style.cursor = mapHitAt(e.clientX, e.clientY) ? 'pointer' : '';
+                return;
+            }
+            const dx = e.clientX - p.x, dy = e.clientY - p.y;
+            p.x = e.clientX;
+            p.y = e.clientY;
+            if (mapPointers.size === 1) {
+                flightMap.cx -= dx / flightMap.scale;
+                flightMap.cy -= dy / flightMap.scale;
+                clampMapCenter();
+                scheduleMapDraw();
+            } else if (mapPointers.size === 2 && mapPinch) {
+                const [a, b] = [...mapPointers.values()];
+                const dist = Math.hypot(a.x - b.x, a.y - b.y);
+                const mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2;
+                const rect = mapCanvas.getBoundingClientRect();
+                flightMap.cx -= (mx - mapPinch.mx) / flightMap.scale;
+                flightMap.cy -= (my - mapPinch.my) / flightMap.scale;
+                if (mapPinch.dist > 10) mapZoomAt(dist / mapPinch.dist, mx - rect.left, my - rect.top);
+                mapPinch = { dist, mx, my };
+                clampMapCenter();
+                scheduleMapDraw();
+            }
+        });
+
+        function mapPointerEnd(e) {
+            mapPointers.delete(e.pointerId);
+            if (mapPointers.size < 2) mapPinch = null;
+            // Clic (pas de déplacement) sur le repère d'un aéroport : ouvre son diagramme de pistes
+            if (e.type === 'pointerup' && mapDown && Math.hypot(e.clientX - mapDown.x, e.clientY - mapDown.y) < 6 && Date.now() - mapDown.t < 600) {
+                const hit = mapHitAt(e.clientX, e.clientY);
+                if (hit) openFlightAirport(hit.icao);
+            }
+            mapDown = null;
+        }
+        mapCanvas.addEventListener('pointerup', mapPointerEnd);
+        mapCanvas.addEventListener('pointercancel', mapPointerEnd);
+
+        mapCanvas.addEventListener('wheel', (e) => {
+            e.preventDefault();
+            const rect = mapCanvas.getBoundingClientRect();
+            mapZoomAt(Math.exp(-Math.max(-300, Math.min(300, e.deltaY)) * 0.002), e.clientX - rect.left, e.clientY - rect.top);
+        }, { passive: false });
+
+        mapCanvas.addEventListener('dblclick', (e) => {
+            const rect = mapCanvas.getBoundingClientRect();
+            mapZoomAt(1.6, e.clientX - rect.left, e.clientY - rect.top);
         });
 
         // Initialisation de l'application

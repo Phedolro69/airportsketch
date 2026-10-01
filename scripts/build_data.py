@@ -295,6 +295,14 @@ def build_data(output_dir: str, copy_html: bool = True, faa_cache: str = None):
     index_size = os.path.getsize(search_index_path)
     print(f"search_index.json created: {index_size:,} bytes ({index_size/1024:.1f} KB)")
 
+    # 6b. Fond de carte vectoriel de la carte des vols (généré par make_world.py, versionné)
+    world_src = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets", "world.json")
+    if os.path.exists(world_src):
+        shutil.copy2(world_src, os.path.join(data_dir, "world.json"))
+        print(f"Copied world.json ({os.path.getsize(world_src):,} bytes)")
+    else:
+        print("WARNING: scripts/assets/world.json missing - flight map background unavailable")
+
     # 7. Optionally copy index.html
     if copy_html:
         root_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))

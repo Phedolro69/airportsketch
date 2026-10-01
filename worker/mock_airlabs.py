@@ -21,12 +21,18 @@ Cas particuliers pour tester l'interface :
     numéro 9999 ...... vol inconnu (ex : AF9999 -> « Aucun vol connu »)
     numéro 1 à 9 ..... statut forcé, pour retrouver chaque cas facilement :
                        1 en vol · 2 prévu · 3 atterri · 4 annulé · 5 en vol retardé de 45 min
+
+Route /track?callsign=AFR1 (trajectoire ADS-B du vol en cours) : trajectoire simulée le long du grand
+cercle avec un léger écart latéral, et une lacune de couverture au milieu des vols longs.
+    vol pas en l'air ou compagnie ZZZ ... réponse null
+    numéro 429 ....................... erreur « saturé » (HTTP 503)
 """
 
 import argparse
 import datetime
 import hashlib
 import json
+import math
 import random
 import re
 import time
@@ -38,6 +44,9 @@ ROUTES = {
     "/live": {
         "airline_iata": re.compile(r"^[A-Z0-9]{2}$"),
         "airline_icao": re.compile(r"^[A-Z]{3}$"),
+    },
+    "/track": {
+        "callsign": re.compile(r"^[A-Z0-9]{3,8}$"),
     },
     "/flight": {
         "flight_iata": re.compile(r"^[A-Z0-9]{2}\d{1,4}[A-Z]?$"),
@@ -71,6 +80,17 @@ AIRPORTS = {
     "ORD": ("KORD", "Chicago", "US", -6), "ATL": ("KATL", "Atlanta", "US", -5), "DFW": ("KDFW", "Dallas", "US", -6),
     "BOS": ("KBOS", "Boston", "US", -5), "MIA": ("KMIA", "Miami", "US", -5), "DXB": ("OMDB", "Dubai", "AE", 4),
     "YUL": ("CYUL", "Montreal", "CA", -5), "NRT": ("RJAA", "Tokyo", "JP", 9),
+}
+
+# Coordonnées (lat, lon) des aéroports ci-dessus
+COORDS = {
+    "CDG": (49.0128, 2.55), "ORY": (48.7233, 2.3794), "NCE": (43.6584, 7.2159), "LYS": (45.7256, 5.0811),
+    "MRS": (43.4393, 5.2214), "TLS": (43.6293, 1.3638), "LHR": (51.4706, -0.4619), "LGW": (51.1537, -0.1821),
+    "FRA": (50.0379, 8.5622), "MUC": (48.3538, 11.7861), "AMS": (52.3086, 4.7639), "MAD": (40.4936, -3.5668),
+    "BCN": (41.2971, 2.0785), "FCO": (41.8003, 12.2389), "GVA": (46.2381, 6.1089), "JFK": (40.6398, -73.7789),
+    "SFO": (37.6213, -122.379), "LAX": (33.9416, -118.4085), "ORD": (41.9742, -87.9073), "ATL": (33.6407, -84.4277),
+    "DFW": (32.8998, -97.0403), "BOS": (42.3656, -71.0096), "MIA": (25.7959, -80.287), "DXB": (25.2532, 55.3657),
+    "YUL": (45.4706, -73.7408), "NRT": (35.772, 140.3929),
 }
 
 AIRCRAFT = ["A320", "A321", "A319", "B738", "B38M", "A20N", "A21N", "B772", "B77W", "B789", "A333", "A359", "A388", "E190"]
@@ -191,6 +211,76 @@ def generate_flight(airline, number: int, now: datetime.datetime):
     return flight
 
 
+def great_circle(a, b, f):
+    """Point à la fraction f (0..1) du grand cercle a -> b, avec (lat, lon) en degrés."""
+    r = math.pi / 180
+    la1, lo1, la2, lo2 = a[0] * r, a[1] * r, b[0] * r, b[1] * r
+    d = 2 * math.asin(math.sqrt(math.sin((la2 - la1) / 2) ** 2 + math.cos(la1) * math.cos(la2) * math.sin((lo2 - lo1) / 2) ** 2))
+    if d == 0:
+        return a
+    A, B = math.sin((1 - f) * d) / math.sin(d), math.sin(f * d) / math.sin(d)
+    x = A * math.cos(la1) * math.cos(lo1) + B * math.cos(la2) * math.cos(lo2)
+    y = A * math.cos(la1) * math.sin(lo1) + B * math.cos(la2) * math.sin(lo2)
+    z = A * math.sin(la1) + B * math.sin(la2)
+    return (math.atan2(z, math.hypot(x, y)) / r, math.atan2(y, x) / r)
+
+
+def bearing(a, b):
+    r = math.pi / 180
+    dl = (b[1] - a[1]) * r
+    y = math.sin(dl) * math.cos(b[0] * r)
+    x = math.cos(a[0] * r) * math.sin(b[0] * r) - math.sin(a[0] * r) * math.cos(b[0] * r) * math.cos(dl)
+    return round((math.atan2(y, x) / r + 360) % 360)
+
+
+def generate_track(airline, number: int, now):
+    """Réponse /track : trajectoire simulée du vol en cours, ou None s'il n'est pas en l'air."""
+    f = generate_flight(airline, number, now)
+    if f["status"] != "en-route":
+        return None
+    r = rng_for("track", airline[1], number)
+    dep, arr = COORDS[f["dep_iata"]], COORDS[f["arr_iata"]]
+    duration = f["duration"]
+    progress = max(0.02, min(0.98, f["percent"] / 100))
+    started = datetime.datetime.strptime(f["dep_actual_utc"], "%Y-%m-%d %H:%M")
+    amp = r.uniform(-1, 1) * 1.6 * min(1, duration / 400)  # écart latéral max en degrés
+
+    def pos(frac):
+        lat, lon = great_circle(dep, arr, frac)
+        # écart perpendiculaire approximatif, nul au départ et à l'arrivée
+        dlat = amp * math.sin(math.pi * frac) * math.cos(math.radians(bearing(dep, arr) + 90))
+        dlon = amp * math.sin(math.pi * frac) * math.sin(math.radians(bearing(dep, arr) + 90)) / max(0.3, math.cos(math.radians(lat)))
+        return (lat + dlat, lon + dlon)
+
+    def alt(frac):
+        up = min(1, frac / 0.12)
+        down = min(1, (1 - frac) / 0.1)
+        return round((400 + (37000 - 400) * min(up, down)) / 100) * 100
+
+    n = max(8, int(progress * 70))
+    fracs = [progress * i / n for i in range(n + 1)]
+    if duration > 300:  # lacune de couverture au-dessus de l'océan
+        fracs = [x for x in fracs if not (0.38 < x < 0.58)]
+    track = []
+    for x in fracs:
+        la, lo = pos(x)
+        ts = int((started + datetime.timedelta(minutes=x * duration)).replace(tzinfo=datetime.timezone.utc).timestamp())
+        track.append([round(la, 4), round(lo, 4), alt(x), ts])
+    cur = pos(progress)
+    prev = pos(max(0, progress - 0.01))
+    track.append([round(cur[0], 4), round(cur[1], 4), alt(progress), int(now.replace(tzinfo=datetime.timezone.utc).timestamp())])
+    return {
+        "callsign": f["flight_icao"],
+        "hex": f"{rng_for('hex', airline[1], number).getrandbits(24):06x}",
+        "reg": f["reg_number"],
+        "type": f["aircraft_icao"],
+        "now": {"lat": round(cur[0], 4), "lon": round(cur[1], 4), "alt": alt(progress), "gs": r.randint(430, 490),
+                "track": bearing(prev, cur), "vs": 0, "ts": track[-1][3]},
+        "track": track,
+        "source": "mock",
+    }
+
+
 LIVE_FIELDS = ["flight_iata", "flight_icao", "flight_number", "airline_iata", "airline_icao",
                "dep_iata", "dep_icao", "arr_iata", "arr_icao", "status"]
 
@@ -247,6 +337,16 @@ class Handler(BaseHTTPRequestHandler):
 
         time.sleep(self.delay_ms / 1000)
         now = datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None)
+
+        if url.path == "/track":
+            if value.startswith(("XXX", "XX")):
+                return self._send(502, {"error": {"message": "Service de suivi ADS-B injoignable"}})
+            m = re.match(r"^([A-Z]{3})(\d{1,4})", value)
+            if not m or m.group(1) == "ZZZ":
+                return self._send(200, {"response": None})
+            if int(m.group(2)) == 429:
+                return self._send(503, {"error": {"message": "Suivi ADS-B momentanément saturé, réessayez dans une minute", "code": "rate_limited"}})
+            return self._send(200, {"response": generate_track(find_airline(m.group(1)), int(m.group(2)), now)})
 
         if url.path == "/live":
             if value in ("XX", "XXX"):

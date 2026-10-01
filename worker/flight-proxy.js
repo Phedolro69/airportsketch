@@ -7,7 +7,10 @@
  * Routes :
  *   GET /live?airline_iata=AF   | /live?airline_icao=AFR    -> vols en direct de la compagnie
  *   GET /flight?flight_iata=AF173 | /flight?flight_icao=AFR173 -> vol le plus proche (en vol, prévu ou atterri)
+ *   GET /track?callsign=AFR173                                 -> trajectoire réellement suivie (ADS-B, adsb.lol), sans clé AirLabs
  */
+
+import { fetchTrack } from './track.js';
 
 const AIRLABS_BASE = 'https://airlabs.co/api/v9';
 
@@ -40,6 +43,9 @@ const ROUTES = {
     }
 };
 
+const TRACK_CALLSIGN = /^[A-Z0-9]{3,8}$/;
+const TRACK_TTL = 60;
+
 // Origines de développement local (localhost et réseau privé, tous ports)
 const DEV_ORIGIN = /^http:\/\/(localhost|127\.0\.0\.1|192\.168\.\d+\.\d+|10\.\d+\.\d+\.\d+)(:\d+)?$/;
 
@@ -61,6 +67,43 @@ function json(body, status, extraHeaders = {}) {
     });
 }
 
+// Trajectoire d'un vol en cours (ADS-B). Même cache KV partagé que les autres routes.
+async function handleTrack(url, env, ctx, cors) {
+    const callsign = (url.searchParams.get('callsign') || '').toUpperCase();
+    if (!TRACK_CALLSIGN.test(callsign)) {
+        return json({ error: { message: 'Paramètre invalide' } }, 400, cors);
+    }
+
+    const cacheHeaders = { 'Cache-Control': `public, max-age=${TRACK_TTL}` };
+    const cacheKey = `/track?callsign=${callsign}`;
+    const kv = env.FLIGHT_CACHE;
+    const cached = kv ? await kv.get(cacheKey) : null;
+    if (cached) {
+        return new Response(cached, {
+            status: 200,
+            headers: { 'Content-Type': 'application/json; charset=utf-8', ...cacheHeaders, 'X-Cache': 'HIT', ...cors }
+        });
+    }
+
+    let track;
+    try {
+        track = await fetchTrack(callsign);
+    } catch (err) {
+        if (err && err.status === 429) {
+            return json({ error: { message: 'Suivi ADS-B momentanément saturé, réessayez dans une minute', code: 'rate_limited' } }, 503, cors);
+        }
+        return json({ error: { message: 'Service de suivi ADS-B injoignable' } }, 502, cors);
+    }
+
+    // Un vol absent (null) est aussi mis en cache, pour ne pas solliciter adsb.lol à chaque rafraîchissement
+    const text = JSON.stringify({ response: track });
+    if (kv) ctx.waitUntil(kv.put(cacheKey, text, { expirationTtl: TRACK_TTL }));
+    return new Response(text, {
+        status: 200,
+        headers: { 'Content-Type': 'application/json; charset=utf-8', ...cacheHeaders, 'X-Cache': 'MISS', ...cors }
+    });
+}
+
 export default {
     async fetch(request, env, ctx) {
         const cors = corsHeaders(request, env);
@@ -73,6 +116,9 @@ export default {
         }
 
         const url = new URL(request.url);
+        if (url.pathname === '/track') {
+            return handleTrack(url, env, ctx, cors);
+        }
         const route = ROUTES[url.pathname];
         if (!route) {
             return json({ error: { message: 'Route inconnue' } }, 404, cors);

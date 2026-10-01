@@ -107,6 +107,174 @@
             border-color: #3b82f6;
         }
 
+        /* Bouton d'aide dans le header */
+        .btn-help {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: transparent;
+            border: 1px solid var(--border-card);
+            color: var(--text-muted);
+            border-radius: 9999px;
+            padding: 5px 12px 5px 6px;
+            font-family: inherit;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+        .btn-help-icon {
+            display: grid;
+            place-items: center;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: rgba(56, 189, 248, 0.15);
+            color: var(--accent-blue);
+            font-size: 12px;
+            font-weight: 700;
+        }
+        .btn-help:hover, .btn-help:focus-visible {
+            border-color: var(--accent-blue);
+            color: var(--text-main);
+            background: rgba(56, 189, 248, 0.08);
+        }
+
+        /* Fenêtre d'aide */
+        .help-dialog {
+            margin: auto;
+            width: min(760px, calc(100vw - 32px));
+            max-height: calc(100dvh - 32px);
+            padding: 0;
+            border: 1px solid var(--border-card);
+            border-radius: 16px;
+            background: var(--bg-surface);
+            color: var(--text-main);
+            box-shadow: 0 25px 60px -12px rgba(0, 0, 0, 0.8);
+            overflow: hidden;
+        }
+        .help-dialog[open] {
+            display: flex;
+            flex-direction: column;
+            animation: help-in 0.18s ease-out;
+        }
+        .help-dialog::backdrop {
+            background: rgba(2, 6, 15, 0.7);
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
+        }
+        @keyframes help-in {
+            from { opacity: 0; transform: translateY(8px) scale(0.98); }
+            to { opacity: 1; transform: none; }
+        }
+        .help-hero {
+            position: relative;
+            padding: 22px 24px 18px;
+            background:
+                radial-gradient(circle at 15% 0%, rgba(56, 189, 248, 0.18), transparent 55%),
+                radial-gradient(circle at 90% 20%, rgba(167, 139, 250, 0.14), transparent 50%);
+            border-bottom: 1px solid var(--border-subtle);
+        }
+        .help-hero h2 {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 20px;
+            font-weight: 700;
+            letter-spacing: -0.4px;
+        }
+        .help-hero h2 svg { color: var(--accent-blue); flex-shrink: 0; }
+        .help-hero p {
+            margin-top: 6px;
+            max-width: 56ch;
+            color: var(--text-muted);
+            font-size: 13px;
+            line-height: 1.5;
+        }
+        .help-close {
+            position: absolute;
+            top: 14px;
+            right: 14px;
+            display: grid;
+            place-items: center;
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            border: 1px solid transparent;
+            background: transparent;
+            color: var(--text-muted);
+            cursor: pointer;
+        }
+        .help-close:hover, .help-close:focus-visible {
+            background: var(--bg-card);
+            border-color: var(--border-card);
+            color: var(--text-main);
+        }
+        .help-body {
+            overflow-y: auto;
+            padding: 18px 24px 22px;
+        }
+        .help-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 12px;
+        }
+        .help-card {
+            --c: var(--accent-blue);
+            display: flex;
+            gap: 12px;
+            padding: 14px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-card);
+            border-radius: 12px;
+        }
+        .help-card-icon {
+            display: grid;
+            place-items: center;
+            flex-shrink: 0;
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            color: var(--c);
+            background: color-mix(in srgb, var(--c) 15%, transparent);
+            border: 1px solid color-mix(in srgb, var(--c) 35%, transparent);
+        }
+        .help-card h3 {
+            font-size: 13.5px;
+            font-weight: 700;
+            margin: 1px 0 4px;
+        }
+        .help-card p {
+            color: var(--text-muted);
+            font-size: 12px;
+            line-height: 1.5;
+        }
+        .help-card p + p, .help-card .help-tags { margin-top: 6px; }
+        .help-card b { color: #cbd5e1; font-weight: 600; }
+        .help-card code, .help-tips code {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            color: var(--text-main);
+            background: var(--bg-surface);
+            border: 1px solid var(--border-card);
+            border-radius: 4px;
+            padding: 0 4px;
+        }
+        .help-tags { display: flex; flex-wrap: wrap; gap: 4px; }
+        .help-card.wide { grid-column: span 2; }
+        .help-tips {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px 18px;
+            margin-top: 16px;
+            padding-top: 14px;
+            border-top: 1px solid var(--border-subtle);
+            color: var(--text-dim);
+            font-size: 11.5px;
+            line-height: 1.6;
+        }
+        .help-tips strong { color: var(--accent-amber); font-weight: 600; }
+
         /* Barre d'onglets mobile */
         .mobile-tab-bar {
             display: none;
@@ -1018,6 +1186,13 @@
             .header-brand h1 {
                 font-size: 15px;
             }
+            .btn-help { padding: 3px; }
+            .btn-help-label { display: none; }
+            .help-hero { padding: 18px 16px 14px; }
+            .help-hero h2 { font-size: 17px; padding-right: 32px; }
+            .help-body { padding: 14px 16px 18px; }
+            .help-grid { grid-template-columns: 1fr; }
+            .help-card.wide { grid-column: auto; }
 
             .mobile-tab-bar {
                 display: block;
@@ -1107,7 +1282,85 @@
             </svg>
             <h1>AirportSketch</h1>
         </div>
+        <button class="btn-help" onclick="openHelp()" title="Que faire avec cette app ?" aria-haspopup="dialog">
+            <span class="btn-help-icon" aria-hidden="true">?</span>
+            <span class="btn-help-label">Que faire avec cette app ?</span>
+        </button>
     </header>
+
+    <!-- Fenêtre d'aide -->
+    <dialog id="helpDialog" class="help-dialog" aria-labelledby="helpTitle">
+        <div class="help-hero">
+            <h2 id="helpTitle">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"/></svg>
+                Bienvenue sur AirportSketch
+            </h2>
+            <p>Le schéma des pistes de plus de 11 000 aéroports dans le monde, à l'échelle et orienté au nord, avec fréquences, approches aux instruments et suivi de vols en direct.</p>
+            <button class="help-close" onclick="closeHelp()" title="Fermer" aria-label="Fermer l'aide">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+            </button>
+        </div>
+        <div class="help-body">
+            <div class="help-grid">
+                <section class="help-card">
+                    <div class="help-card-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg></div>
+                    <div>
+                        <h3>Rechercher un aéroport</h3>
+                        <p>Tapez un code OACI (<code>LFPG</code>), IATA (<code>CDG</code>), un nom ou une ville. Les grands aéroports internationaux sortent en premier.</p>
+                    </div>
+                </section>
+                <section class="help-card" style="--c: var(--accent-green)">
+                    <div class="help-card-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15 22 12 18 9 22 12 2"/></svg></div>
+                    <div>
+                        <h3>Un schéma fidèle</h3>
+                        <p>Pistes à l'échelle, orientées selon le <b>nord géographique</b>, avec leurs seuils décalés. Glissez pour déplacer, molette ou pincement pour zoomer, <b>⟲</b> pour recentrer, <b>⛶</b> pour le plein écran.</p>
+                    </div>
+                </section>
+                <section class="help-card" style="--c: var(--accent-amber)">
+                    <div class="help-card-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.9 19.1a10 10 0 0 1 0-14.2M7.8 16.2a6 6 0 0 1 0-8.4M16.2 7.8a6 6 0 0 1 0 8.4M19.1 4.9a10 10 0 0 1 0 14.2"/><circle cx="12" cy="12" r="2"/></svg></div>
+                    <div>
+                        <h3>Pistes &amp; fréquences</h3>
+                        <p>La fiche détaille chaque piste (longueur, largeur, seuils) et les fréquences radio. Un filtre masque les pistes de moins de 2000 m sur les grands terrains.</p>
+                    </div>
+                </section>
+                <section class="help-card" style="--c: #c4b5fd">
+                    <div class="help-card-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"/></svg></div>
+                    <div>
+                        <h3>Suivre un vol</h3>
+                        <p>Passez en mode <b>Vol</b> et tapez un numéro (<code>AF173</code>) : horaires, retards, portes et terminaux, puis un clic pour ouvrir le schéma de départ ou d'arrivée.</p>
+                    </div>
+                </section>
+                <section class="help-card wide" style="--c: #d946ef">
+                    <div class="help-card-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18"/><path d="m5 10 7-7 7 7"/><path d="M8 21h8"/></svg></div>
+                    <div>
+                        <h3>Approches aux instruments (États-Unis)</h3>
+                        <p>Pour près de 2 900 aéroports américains, chaque seuil affiche ses approches publiées par la FAA, de la plus précise à la moins précise. <b>Cliquez sur une pastille</b> pour ouvrir la carte d'approche officielle en PDF.</p>
+                        <div class="help-tags">
+                            <span class="appr-tag appr-ils3">ILS CAT III</span>
+                            <span class="appr-tag appr-ils2">ILS CAT II</span>
+                            <span class="appr-tag appr-ils1">ILS CAT I</span>
+                            <span class="appr-tag appr-loc">LOC</span>
+                            <span class="appr-tag appr-rnav">RNAV</span>
+                            <span class="appr-tag appr-vor">VOR</span>
+                            <span class="appr-tag appr-ndb">NDB</span>
+                            <span class="appr-tag appr-vis">VIS</span>
+                        </div>
+                    </div>
+                </section>
+                <section class="help-card wide" style="--c: #94a3b8">
+                    <div class="help-card-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></svg></div>
+                    <div>
+                        <h3>Partager par lien</h3>
+                        <p>L'adresse de la page suit ce que vous regardez : copiez-la pour partager un aéroport (<code>?icao=KJFK</code>) ou un vol (<code>?flight=AF173</code>).</p>
+                    </div>
+                </section>
+            </div>
+            <div class="help-tips">
+                <span>Données OurAirports et FAA, mises à jour chaque nuit · vols AirLabs</span>
+                <span><strong>Information indicative, ne pas utiliser pour la navigation.</strong></span>
+            </div>
+        </div>
+    </dialog>
 
     <div class="main-container">
         <!-- Sidebar : Recherche + Navigation Mobile + Détails de l'aéroport -->
@@ -2507,6 +2760,20 @@
         });
         document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeChartMenu(); });
         document.getElementById('runwayList').addEventListener('scroll', closeChartMenu);
+
+        // Fenêtre d'aide (Échap et focus gérés nativement par <dialog>)
+        const helpDialog = document.getElementById('helpDialog');
+        function openHelp() {
+            closeChartMenu();
+            helpDialog.showModal();
+        }
+        function closeHelp() {
+            helpDialog.close();
+        }
+        // Clic sur le fond assombri : la cible est alors le <dialog> lui-même
+        helpDialog.addEventListener('click', (e) => {
+            if (e.target === helpDialog) closeHelp();
+        });
 
         canvas.addEventListener('wheel', (e) => {
             e.preventDefault();

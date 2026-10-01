@@ -4,7 +4,8 @@ AirportSketch Data Builder
 Downloads CSV datasets from OurAirports, extracts airports with valid runway coordinates,
 and generates:
   1. data/search_index.json (lightweight search index for fast autocomplete)
-  2. data/airports/{ICAO}.json (individual JSON per airport with runways and frequencies)
+  2. data/airports/{ICAO}.json (individual JSON per airport with runways and frequencies,
+     plus IFR approaches per runway end for US airports, from FAA d-TPP/CIFP)
 """
 
 import argparse
@@ -12,14 +13,20 @@ import csv
 import io
 import json
 import os
+import re
 import shutil
 import sys
 import time
 import urllib.request
 
+from faa_approaches import build_approaches, normalize_runway
+
 RUNWAYS_URL = "https://davidmegginson.github.io/ourairports-data/runways.csv"
 AIRPORTS_URL = "https://davidmegginson.github.io/ourairports-data/airports.csv"
 FREQUENCIES_URL = "https://davidmegginson.github.io/ourairports-data/airport-frequencies.csv"
+
+# Pays couverts par la FAA (États-Unis et territoires) pour les approches IFR
+FAA_COUNTRIES = {"US", "PR", "VI", "GU", "AS", "MP", "UM"}
 
 TYPE_PRIORITY = {
     "large_airport": 1,
@@ -30,6 +37,15 @@ TYPE_PRIORITY = {
     "balloonport": 6,
     "closed": 7
 }
+
+
+def neighbour_runways(key: str):
+    """'5L' -> ['4L', '6L'] ; '36' -> ['35', '1']."""
+    m = re.match(r"^(\d{1,2})([LRC]?)$", key)
+    if not m:
+        return []
+    n, side = int(m.group(1)), m.group(2)
+    return [f"{(n + d - 1) % 36 + 1}{side}" for d in (-1, 1)]
 
 
 def download_csv(url: str, name: str) -> str:
@@ -135,6 +151,7 @@ def build_data(output_dir: str, copy_html: bool = True):
     # 4. Parse airports
     print("Parsing airports and preparing files...")
     airports_meta = {}
+    alt_codes = {}
     reader_airports = csv.DictReader(io.StringIO(raw_airports))
 
     for row in reader_airports:
@@ -175,6 +192,16 @@ def build_data(output_dir: str, copy_html: bool = True):
             "iata": row.get("iata_code") or "-",
             "home_link": row.get("home_link") or ""
         }
+        # Codes alternatifs pour rapprocher les données FAA (ex. OurAirports "US-1234" / FAA "1B1")
+        alt_codes[ident] = [c.strip().upper() for c in (row.get("gps_code"), row.get("local_code")) if c and c.strip()]
+
+    # 4b. IFR approaches (US, FAA) - optional: the build continues without them on failure
+    print("Fetching FAA instrument approaches...")
+    approaches_by_airport, approaches_cycle, approaches_pdf_base = {}, None, None
+    try:
+        approaches_cycle, approaches_pdf_base, approaches_by_airport = build_approaches()
+    except Exception as e:
+        print(f"[faa] WARNING: approaches skipped ({e})")
 
     # Prepare target directories
     data_dir = os.path.join(output_dir, "data")
@@ -184,6 +211,7 @@ def build_data(output_dir: str, copy_html: bool = True):
     # 5. Generate individual airport JSON files
     search_index = []
     written_airports = 0
+    airports_with_approaches = 0
 
     print("Writing individual airport JSON files...")
     for ident, runways in runways_by_airport.items():
@@ -208,6 +236,30 @@ def build_data(output_dir: str, copy_html: bool = True):
             "runways": runways,
             "frequencies": freqs_by_airport.get(ident, [])
         }
+
+        # Approches IFR indexées par seuil de piste, avec les identifiants OurAirports
+        faa = None
+        if meta["country"] in FAA_COUNTRIES:
+            faa = next((approaches_by_airport[c] for c in [ident, *alt_codes.get(ident, [])]
+                        if c in approaches_by_airport), None)
+        if faa:
+            approaches = {}
+            ends = [e for rw in runways for e in (rw["le_ident"], rw["he_ident"])]
+            exact = {normalize_runway(e) for e in ends} & faa.keys()
+            for end in ends:
+                key = normalize_runway(end)
+                if key not in faa:
+                    # Numérotation périmée côté OurAirports (dérive magnétique) : piste voisine à ±1,
+                    # seulement si elle n'est pas déjà attribuée et sans ambiguïté
+                    candidates = [k for k in neighbour_runways(key) if k in faa and k not in exact]
+                    key = candidates[0] if len(candidates) == 1 else None
+                if key:
+                    approaches[end] = faa[key]
+            if approaches:
+                airport_data["approaches"] = approaches
+                airport_data["approaches_cycle"] = approaches_cycle
+                airport_data["approaches_pdf_base"] = approaches_pdf_base
+                airports_with_approaches += 1
 
         # Write {ident}.json
         file_path = os.path.join(airports_dir, f"{ident}.json")
@@ -257,6 +309,7 @@ def build_data(output_dir: str, copy_html: bool = True):
     print(f"  - Total airports generated: {written_airports:,}")
     print(f"  - Total runways: {total_valid_runways:,}")
     print(f"  - Total frequencies: {total_freqs:,}")
+    print(f"  - Airports with IFR approaches: {airports_with_approaches:,}")
     print(f"  - Output directory: {os.path.abspath(output_dir)}")
 
 

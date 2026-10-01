@@ -14,10 +14,11 @@ L'application utilise une architecture statique pré-compilée :
 2. **Fiches unitaires par aéroport (`data/airports/{ICAO}.json`)** :
    - Fichiers individuels très légers (~1 Ko chacun) chargés uniquement à la demande lors de la sélection.
    - Contient le détail complet : coordonnées précises des seuils de pistes, longueurs/largeurs, seuils décalés, et fréquences radio.
+   - Pour les aéroports américains (~2 900), les **approches IFR par seuil de piste** (ILS avec catégorie, LOC, RNAV, VOR, NDB, approches à vue), issues des données publiques de la FAA : [d-TPP](https://www.faa.gov/air_traffic/flight_info/aeronav/digital_products/dtpp/) (liste des cartes) et [CIFP](https://www.faa.gov/air_traffic/flight_info/aeronav/digital_products/cifp/download/) (catégorie et fréquence des ILS), au cycle AIRAC en cours (`scripts/faa_approaches.py`). Information indicative, à ne pas utiliser pour la navigation.
 
 3. **Job nocturne automatisé (GitHub Actions)** :
    - Le workflow [`.github/workflows/nightly-update.yml`](.github/workflows/nightly-update.yml) s'exécute chaque nuit à **03h00 UTC**.
-   - Il télécharge les dernières données OurAirports, génère le site et le déploie sur **GitHub Pages** sous forme d'artefact sans polluer l'historique Git.
+   - Il télécharge les dernières données OurAirports et FAA, génère le site et le déploie sur **GitHub Pages** sous forme d'artefact sans polluer l'historique Git.
 
 4. **Recherche de vols & dossier de vol (AirLabs)** :
    - Le mode **Vol** de la recherche propose les vols en direct de la compagnie saisie (ex : `AF1…`), et le vol connu le plus proche (dernier ou prochain) quand le vol n'est pas en l'air.

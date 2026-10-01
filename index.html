@@ -426,6 +426,61 @@
             font-size: 13px;
         }
 
+        /* Approches IFR par seuil (données FAA) */
+        .runway-item { flex-wrap: wrap; }
+        .runway-approaches {
+            flex-basis: 100%;
+            margin-top: 10px;
+            padding-top: 8px;
+            border-top: 1px solid #2d3748;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .approach-row {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 5px;
+        }
+        .approach-row-ident {
+            width: 30px;
+            color: #cbd5e1;
+            font-size: 11px;
+            font-weight: 700;
+        }
+        .approach-none { color: var(--text-dim); font-size: 10px; }
+        .appr-tag {
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 0.3px;
+            padding: 2px 6px;
+            border-radius: 4px;
+            border: 1px solid;
+            white-space: nowrap;
+            cursor: default;
+        }
+        .appr-ils3 { background: #15803d; border-color: #22c55e; color: #fff; }
+        .appr-ils2 { background: rgba(34, 197, 94, 0.30); border-color: #22c55e; color: #bbf7d0; }
+        .appr-ils1 { background: rgba(34, 197, 94, 0.14); border-color: #16a34a; color: #86efac; }
+        .appr-loc  { background: rgba(20, 184, 166, 0.12); border-color: #14b8a6; color: #99f6e4; }
+        .appr-rnav { background: rgba(217, 70, 239, 0.18); border-color: #d946ef; color: #f0abfc; }
+        .appr-vor, .appr-ndb { background: rgba(245, 158, 11, 0.16); border-color: #f59e0b; color: #fcd34d; }
+        .appr-vis  { background: transparent; border-color: #475569; color: #94a3b8; }
+        .approach-legend {
+            margin-top: 10px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+        }
+        .approach-source {
+            margin-top: 8px;
+            font-size: 10px;
+            line-height: 1.4;
+            color: var(--text-dim);
+        }
+        .approach-source a { color: var(--text-muted); }
+
         /* Bouton bascule mobile vers le schéma */
         .btn-view-diagram {
             display: none;
@@ -1111,6 +1166,7 @@
                 </div>
 
                 <div id="runwayList" class="runway-list"></div>
+                <div id="approachInfo" hidden></div>
             </div>
         </div>
 
@@ -1986,6 +2042,65 @@
             });
         }
 
+        // ========================================================
+        // APPROCHES IFR (données FAA, aéroports américains)
+        // ========================================================
+        const APPROACH_STYLES = {
+            ILS3: { label: 'ILS CAT III', cls: 'appr-ils3', bg: '#15803d',                bd: '#22c55e', fg: '#ffffff' },
+            ILS2: { label: 'ILS CAT II',  cls: 'appr-ils2', bg: 'rgba(34,197,94,0.30)',   bd: '#22c55e', fg: '#bbf7d0' },
+            ILS1: { label: 'ILS CAT I',   cls: 'appr-ils1', bg: 'rgba(34,197,94,0.14)',   bd: '#16a34a', fg: '#86efac' },
+            LOC:  { label: 'LOC',         cls: 'appr-loc',  bg: 'rgba(20,184,166,0.12)',  bd: '#14b8a6', fg: '#99f6e4' },
+            RNAV: { label: 'RNAV',        cls: 'appr-rnav', bg: 'rgba(217,70,239,0.18)',  bd: '#d946ef', fg: '#f0abfc' },
+            VOR:  { label: 'VOR',         cls: 'appr-vor',  bg: 'rgba(245,158,11,0.16)',  bd: '#f59e0b', fg: '#fcd34d' },
+            NDB:  { label: 'NDB',         cls: 'appr-ndb',  bg: 'rgba(245,158,11,0.16)',  bd: '#f59e0b', fg: '#fcd34d' },
+            VIS:  { label: 'VIS',         cls: 'appr-vis',  bg: 'rgba(11,15,25,0.9)',     bd: '#475569', fg: '#94a3b8' }
+        };
+
+        // Pastilles d'un seuil : un type par pastille, ILS avec sa catégorie max, LOC seulement sans ILS
+        function approachTags(ident) {
+            const apps = (currentAirportData && currentAirportData.approaches && currentAirportData.approaches[ident]) || [];
+            const byType = {};
+            apps.forEach(a => (byType[a.type] = byType[a.type] || []).push(a));
+
+            const tags = [];
+            if (byType.ILS) {
+                const cat = Math.max(...byType.ILS.map(a => a.cat || 1));
+                tags.push({ key: `ILS${cat}`, apps: byType.ILS });
+            } else if (byType.LOC) {
+                tags.push({ key: 'LOC', apps: byType.LOC });
+            }
+            ['RNAV', 'VOR', 'NDB', 'VIS'].forEach(t => { if (byType[t]) tags.push({ key: t, apps: byType[t] }); });
+            return tags.map(t => ({ ...APPROACH_STYLES[t.key], key: t.key, names: t.apps.map(a => a.name) }));
+        }
+
+        function approachTagsHtml(ident) {
+            const tags = approachTags(ident);
+            if (!tags.length) return '<span class="approach-none">Aucune approche IFR publiée</span>';
+            return tags.map(t => `<span class="appr-tag ${t.cls}" title="${escapeHtml(t.names.join('\n'))}">${t.label}</span>`).join('');
+        }
+
+        function updateApproachInfo() {
+            const box = document.getElementById('approachInfo');
+            const data = currentAirportData;
+            if (!data || !data.approaches) {
+                box.hidden = true;
+                box.innerHTML = '';
+                return;
+            }
+            const used = new Set(currentRunways.flatMap(r => [r.le_ident, r.he_ident]).flatMap(id => approachTags(id).map(t => t.key)));
+            const legend = Object.entries(APPROACH_STYLES)
+                .filter(([key]) => used.has(key))
+                .map(([, s]) => `<span class="appr-tag ${s.cls}">${s.label}</span>`).join('');
+            box.innerHTML = `
+                <div class="approach-legend">${legend}</div>
+                <div class="approach-source">
+                    Approches IFR : FAA (d-TPP / CIFP), cycle AIRAC ${escapeHtml(data.approaches_cycle || '')}.
+                    Survolez une pastille pour voir les procédures. Information indicative —
+                    ne pas utiliser pour la navigation.
+                </div>`;
+            box.hidden = false;
+        }
+
         function updateSidebarInfo(code) {
             document.getElementById('statsBox').style.display = 'flex';
             const filterNotice = hideShortRunways ? ' (filtrées)' : '';
@@ -2013,9 +2128,15 @@
                         <div style="font-weight:700; color:#f8fafc;">${lengthM} m</div>
                         <div style="color:#94a3b8; font-size:11px;">${Math.round(lengthM / FT_TO_M)} ft</div>
                     </div>
+                    ${currentAirportData && currentAirportData.approaches ? `
+                    <div class="runway-approaches">
+                        <div class="approach-row"><span class="approach-row-ident">${r.le_ident}</span>${approachTagsHtml(r.le_ident)}</div>
+                        <div class="approach-row"><span class="approach-row-ident">${r.he_ident}</span>${approachTagsHtml(r.he_ident)}</div>
+                    </div>` : ''}
                 `;
                 listEl.appendChild(item);
             });
+            updateApproachInfo();
         }
 
         function calculateBounds() {
@@ -2044,8 +2165,12 @@
 
             viewState.baseBounds = calculateBounds();
             const padding = Math.min(width, height) * 0.15;
-            const scaleX = (width - 2 * padding) / viewState.baseBounds.width;
-            const scaleY = (height - 2 * padding) / viewState.baseBounds.height;
+            // Place pour les pastilles d'approche au-delà des seuils (plafonnée sur petit écran)
+            const hasApproaches = !!(currentAirportData && currentAirportData.approaches);
+            const padX = hasApproaches ? Math.min(Math.max(padding, 175), width * 0.3) : padding;
+            const padY = hasApproaches ? Math.min(Math.max(padding, 75), height * 0.3) : padding;
+            const scaleX = (width - 2 * padX) / viewState.baseBounds.width;
+            const scaleY = (height - 2 * padY) / viewState.baseBounds.height;
             viewState.scale = Math.min(scaleX, scaleY);
             viewState.offsetX = 0;
             viewState.offsetY = 0;
@@ -2115,6 +2240,47 @@
             }
         }
 
+        // (ux, uy) : direction unitaire vers l'extérieur de la piste depuis le seuil p
+        function drawApproachTags(ident, p, ux, uy) {
+            const tags = approachTags(ident);
+            if (!tags.length) return;
+
+            ctx.save();
+            ctx.font = 'bold 9px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            const gap = 3, h = 14;
+            const widths = tags.map(t => ctx.measureText(t.label).width + 10);
+            const total = widths.reduce((a, b) => a + b, 0) + gap * (tags.length - 1);
+
+            // Centre du bloc : juste après l'identifiant (centré à 28 px du seuil), sans le recouvrir
+            // ni recouvrir la piste, quelle que soit l'orientation
+            ctx.font = 'bold 12px sans-serif';
+            const identReach = Math.abs(ux) * ctx.measureText(ident).width / 2 + Math.abs(uy) * 7;
+            ctx.font = 'bold 9px sans-serif';
+            const reach = Math.abs(ux) * total / 2 + Math.abs(uy) * h / 2;
+            const d = 28 + identReach + 5 + reach;
+            let x = p.x + ux * d - total / 2;
+            const y = p.y + uy * d - h / 2;
+
+            tags.forEach((t, i) => {
+                const w = widths[i];
+                ctx.beginPath();
+                if (ctx.roundRect) ctx.roundRect(x, y, w, h, 3); else ctx.rect(x, y, w, h);
+                ctx.fillStyle = 'rgba(11, 15, 25, 0.9)';
+                ctx.fill();
+                ctx.fillStyle = t.bg;
+                ctx.fill();
+                ctx.strokeStyle = t.bd;
+                ctx.lineWidth = 1;
+                ctx.stroke();
+                ctx.fillStyle = t.fg;
+                ctx.fillText(t.label, x + w / 2, y + h / 2 + 0.5);
+                x += w + gap;
+            });
+            ctx.restore();
+        }
+
         function draw() {
             const width = canvasContainer.clientWidth;
             const height = canvasContainer.clientHeight;
@@ -2179,6 +2345,10 @@
                 ctx.textBaseline = 'middle';
                 ctx.fillText(r.le_ident, p1.x - ux * 28, p1.y - uy * 28);
                 ctx.fillText(r.he_ident, p2.x + ux * 28, p2.y + uy * 28);
+
+                // Pastilles d'approche IFR, dans le prolongement de l'axe au-delà de l'identifiant
+                drawApproachTags(r.le_ident, p1, -ux, -uy);
+                drawApproachTags(r.he_ident, p2, ux, uy);
 
                 // Dimensions et étiquette orientée
                 const midX = (p1.x + p2.x) / 2;

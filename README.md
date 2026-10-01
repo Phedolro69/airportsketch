@@ -127,7 +127,18 @@ Pour un vol en cours, le dossier de vol affiche une **barre de progression** et 
 
 Si le site est servi depuis un autre domaine que `https://phedolro69.github.io`, ajoutez-le à `ALLOWED_ORIGINS` dans `worker/wrangler.toml`.
 
-Routes du worker : `/live`, `/flight` et `/track` (toutes via AirLabs, clé requise), et `/usage` (appels AirLabs du jour et budget). Le worker est déployé à la main (`npx wrangler deploy`) : le workflow GitHub ne met à jour que le site.
+Routes du worker : `/live`, `/flight` et `/track` (AirLabs avec le code d'accès, démo sinon), `/config` (mode actif et vols de démo) et `/usage` (appels AirLabs du jour et budget). Le worker est déployé à la main (`npx wrangler deploy`) : le workflow GitHub ne met à jour que le site.
+
+### Mode démo et données réelles
+
+Par défaut, **tous les visiteurs voient 20 vols de démonstration** : fictifs mais réalistes (vraies routes, horaires recalculés par rapport à l'heure actuelle, vols en cours avec position, prévus, retardé, atterri, annulé), générés par le worker (`worker/demo.js`) **sans aucun appel à AirLabs**. Le site l'indique clairement (encart « Mode démo » sous la recherche de vol, étiquette DÉMO dans le dossier, légende de la carte), et en mode démo la liste des vols s'affiche dès le clic dans le champ.
+
+Les **vraies données** (AirLabs) sont réservées au propriétaire, et c'est le worker qui en décide :
+1. enregistrer un code secret : `cd worker && npx wrangler secret put LIVE_ACCESS_CODE` ;
+2. ouvrir une fois le site avec `?code=VOTRE_CODE` : le navigateur retient le code (le paramètre est aussitôt retiré de l'adresse) et l'envoie au worker (en-tête `X-Access-Code`) ; une pastille « Données réelles » apparaît dans l'en-tête ;
+3. `?code=off` revient à la démo.
+
+Sans le bon code, le worker sert la démo, quoi que fasse le site. Pour ouvrir les vraies données à tous (offre payante par exemple) : `DATA_MODE = "live"` dans `worker/wrangler.toml` (ou dans le tableau de bord Cloudflare), puis `npx wrangler deploy`. La route `/config` indique le mode actif.
 
 ### Quota AirLabs
 

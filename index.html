@@ -533,6 +533,46 @@
         .freq-type { color: #94a3b8; font-weight: 500; }
         .freq-mhz { color: var(--accent-green); font-weight: 700; font-family: 'JetBrains Mono', monospace; }
 
+        /* Mode des données de vol : démo (fictives) ou réelles (code d'accès) */
+        .demo-notice {
+            display: none;
+            margin-top: 8px;
+            padding: 7px 10px;
+            border-radius: 8px;
+            background: rgba(250, 204, 21, 0.08);
+            border: 1px solid rgba(250, 204, 21, 0.3);
+            color: #fde68a;
+            font-size: 11px;
+            line-height: 1.45;
+        }
+        body[data-flight-data="demo"] #searchSection[data-mode="flight"] .demo-notice:not([hidden]) { display: block; }
+        .demo-notice b { color: #facc15; }
+        .demo-tag {
+            display: inline-block;
+            margin-right: 6px;
+            padding: 1px 6px;
+            border-radius: 4px;
+            background: rgba(250, 204, 21, 0.15);
+            border: 1px solid rgba(250, 204, 21, 0.45);
+            color: #fde68a;
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 0.3px;
+        }
+        .data-mode-pill {
+            margin-left: 10px;
+            padding: 2px 8px;
+            border-radius: 9999px;
+            background: rgba(16, 185, 129, 0.15);
+            border: 1px solid rgba(16, 185, 129, 0.5);
+            color: #6ee7b7;
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 0.3px;
+            white-space: nowrap;
+        }
+        .data-mode-pill[hidden] { display: none; }
+
         /* Pistes de moins de 2000 m : couleur dédiée et bouton de masquage */
         .short-rwy-btn {
             display: flex;
@@ -1702,6 +1742,7 @@
                 <path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"/>
             </svg>
             <h1>Plein Axe&nbsp;!</h1>
+            <span class="data-mode-pill" id="liveModePill" hidden title="Vraies données AirLabs (code d'accès enregistré dans ce navigateur)">Données réelles</span>
         </div>
         <button class="btn-help" onclick="openHelp()" title="Que faire avec cette app ?" aria-haspopup="dialog">
             <span class="btn-help-icon" aria-hidden="true">?</span>
@@ -1749,6 +1790,7 @@
                     <div>
                         <h3>Suivre un vol</h3>
                         <p>Passez en mode <b>Vol</b> et tapez un numéro (<code>AF173</code>) : horaires, retards, portes et terminaux, et pour un vol en cours une <b>barre de progression</b> avec le temps restant. Les boutons <b>Diagramme départ · Diagramme arrivée · Carte</b>, en haut du schéma, passent d'une vue à l'autre.</p>
+                        <p>Le site fonctionne en <b>mode démo</b> : 20 vols fictifs mais réalistes, à choisir dans la liste qui s'ouvre dès le clic dans le champ.</p>
                     </div>
                 </section>
                 <section class="help-card wide" style="--c: #facc15">
@@ -1813,8 +1855,11 @@
                     <div id="autocompleteResults" class="autocomplete-results"></div>
                 </div>
                 <div class="search-box" id="flightSearchBox" hidden>
-                    <input type="text" id="flightInput" placeholder="N° de vol (ex: AF173, BA117)..." oninput="handleFlightInput(this.value)" onkeydown="handleFlightKeydown(event)" autocomplete="off">
+                    <input type="text" id="flightInput" placeholder="N° de vol (ex: AF173, BA117)..." oninput="handleFlightInput(this.value)" onkeydown="handleFlightKeydown(event)" onfocus="showDemoFlightsIfEmpty()" onclick="showDemoFlightsIfEmpty()" autocomplete="off">
                     <div id="flightResults" class="autocomplete-results"></div>
+                </div>
+                <div class="demo-notice" id="demoNotice" hidden>
+                    <b>Mode démo</b> : les vols proposés sont fictifs mais réalistes (horaires, retards, positions, routes). Cliquez dans le champ pour les voir tous.
                 </div>
             </div>
 
@@ -2172,6 +2217,7 @@
         }
 
         async function initApp() {
+            const flightModeReady = loadFlightDataMode();   // en parallèle du chargement de l'index
             const statusBox = document.getElementById('statusBox');
             const errorBox = document.getElementById('fileError');
             const inputEl = document.getElementById('airportInput');
@@ -2204,6 +2250,7 @@
                 selectAirport(initialCode);
 
                 // Vol passé dans l'URL (?flight=AF173)
+                await flightModeReady;
                 const initialFlight = parseFlightQuery(urlParams.get('flight') || '');
                 if (initialFlight && initialFlight.complete && FLIGHT_API_BASE) {
                     setSearchMode('flight', false);
@@ -2411,8 +2458,62 @@
             return null;
         }
 
+        // --- Mode des données de vol ---------------------------------------------
+        // Par défaut, le worker sert 20 vols de démonstration (fictifs). Les vraies données (AirLabs) sont réservées
+        // au propriétaire : ouvrir une fois le site avec ?code=… (secret LIVE_ACCESS_CODE du worker) ; ?code=off
+        // revient à la démo. C'est le worker qui vérifie le code : le site ne fait que le transmettre.
+        const ACCESS_CODE_KEY = 'pleinaxe.accessCode';
+        let accessCode = '';
+        try {
+            const urlCode = new URLSearchParams(location.search).get('code');
+            if (urlCode !== null) {
+                if (urlCode === '' || urlCode.toLowerCase() === 'off') localStorage.removeItem(ACCESS_CODE_KEY);
+                else localStorage.setItem(ACCESS_CODE_KEY, urlCode);
+                // Le code ne reste pas dans la barre d'adresse (ni dans l'historique partagé)
+                const clean = new URL(location.href);
+                clean.searchParams.delete('code');
+                history.replaceState({}, '', clean);
+            }
+            accessCode = localStorage.getItem(ACCESS_CODE_KEY) || '';
+        } catch (err) { /* stockage indisponible : mode démo */ }
+
+        let flightDataMode = null;     // 'demo' | 'live' | null (service sans /config, ex. simulateur local)
+        let demoFlights = [];
+
+        async function loadFlightDataMode() {
+            if (!FLIGHT_API_BASE) return;
+            try {
+                const res = await fetch(`${FLIGHT_API_BASE}/config`, { headers: accessCode ? { 'X-Access-Code': accessCode } : {} });
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                const cfg = await res.json();
+                flightDataMode = cfg.mode === 'live' ? 'live' : 'demo';
+                demoFlights = Array.isArray(cfg.flights) ? cfg.flights : [];
+            } catch (err) {
+                flightDataMode = null;
+            }
+            document.body.dataset.flightData = flightDataMode || '';
+            document.getElementById('demoNotice').hidden = flightDataMode !== 'demo';
+            // Repère pour le propriétaire seulement : vraies données grâce à son code
+            document.getElementById('liveModePill').hidden = !(flightDataMode === 'live' && accessCode);
+        }
+
+        // Mode démo : la liste complète des vols dès le clic dans le champ, sans attendre une saisie
+        function showDemoFlightsIfEmpty() {
+            const input = document.getElementById('flightInput');
+            if (flightDataMode === 'demo' && !input.value.trim()) renderDemoFlights('');
+        }
+
+        function renderDemoFlights(raw) {
+            const q = raw.replace(/\s+/g, '').toUpperCase();
+            const matches = demoFlights
+                .filter(f => !q || [f.flight_iata, f.flight_icao, f.dep_iata, f.arr_iata].some(v => (v || '').startsWith(q)))
+                .sort((a, b) => (a.flight_iata || '').localeCompare(b.flight_iata || '', 'fr', { numeric: true }));
+            renderFlightResults({ q, flightParam: 'flight_iata', complete: false }, matches, null);
+            if (!matches.length) showFlightMessage(`Aucun vol de démonstration ne correspond à <b>${escapeHtml(q)}</b>.`);
+        }
+
         async function callFlightApi(path) {
-            const res = await fetch(`${FLIGHT_API_BASE}${path}`);
+            const res = await fetch(`${FLIGHT_API_BASE}${path}`, { headers: accessCode ? { 'X-Access-Code': accessCode } : {} });
             const body = await res.json().catch(() => null);
             if (!body || body.error) {
                 throw new Error(body && body.error ? body.error.message : `Erreur du service de vols (${res.status})`);
@@ -2450,6 +2551,11 @@
 
             if (!FLIGHT_API_BASE) {
                 showFlightMessage("Service de vols non configuré (URL du Worker manquante).");
+                return;
+            }
+            // Mode démo : filtrage local des 20 vols, aucun appel au service
+            if (flightDataMode === 'demo') {
+                renderDemoFlights(val);
                 return;
             }
             if (!val.trim()) {
@@ -2679,7 +2785,7 @@
                     </div>
                 </div>
                 <div class="flight-note ${isLive ? 'live' : ''}">
-                    ${isLive ? '● Vol en cours : données en direct.' : 'Pas en vol actuellement : affichage du vol connu le plus proche.'}
+                    ${f.demo ? '<span class="demo-tag">DÉMO</span>Vol de démonstration : données fictives mais réalistes. ' : ''}${isLive ? (f.demo ? 'Vol en cours.' : '● Vol en cours : données en direct.') : 'Pas en vol actuellement : affichage du vol connu le plus proche.'}
                     Heures locales.
                 </div>
                 <div class="flight-route">
@@ -3819,7 +3925,7 @@
                             vs: null,
                             ts: num(f.updated) || Math.round(Date.now() / 1000)
                         },
-                        track: [], source: 'airlabs'
+                        track: [], source: f.demo ? 'demo' : 'airlabs'
                     },
                     notice: ''
                 };
@@ -4358,7 +4464,7 @@
                 if (route.hasGap) items.push(line('stroke="#a78bfa" stroke-width="2" stroke-dasharray="5 4" opacity=".75"', 'Sans réception'));
                 if (route.hasRemaining) items.push(line('stroke="#a78bfa" stroke-width="2.4" stroke-dasharray="0.1 5" stroke-linecap="round" opacity=".75"', 'Reste à parcourir (estimé)'));
             } else if (route && route.hasPosition) {
-                items.push(`<div><svg width="30" height="14" viewBox="0 0 30 14"><g transform="translate(8 0) scale(0.58) rotate(90 12 12)"><path fill="#c4b5fd" d="M12 1.5 L13.6 8.5 L22 13.5 L22 15.5 L13.6 12.8 L13.2 19 L16 21 L16 22.5 L12 21.5 L8 22.5 L8 21 L10.8 19 L10.4 12.8 L2 15.5 L2 13.5 L10.4 8.5 Z"/></g></svg>Position réelle de l'avion</div>`);
+                items.push(`<div><svg width="30" height="14" viewBox="0 0 30 14"><g transform="translate(8 0) scale(0.58) rotate(90 12 12)"><path fill="#c4b5fd" d="M12 1.5 L13.6 8.5 L22 13.5 L22 15.5 L13.6 12.8 L13.2 19 L16 21 L16 22.5 L12 21.5 L8 22.5 L8 21 L10.8 19 L10.4 12.8 L2 15.5 L2 13.5 L10.4 8.5 Z"/></g></svg>${t && t.source === 'demo' ? "Position simulée de l'avion (démo)" : "Position réelle de l'avion"}</div>`);
                 items.push(line('stroke="#a78bfa" stroke-width="2.4" stroke-linecap="round" opacity=".75"', 'Parcouru (estimé)'));
                 if (route.hasRemaining) items.push(line('stroke="#a78bfa" stroke-width="2.4" stroke-dasharray="0.1 5" stroke-linecap="round" opacity=".75"', 'Reste à parcourir (estimé)'));
             } else if (route) {
@@ -4370,9 +4476,10 @@
                 if (hasLarge) items.push(`<div><svg width="30" height="10"><circle cx="15" cy="5" r="3.6" fill="${MAP_COLORS.apLarge}" stroke="#0d1322" stroke-width="1.5"/></svg>Grand aéroport sur la route</div>`);
                 if (hasMedium) items.push(`<div><svg width="30" height="10"><circle cx="15" cy="5" r="2.7" fill="${MAP_COLORS.apMedium}" stroke="#0d1322" stroke-width="1.5"/></svg>Aéroport moyen (piste ≥ 2 500 m)</div>`);
             }
-            const credit = t && t.source === 'airlabs'
-                ? 'Position : AirLabs · fond Natural Earth'
-                : 'Fond de carte : Natural Earth';
+            const isDemo = (t && t.source === 'demo') || (flightMap.flight && flightMap.flight.demo);
+            const credit = isDemo
+                ? 'Vol de démonstration : données fictives · fond Natural Earth'
+                : t && t.source === 'airlabs' ? 'Position : AirLabs · fond Natural Earth' : 'Fond de carte : Natural Earth';
             legend.innerHTML = items.length
                 ? `${items.join('')}<small>${credit}<br>Plan de vol non public · indicatif, ne pas utiliser pour la navigation</small>`
                 : '';

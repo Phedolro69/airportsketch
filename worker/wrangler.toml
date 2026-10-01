@@ -8,6 +8,9 @@ compatibility_date = "2026-09-01"
 ALLOWED_ORIGINS = "https://phedolro69.github.io"
 # Appels AirLabs autorisés par jour (UTC), cache exclu. Offre gratuite : 1 000/mois ≈ 30/jour.
 DAILY_BUDGET = "30"
+# "demo" (par défaut) : vols fictifs pour tous, vraies données seulement avec le code d'accès
+# (secret LIVE_ACCESS_CODE : npx wrangler secret put LIVE_ACCESS_CODE) ; "live" : vraies données pour tous
+DATA_MODE = "demo"
 
 # La clé AirLabs est un secret, jamais dans ce fichier :
 #   npx wrangler secret put AIRLABS_API_KEY

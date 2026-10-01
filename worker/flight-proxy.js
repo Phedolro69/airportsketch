@@ -9,6 +9,10 @@
  *   GET /flight?flight_iata=AF173 | /flight?flight_icao=AFR173 -> vol le plus proche (en vol, prévu ou atterri)
  *   GET /track?callsign=AFR173                                 -> position actuelle du vol en cours (AirLabs /flights)
  *   GET /usage                                                 -> appels AirLabs du jour et budget quotidien
+ *   GET /config                                                -> mode (« demo » ou « live ») et, en démo, la liste des vols
+ *
+ * Mode démo (par défaut) : 20 vols fictifs générés par demo.js, sans aucun appel à AirLabs. Les vraies données
+ * ne sont servies qu'avec l'en-tête X-Access-Code égal au secret LIVE_ACCESS_CODE, ou si DATA_MODE = "live".
  *
  * Quota AirLabs (offre gratuite, 1 000 requêtes/mois) : caches longs, limite par visiteur et budget
  * quotidien (budget.js) ; seules les requêtes absentes du cache comptent.
@@ -16,6 +20,7 @@
 
 import { fetchPosition } from './position.js';
 import { checkBudget, isAirLabsQuotaError, budgetUsage, QUOTA_MESSAGES } from './budget.js';
+import { demoList, demoLive, demoFlight, demoTrack } from './demo.js';
 
 const AIRLABS_BASE = 'https://airlabs.co/api/v9';
 
@@ -61,6 +66,7 @@ function corsHeaders(request, env) {
     return ok ? {
         'Access-Control-Allow-Origin': origin,
         'Access-Control-Allow-Methods': 'GET, OPTIONS',
+        'Access-Control-Allow-Headers': 'X-Access-Code',
         'Vary': 'Origin'
     } : {};
 }
@@ -71,6 +77,22 @@ function json(body, status, extraHeaders = {}) {
         headers: { 'Content-Type': 'application/json; charset=utf-8', ...extraHeaders }
     });
 }
+
+// Vraies données (AirLabs) seulement avec le bon code d'accès, ou si le mode « live » est ouvert à tous
+function isLive(request, env) {
+    if (String(env.DATA_MODE || '').toLowerCase() === 'live') return true;
+    const secret = env.LIVE_ACCESS_CODE || '';
+    const given = request.headers.get('X-Access-Code') || '';
+    if (!secret || !given) return false;
+    // Comparaison en temps constant
+    let diff = secret.length ^ given.length;
+    for (let i = 0; i < Math.max(secret.length, given.length); i++) {
+        diff |= (secret.charCodeAt(i) || 0) ^ (given.charCodeAt(i) || 0);
+    }
+    return diff === 0;
+}
+
+const DEMO_HEADERS = { 'Cache-Control': 'no-store', 'X-Data-Mode': 'demo' };
 
 // Position d'un vol en cours (AirLabs). Même cache KV partagé que les autres routes.
 async function handleTrack(request, url, env, ctx, cors) {
@@ -126,7 +148,16 @@ export default {
         }
 
         const url = new URL(request.url);
+        const live = isLive(request, env);
+        if (url.pathname === '/config') {
+            return json(live ? { mode: 'live' } : { mode: 'demo', flights: demoList() }, 200, { ...cors, 'Cache-Control': 'no-store', Vary: 'Origin, X-Access-Code' });
+        }
         if (url.pathname === '/track') {
+            if (!live) {
+                const callsign = (url.searchParams.get('callsign') || '').toUpperCase();
+                if (!TRACK_CALLSIGN.test(callsign)) return json({ error: { message: 'Paramètre invalide' } }, 400, cors);
+                return json({ response: demoTrack(callsign) }, 200, { ...cors, ...DEMO_HEADERS });
+            }
             return handleTrack(request, url, env, ctx, cors);
         }
         if (url.pathname === '/usage') {
@@ -145,6 +176,12 @@ export default {
             return json({ error: { message: 'Paramètre invalide' } }, 400, cors);
         }
         const [paramName, paramValue] = entries[0];
+
+        // Mode démo : vols fictifs, aucun appel à AirLabs, aucun cache partagé
+        if (!live) {
+            const response = url.pathname === '/live' ? demoLive(paramName, paramValue) : demoFlight(paramName, paramValue);
+            return json({ response }, 200, { ...cors, ...DEMO_HEADERS });
+        }
 
         if (!env.AIRLABS_API_KEY) {
             return json({ error: { message: 'AIRLABS_API_KEY non configurée sur le Worker' } }, 500, cors);

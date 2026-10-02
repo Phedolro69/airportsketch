@@ -8,7 +8,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css?v=14">
+    <link rel="stylesheet" href="style.css?v=15">
 </head>
 <body data-mobile-tab="diagram" data-search-mode="airport">
 
@@ -18,21 +18,22 @@
                 <path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"/>
             </svg>
             <h1>Plein Axe&nbsp;!</h1>
-            <span class="demo-pill" id="demoModePill" hidden title="Mode démo : vols fictifs mais réalistes">Démo</span>
-            <span class="data-mode-pill" id="liveModePill" hidden title="Vraies données AirLabs (code d'accès enregistré dans ce navigateur)">Données réelles</span>
+            <span class="demo-pill" id="demoModePill" hidden title="Mode démo : vols fictifs mais réalistes" data-i18n-title="Mode démo : vols fictifs mais réalistes" data-i18n="Démo">Démo</span>
+            <span class="data-mode-pill" id="liveModePill" hidden title="Vraies données AirLabs (code d'accès enregistré dans ce navigateur)" data-i18n-title="Vraies données AirLabs (code d'accès enregistré dans ce navigateur)" data-i18n="Données réelles">Données réelles</span>
         </div>
         <div class="header-actions">
-            <button class="btn-theme" id="themeBtn" onclick="toggleTheme()" title="Basculer thème clair / sombre" aria-label="Basculer thème clair / sombre">
+            <button class="btn-theme btn-lang" id="langBtn" onclick="setLang(LANG === 'fr' ? 'en' : 'fr')" title="English version" aria-label="English version" data-i18n-title="English version" data-i18n-aria="English version">EN</button>
+            <button class="btn-theme" id="themeBtn" onclick="toggleTheme()" title="Basculer thème clair / sombre" aria-label="Basculer thème clair / sombre" data-i18n-title="Basculer thème clair / sombre" data-i18n-aria="Basculer thème clair / sombre">
                 <svg class="ico-moon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
                 <svg class="ico-sun" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
             </button>
-            <button class="btn-theme btn-share" id="shareBtn" onclick="shareLink()" title="Copier le lien de cette vue" aria-label="Copier le lien de cette vue">
+            <button class="btn-theme btn-share" id="shareBtn" onclick="shareLink()" title="Copier le lien de cette vue" aria-label="Copier le lien de cette vue" data-i18n-title="Copier le lien de cette vue" data-i18n-aria="Copier le lien de cette vue">
                 <svg class="ico-link" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></svg>
                 <svg class="ico-check" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
             </button>
-            <button class="btn-help" onclick="openHelp()" title="Que faire avec cette app ?" aria-haspopup="dialog">
+            <button class="btn-help" onclick="openHelp()" title="Que faire avec cette app ?" aria-haspopup="dialog" data-i18n-title="Que faire avec cette app ?">
                 <span class="btn-help-icon" aria-hidden="true">?</span>
-                <span class="btn-help-label">Que faire avec cette app ?</span>
+                <span class="btn-help-label" data-i18n="Que faire avec cette app ?">Que faire avec cette app ?</span>
             </button>
         </div>
     </header>
@@ -42,15 +43,16 @@
         <div class="help-hero">
             <h2 id="helpTitle">
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"/></svg>
-                Bienvenue sur Plein Axe
+                <span data-i18n="Bienvenue sur Plein Axe">Bienvenue sur Plein Axe</span>
             </h2>
-            <p>Le schéma des pistes de plus de 11 000 aéroports dans le monde, à l'échelle, avec fréquences, approches aux instruments et suivi de vols en direct.</p>
-            <button class="help-close" onclick="closeHelp()" title="Fermer" aria-label="Fermer l'aide">
+            <p data-lang="fr">Le schéma des pistes de plus de 11 000 aéroports dans le monde, à l'échelle, avec fréquences, approches aux instruments et suivi de vols en direct.</p>
+            <p data-lang="en">To-scale runway diagrams of more than 11,000 airports worldwide, with frequencies, instrument approaches and live flight tracking.</p>
+            <button class="help-close" onclick="closeHelp()" title="Fermer" aria-label="Fermer l'aide" data-i18n-title="Fermer" data-i18n-aria="Fermer l'aide">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
             </button>
         </div>
         <div class="help-body">
-            <div class="help-grid">
+            <div class="help-grid" data-lang="fr">
                 <section class="help-card">
                     <div class="help-card-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg></div>
                     <div>
@@ -125,9 +127,88 @@
                     </div>
                 </section>
             </div>
-            <div class="help-tips">
+            <div class="help-tips" data-lang="fr">
                 <span>Données OurAirports et FAA, mises à jour chaque nuit · vols et positions AirLabs · fond de carte Natural Earth</span>
                 <span><strong>Information indicative, ne pas utiliser pour la navigation.</strong></span>
+            </div>
+            <div class="help-grid" data-lang="en">
+                <section class="help-card">
+                    <div class="help-card-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg></div>
+                    <div>
+                        <h3>Find an airport</h3>
+                        <p>Type an ICAO code (<code>LFPG</code>), an IATA code (<code>CDG</code>), a name or a city. Major international airports come first. With the keyboard: <b>↑ ↓</b> to choose, <b>Enter</b> to open.</p>
+                    </div>
+                </section>
+                <section class="help-card" style="--c: var(--accent-green)">
+                    <div class="help-card-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15 22 12 18 9 22 12 2"/></svg></div>
+                    <div>
+                        <h3>An accurate diagram</h3>
+                        <p>To-scale runways oriented to <b>true north</b>, with their displaced thresholds and the airport name as a title. Drag to move, scroll or pinch to zoom, <b>⟲</b> to recenter, <b>⛶</b> for full screen.</p>
+                    </div>
+                </section>
+                <section class="help-card" style="--c: var(--accent-amber)">
+                    <div class="help-card-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.9 19.1a10 10 0 0 1 0-14.2M7.8 16.2a6 6 0 0 1 0-8.4M16.2 7.8a6 6 0 0 1 0 8.4M19.1 4.9a10 10 0 0 1 0 14.2"/><circle cx="12" cy="12" r="2"/></svg></div>
+                    <div>
+                        <h3>Runways &amp; frequencies</h3>
+                        <p>The airport sheet details each runway (length, width, thresholds) and the radio frequencies. Runways shorter than 2,000 m are hidden by default; the “Show short runways” button above the diagram shows them, in <b>pale purple</b>.</p>
+                    </div>
+                </section>
+                <section class="help-card" style="--c: #c4b5fd">
+                    <div class="help-card-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"/></svg></div>
+                    <div>
+                        <h3>Track a flight</h3>
+                        <p>Switch to <b>Flight</b> mode and type a number (<code>AF173</code>): times, delays, gates and terminals, and for a flight in progress a <b>progress bar</b> with the remaining time.</p>
+                        <p>The site runs in <b>demo mode</b>: 20 fictitious but realistic flights, to pick from the list that opens as soon as you click in the field.</p>
+                    </div>
+                </section>
+                <section class="help-card wide" style="--c: #facc15">
+                    <div class="help-card-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3.5 3 14.5 0 18M12 3c-3 3.5-3 14.5 0 18"/></svg></div>
+                    <div>
+                        <h3>Flight map</h3>
+                        <p>The aircraft at its <b>actual position</b> (altitude, speed, heading), then <b>estimated every 20 s</b> from its speed and route, the estimated track and the <b>airports along the route</b>: large ones (big dots) and medium ones with a long runway (small dots), colored by <b>weather</b>, also listed in the flight details. Set the <b>corridor</b> from ± 100 to 300 nm; over oceans, the nearest alternates (Shannon, Keflavik, Gander…) remain shown. <b>Hover</b> an airport for its sheet and mini diagram, <b>click</b> or <b>zoom in hard</b> on it to open its diagram; zoom out of that diagram to return to the map. The <b>☀ / ☾</b> button at the top switches between dark and light mode.</p>
+                    </div>
+                </section>
+                <section class="help-card wide" style="--c: #22c55e">
+                    <div class="help-card-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.5 19H9a7 7 0 1 1 6.7-9h1.8a4.5 4.5 0 1 1 0 9z"/></svg></div>
+                    <div>
+                        <h3>Airport weather (METAR &amp; TAF)</h3>
+                        <p>On the flight map, each airport is colored by its current <b>flight category</b>. On hover (or in the airport sheet), the <b>METAR</b> (observation) is decoded, then the <b>TAF</b> (forecast): wind, visibility, clouds, temperature, QNH. NOAA data, updated every 5 minutes; small airports do not always have a METAR.</p>
+                        <div class="help-tags">
+                            <span class="wx-pill VFR">VFR</span>
+                            <span class="wx-pill MVFR">MVFR</span>
+                            <span class="wx-pill IFR">IFR</span>
+                            <span class="wx-pill LIFR">LIFR</span>
+                        </div>
+                    </div>
+                </section>
+                <section class="help-card wide" style="--c: #d946ef">
+                    <div class="help-card-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18"/><path d="m5 10 7-7 7 7"/><path d="M8 21h8"/></svg></div>
+                    <div>
+                        <h3>Instrument approaches (United States)</h3>
+                        <p>For nearly 2,900 US airports, each threshold shows its FAA-published approaches, from most to least precise. <b>Click a tag</b> to open the official approach chart as a PDF.</p>
+                        <div class="help-tags">
+                            <span class="appr-tag appr-ils3">ILS CAT III</span>
+                            <span class="appr-tag appr-ils2">ILS CAT II</span>
+                            <span class="appr-tag appr-ils1">ILS CAT I</span>
+                            <span class="appr-tag appr-loc">LOC</span>
+                            <span class="appr-tag appr-rnav">RNAV</span>
+                            <span class="appr-tag appr-vor">VOR</span>
+                            <span class="appr-tag appr-ndb">NDB</span>
+                            <span class="appr-tag appr-vis">VIS</span>
+                        </div>
+                    </div>
+                </section>
+                <section class="help-card wide" style="--c: #94a3b8">
+                    <div class="help-card-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></svg></div>
+                    <div>
+                        <h3>Share a link</h3>
+                        <p>The page address follows what you are looking at: copy it to share an airport (<code>?icao=KJFK</code>) or a flight (<code>?flight=AF173</code>).</p>
+                    </div>
+                </section>
+            </div>
+            <div class="help-tips" data-lang="en">
+                <span>OurAirports and FAA data, updated nightly · flights and positions by AirLabs · Natural Earth base map</span>
+                <span><strong>For information only, not for navigation.</strong></span>
             </div>
         </div>
     </dialog>
@@ -138,27 +219,27 @@
             <!-- Barre de recherche (toujours accessible) -->
             <div class="search-section" id="searchSection" data-mode="airport">
                 <div class="search-header">
-                    <label id="searchLabel" for="airportInput">Rechercher un aéroport</label>
+                    <label id="searchLabel" for="airportInput" data-i18n="Rechercher un aéroport">Rechercher un aéroport</label>
                     <div class="search-mode-toggle" role="tablist">
                         <button class="mode-btn mode-flight" id="modeBtnFlight" onclick="setSearchMode('flight')" role="tab" aria-selected="false">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"/></svg>
-                            <span>Vol</span>
+                            <span data-i18n="Vol">Vol</span>
                         </button>
                         <button class="mode-btn mode-airport active" id="modeBtnAirport" onclick="setSearchMode('airport')" role="tab" aria-selected="true">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s-7-6.5-7-12a7 7 0 0 1 14 0c0 5.5-7 12-7 12z"/><circle cx="12" cy="10" r="2.5"/></svg>
-                            <span>Aéroport</span>
+                            <span data-i18n="Aéroport">Aéroport</span>
                         </button>
                     </div>
                 </div>
                 <div class="search-box" id="airportSearchBox">
-                    <input type="text" id="airportInput" placeholder="Ex: LFPG, Nice, KJFK, CDG..." oninput="handleInput(this.value)" onkeydown="handleListKeydown(event, 'autocompleteResults')" autocomplete="off" disabled>
+                    <input type="text" id="airportInput" placeholder="Ex: LFPG, Nice, KJFK, CDG..." data-i18n-placeholder="Ex: LFPG, Nice, KJFK, CDG..." oninput="handleInput(this.value)" onkeydown="handleListKeydown(event, 'autocompleteResults')" autocomplete="off" disabled>
                     <div id="autocompleteResults" class="autocomplete-results"></div>
                 </div>
                 <div class="search-box" id="flightSearchBox" hidden>
-                    <input type="text" id="flightInput" placeholder="N° de vol (ex: AF173, BA117)..." oninput="handleFlightInput(this.value)" onkeydown="handleFlightKeydown(event)" onfocus="showDemoFlightsIfEmpty()" onclick="showDemoFlightsIfEmpty()" autocomplete="off">
+                    <input type="text" id="flightInput" placeholder="N° de vol (ex: AF173, BA117)..." data-i18n-placeholder="N° de vol (ex: AF173, BA117)..." oninput="handleFlightInput(this.value)" onkeydown="handleFlightKeydown(event)" onfocus="showDemoFlightsIfEmpty()" onclick="showDemoFlightsIfEmpty()" autocomplete="off">
                     <div id="flightResults" class="autocomplete-results"></div>
                 </div>
-                <div class="demo-notice" id="demoNotice" hidden>
+                <div class="demo-notice" id="demoNotice" hidden data-i18n-html="<b>Mode démo</b> : les vols proposés sont fictifs mais réalistes (horaires, retards, positions, routes). Cliquez dans le champ pour les voir tous.">
                     <b>Mode démo</b> : les vols proposés sont fictifs mais réalistes (horaires, retards, positions, routes). Cliquez dans le champ pour les voir tous.
                 </div>
             </div>
@@ -168,11 +249,11 @@
                 <div class="mobile-tabs-inner">
                     <button class="mobile-tab-btn active" id="tabBtnDiagram" onclick="switchMobileTab('diagram')">
                         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
-                        <span>Schéma Pistes</span>
+                        <span data-i18n="Schéma Pistes">Schéma Pistes</span>
                     </button>
                     <button class="mobile-tab-btn" id="tabBtnDetails" onclick="switchMobileTab('details')">
                         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
-                        <span>Détails & Pistes</span>
+                        <span data-i18n="Détails & Pistes">Détails & Pistes</span>
                         <span class="tab-badge" id="tabRunwayBadge">0</span>
                     </button>
                 </div>
@@ -180,7 +261,7 @@
 
             <!-- Section des Détails & Pistes -->
             <div class="details-section" id="detailsSection">
-                <div id="statusBox" class="loading-msg">Téléchargement des bases de données...</div>
+                <div id="statusBox" class="loading-msg" data-i18n="Téléchargement des bases de données...">Téléchargement des bases de données...</div>
                 <div id="fileError" class="error-msg"></div>
 
                 <!-- Dossier de vol -->
@@ -198,24 +279,24 @@
                 </div>
                 <div id="airportCard" class="info-card" style="display: none;">
                     <div class="info-grid">
-                        <div><span class="info-label">IATA : </span><span id="apIata" class="info-val">-</span></div>
-                        <div><span class="info-label">Ville : </span><span id="apMunicipality" class="info-val">-</span></div>
-                        <div><span class="info-label">Pays : </span><span id="apCountry" class="info-val">-</span></div>
-                        <div><span class="info-label">Altitude : </span><span id="apElev" class="info-val">-</span></div>
-                        <div style="grid-column: span 2;"><span class="info-label">Coordonnées : </span><span id="apCoords" class="info-val">-</span></div>
+                        <div><span class="info-label" data-i18n="IATA : ">IATA : </span><span id="apIata" class="info-val">-</span></div>
+                        <div><span class="info-label" data-i18n="Ville : ">Ville : </span><span id="apMunicipality" class="info-val">-</span></div>
+                        <div><span class="info-label" data-i18n="Pays : ">Pays : </span><span id="apCountry" class="info-val">-</span></div>
+                        <div><span class="info-label" data-i18n="Altitude : ">Altitude : </span><span id="apElev" class="info-val">-</span></div>
+                        <div style="grid-column: span 2;"><span class="info-label" data-i18n="Coordonnées : ">Coordonnées : </span><span id="apCoords" class="info-val">-</span></div>
                     </div>
                     
                     <div class="wx-card" id="apWeather" hidden></div>
                     <div class="wx-card" id="apNotam" hidden></div>
 
                     <details class="wx-card panel-box freq-details" id="apFreqs">
-                        <summary><span class="panel-box-title">Fréquences radio</span><span class="freq-count" id="freqSummary">0</span></summary>
+                        <summary><span class="panel-box-title" data-i18n="Fréquences radio">Fréquences radio</span><span class="freq-count" id="freqSummary">0</span></summary>
                         <div id="freqList" class="panel-box-body freq-list"></div>
                     </details>
 
                     <button class="btn-view-diagram" onclick="switchMobileTab('diagram')">
                         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg>
-                        <span>Afficher le diagramme d'aéroport</span>
+                        <span data-i18n="Afficher le diagramme d'aéroport">Afficher le diagramme d'aéroport</span>
                     </button>
                 </div>
 
@@ -224,7 +305,7 @@
         </div>
 
         <!-- Deuxième panneau (grand écran) : infos et pistes de l'aéroport, déplacées ici par placeAirportBlocks() -->
-        <aside class="sidebar-airport" id="airportPanel" aria-label="Aéroport"></aside>
+        <aside class="sidebar-airport" id="airportPanel" aria-label="Aéroport" data-i18n-aria="Aéroport"></aside>
 
         <!-- Zone interactive du Canvas / Diagramme -->
         <div class="canvas-area" id="canvasContainer">
@@ -236,18 +317,18 @@
                     <span id="fsRunwaysCount" style="font-size: 11px; color: #94a3b8;">2 pistes</span>
                 </div>
                 <div class="fullscreen-actions">
-                    <button id="fsFilterBtn" class="short-rwy-btn" hidden onclick="toggleShortRunways()" title="Pistes de moins de 2000 m">
+                    <button id="fsFilterBtn" class="short-rwy-btn" hidden onclick="toggleShortRunways()" title="Pistes de moins de 2000 m" data-i18n-title="Pistes de moins de 2000 m">
                         <span class="short-rwy-swatch"></span><span class="short-rwy-label">Masquer petites pistes</span>
                     </button>
-                    <button class="btn-exit-fullscreen" onclick="toggleFullscreen()" title="Quitter le plein écran">
+                    <button class="btn-exit-fullscreen" onclick="toggleFullscreen()" title="Quitter le plein écran" data-i18n-title="Quitter le plein écran">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6 6 18M6 6l12 12"/></svg>
-                        <span>Fermer</span>
+                        <span data-i18n="Fermer">Fermer</span>
                     </button>
                 </div>
             </div>
 
             <!-- Indicateur Nord Géographique -->
-            <div class="compass-indicator" title="Orientation Nord géographique (Haut = 000°)">
+            <div class="compass-indicator" title="Orientation Nord géographique (Haut = 000°)" data-i18n-title="Orientation Nord géographique (Haut = 000°)">
                 <span class="compass-arrow">▲</span>
                 <span>N</span>
             </div>
@@ -255,7 +336,7 @@
             <!-- Pillule d'info aéroport rapide (Mobile) -->
             <div class="quick-airport-pill" id="quickAirportPill" onclick="switchMobileTab('details')">
                 <span id="quickPillText">LFMN • 2 pistes</span>
-                <span style="color: var(--accent-blue); font-weight: 700; margin-left: 8px;">Détails ➔</span>
+                <span style="color: var(--accent-blue); font-weight: 700; margin-left: 8px;" data-i18n="Détails ➔">Détails ➔</span>
             </div>
 
             <!-- Bouton Agrandir en haut à droite du Canvas (Desktop) -->
@@ -273,21 +354,21 @@
                     </button>
                     <button id="viewBtnMap" onclick="showFlightMap(true)" role="tab" aria-selected="false">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3.5 3 14.5 0 18M12 3c-3 3.5-3 14.5 0 18"/></svg>
-                        <span>Carte</span>
+                        <span data-i18n="Carte">Carte</span>
                     </button>
                 </div>
                 <!-- Pistes de moins de 2000 m (affiché seulement si l'aéroport en a, à côté de pistes plus longues) -->
-                <button id="shortRwyBtn" class="short-rwy-btn" hidden onclick="toggleShortRunways()" title="Pistes de moins de 2000 m">
+                <button id="shortRwyBtn" class="short-rwy-btn" hidden onclick="toggleShortRunways()" title="Pistes de moins de 2000 m" data-i18n-title="Pistes de moins de 2000 m">
                     <span class="short-rwy-swatch"></span><span class="short-rwy-label">Masquer petites pistes</span>
                 </button>
             </div>
 
             <div class="canvas-top-actions">
-                <button class="btn-expand-full" onclick="toggleFullscreen()" title="Agrandir en plein écran">
+                <button class="btn-expand-full" onclick="toggleFullscreen()" title="Agrandir en plein écran" data-i18n-title="Agrandir en plein écran">
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
                         <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/>
                     </svg>
-                    <span>Plein écran</span>
+                    <span data-i18n="Plein écran">Plein écran</span>
                 </button>
             </div>
 
@@ -296,12 +377,12 @@
             <div class="map-bottom">
                 <div class="map-hud" id="mapHud" hidden></div>
                 <div class="map-toggles">
-                    <label class="map-large-btn overflown-filter" id="mapLargeBtn" title="N'afficher que les grands aéroports le long de la route">
+                    <label class="map-large-btn overflown-filter" id="mapLargeBtn" title="N'afficher que les grands aéroports le long de la route" data-i18n-title="N'afficher que les grands aéroports le long de la route">
                         <input type="checkbox" id="mapLargeOnlyPhone" onchange="setLargeOnly(this.checked)">
                         <span class="overflown-switch"></span>
-                        Grands aéroports
+                        <span data-i18n="Grands aéroports">Grands aéroports</span>
                     </label>
-                    <label class="map-large-btn overflown-filter" id="mapSpiderBtn" title="Relie l'avion aux 3 aéroports les plus proches, avec distance et temps de vol">
+                    <label class="map-large-btn overflown-filter" id="mapSpiderBtn" title="Relie l'avion aux 3 aéroports les plus proches, avec distance et temps de vol" data-i18n-title="Relie l'avion aux 3 aéroports les plus proches, avec distance et temps de vol">
                         <input type="checkbox" id="mapSpiderPhone" onchange="setMapLayer('spider', this.checked)">
                         <span class="overflown-switch"></span>
                         Spider
@@ -311,39 +392,39 @@
             <!-- Réglages de la carte du vol -->
             <div class="map-settings" id="mapSettings">
                 <div class="map-settings-row">
-                    <span>Codes</span>
-                    <div class="map-seg" role="radiogroup" aria-label="Codes d'aéroport">
-                        <button type="button" data-code="icao" role="radio" onclick="setMapCode('icao')">OACI</button>
+                    <span data-i18n="Codes">Codes</span>
+                    <div class="map-seg" role="radiogroup" aria-label="Codes d'aéroport" data-i18n-aria="Codes d'aéroport">
+                        <button type="button" data-code="icao" role="radio" onclick="setMapCode('icao')" data-i18n="OACI">OACI</button>
                         <button type="button" data-code="iata" role="radio" onclick="setMapCode('iata')">IATA</button>
                     </div>
                 </div>
                 <div class="map-settings-row">
-                    <span>Style</span>
-                    <div class="map-seg" role="radiogroup" aria-label="Style de la carte">
+                    <span data-i18n="Style">Style</span>
+                    <div class="map-seg" role="radiogroup" aria-label="Style de la carte" data-i18n-aria="Style de la carte">
                         <button type="button" data-mapstyle="standard" role="radio" onclick="setMapStyle('standard')">Standard</button>
-                        <button type="button" data-mapstyle="inverted" role="radio" onclick="setMapStyle('inverted')">Inversé</button>
-                        <button type="button" data-mapstyle="contrast" role="radio" onclick="setMapStyle('contrast')">Contrasté</button>
+                        <button type="button" data-mapstyle="inverted" role="radio" onclick="setMapStyle('inverted')" data-i18n="Inversé">Inversé</button>
+                        <button type="button" data-mapstyle="contrast" role="radio" onclick="setMapStyle('contrast')" data-i18n="Contrasté">Contrasté</button>
                     </div>
                 </div>
-                <label class="map-settings-row overflown-filter map-large-only" title="Zones de conflit publiées par l'EASA (bulletins CZIB)">
+                <label class="map-settings-row overflown-filter map-large-only" title="Zones de conflit publiées par l'EASA (bulletins CZIB)" data-i18n-title="Zones de conflit publiées par l'EASA (bulletins CZIB)">
                     <input type="checkbox" id="mapConflict" onchange="setMapLayer('conflict', this.checked)">
                     <span class="overflown-switch"></span>
-                    Zones de conflit (EASA)
+                    <span data-i18n="Zones de conflit (EASA)">Zones de conflit (EASA)</span>
                 </label>
                 <label class="map-settings-row" for="mapBand">
-                    <span>Couloir</span>
-                    <input type="range" id="mapBand" min="100" max="300" step="10" oninput="setMapBand(this.value)" title="Distance maximale de part et d'autre de la route">
+                    <span data-i18n="Couloir">Couloir</span>
+                    <input type="range" id="mapBand" min="100" max="300" step="10" oninput="setMapBand(this.value)" title="Distance maximale de part et d'autre de la route" data-i18n-title="Distance maximale de part et d'autre de la route">
                     <b id="mapBandValue">± 100 nm</b>
                 </label>
-                <label class="map-settings-row overflown-filter map-large-only" title="Relie l'avion aux 3 aéroports les plus proches, avec distance et temps de vol">
+                <label class="map-settings-row overflown-filter map-large-only" title="Relie l'avion aux 3 aéroports les plus proches, avec distance et temps de vol" data-i18n-title="Relie l'avion aux 3 aéroports les plus proches, avec distance et temps de vol">
                     <input type="checkbox" id="mapSpider" onchange="setMapLayer('spider', this.checked)">
                     <span class="overflown-switch"></span>
-                    Dégagements (spider)
+                    <span data-i18n="Dégagements (spider)">Dégagements (spider)</span>
                 </label>
                 <label class="map-settings-row overflown-filter map-large-only">
                     <input type="checkbox" id="mapLargeOnly" onchange="setLargeOnly(this.checked)">
                     <span class="overflown-switch"></span>
-                    Grands aéroports seulement
+                    <span data-i18n="Grands aéroports seulement">Grands aéroports seulement</span>
                 </label>
             </div>
             <div class="map-notice" id="mapNotice" hidden></div>
@@ -365,22 +446,22 @@
 
             <!-- Notification Toast pour gestes tactiles -->
             <div class="touch-gesture-hint" id="touchHint">
-                <span>👆 Glissez pour déplacer • ✌️ Pincez pour zoomer</span>
+                <span data-i18n="👆 Glissez pour déplacer • ✌️ Pincez pour zoomer">👆 Glissez pour déplacer • ✌️ Pincez pour zoomer</span>
             </div>
 
             <!-- Contrôles flottants de navigation & zoom -->
             <div class="controls-overlay">
-                <button class="ctrl-btn" onclick="viewZoom(1.25)" title="Zoomer">+</button>
-                <button class="ctrl-btn" onclick="viewZoom(0.8)" title="Dézoomer">-</button>
-                <button class="ctrl-btn" onclick="viewReset()" title="Réinitialiser la vue">⟲</button>
-                <button class="ctrl-btn btn-fullscreen" onclick="toggleFullscreen()" title="Basculer plein écran">⛶</button>
+                <button class="ctrl-btn" onclick="viewZoom(1.25)" title="Zoomer" data-i18n-title="Zoomer">+</button>
+                <button class="ctrl-btn" onclick="viewZoom(0.8)" title="Dézoomer" data-i18n-title="Dézoomer">-</button>
+                <button class="ctrl-btn" onclick="viewReset()" title="Réinitialiser la vue" data-i18n-title="Réinitialiser la vue">⟲</button>
+                <button class="ctrl-btn btn-fullscreen" onclick="toggleFullscreen()" title="Basculer plein écran" data-i18n-title="Basculer plein écran">⛶</button>
             </div>
         </div>
     </div>
 
-    <script src="js/i18n.js?v=1"></script>
+    <script src="js/i18n.js?v=2"></script>
     <script src="js/airspace-router.js?v=2"></script>
-    <script src="js/app.js?v=21"></script>
+    <script src="js/app.js?v=22"></script>
     <!-- Menu de choix de carte d'approche (pastille regroupant plusieurs cartes) -->
     <div id="chartMenu" class="chart-menu" hidden></div>
 </body>

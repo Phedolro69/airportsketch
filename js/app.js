@@ -181,12 +181,12 @@ function showTouchHint() {
 
 function getAirportTypeBadge(type) {
     const config = {
-        'large_airport':  { label: t('Grand aéroport'), bg: '#10b981', color: '#ffffff' },
-        'medium_airport': { label: t('Aéroport moyen'), bg: '#3b82f6', color: '#ffffff' },
-        'small_airport':  { label: t('Petit aéroport'), bg: '#8b5cf6', color: '#ffffff' },
-        'heliport':       { label: t('Héliport'),        bg: '#f59e0b', color: '#ffffff' },
-        'seaplane_base':  { label: t('Hydrobase'),       bg: '#06b6d4', color: '#ffffff' },
-        'closed':         { label: t('Fermé'),           bg: '#ef4444', color: '#ffffff' }
+        'large_airport':  { label: tr('Grand aéroport'), bg: '#10b981', color: '#ffffff' },
+        'medium_airport': { label: tr('Aéroport moyen'), bg: '#3b82f6', color: '#ffffff' },
+        'small_airport':  { label: tr('Petit aéroport'), bg: '#8b5cf6', color: '#ffffff' },
+        'heliport':       { label: tr('Héliport'),        bg: '#f59e0b', color: '#ffffff' },
+        'seaplane_base':  { label: tr('Hydrobase'),       bg: '#06b6d4', color: '#ffffff' },
+        'closed':         { label: tr('Fermé'),           bg: '#ef4444', color: '#ffffff' }
     };
 
     const cfg = config[type] || { label: type || 'N/A', bg: '#4b5563', color: '#ffffff' };
@@ -200,11 +200,11 @@ async function initApp() {
     const inputEl = document.getElementById('airportInput');
 
     try {
-        statusBox.innerText = t("Chargement de l'index des aéroports...");
+        statusBox.innerText = tr("Chargement de l'index des aéroports...");
 
         const res = await fetch('./data/search_index.json');
         if (!res.ok) {
-            throw new Error(t("Index introuvable ({status}). Veuillez exécuter 'python scripts/build_data.py'", { status: res.status }));
+            throw new Error(tr("Index introuvable ({status}). Veuillez exécuter 'python scripts/build_data.py'", { status: res.status }));
         }
 
         searchIndex = await res.json();
@@ -219,7 +219,7 @@ async function initApp() {
 
         statusBox.style.display = 'none';
         inputEl.disabled = false;
-        inputEl.placeholder = t("ICAO, IATA ou Nom (ex: LFPG, Nice, CDG)...");
+        inputEl.placeholder = tr("ICAO, IATA ou Nom (ex: LFPG, Nice, CDG)...");
 
         // Vérifier si un paramètre d'URL est fourni, sinon défaut à LFMN
         const urlParams = new URLSearchParams(window.location.search);
@@ -238,8 +238,8 @@ async function initApp() {
     } catch (err) {
         statusBox.style.display = 'none';
         errorBox.innerHTML = `
-            <strong>${t('Impossible de charger les données :')}</strong> ${err.message}<br><br>
-            <small>${t('Astuce : En local, générez les données avec <code>python scripts/build_data.py --output .</code> et lancez un serveur avec <code>python -m http.server</code>.')}</small>
+            <strong>${tr('Impossible de charger les données :')}</strong> ${err.message}<br><br>
+            <small>${tr('Astuce : En local, générez les données avec <code>python scripts/build_data.py --output .</code> et lancez un serveur avec <code>python -m http.server</code>.')}</small>
         `;
         errorBox.style.display = 'block';
     }
@@ -281,7 +281,7 @@ function handleInput(val) {
                         ${item.iata ? `<span style="color:var(--accent-blue); font-size:11px; margin-left:4px;">(${item.iata})</span>` : ''}
                         <span style="margin-left:6px;">${typeBadge}</span>
                     </div>
-                    <span style="color:var(--n-9ca3af); font-size:11px;">${t('{n} piste(s)', { n: item.runways })}</span>
+                    <span style="color:var(--n-9ca3af); font-size:11px;">${tr('{n} piste(s)', { n: item.runways })}</span>
                 </div>
                 <div style="color:var(--n-94a3b8); font-size:11px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
                     ${item.name}${item.municipality ? ` (${item.municipality})` : ''}
@@ -326,12 +326,12 @@ async function selectAirport(code) {
 
     if (!data) {
         statusBox.style.display = 'flex';
-        statusBox.innerText = t('Chargement des données de {code}...', { code: upperCode });
+        statusBox.innerText = tr('Chargement des données de {code}...', { code: upperCode });
 
         try {
             const res = await fetch(`./data/airports/${upperCode}.json`);
             if (!res.ok) {
-                throw new Error(t("Aéroport '{code}' non trouvé ou non répertorié.", { code: upperCode }));
+                throw new Error(tr("Aéroport '{code}' non trouvé ou non répertorié.", { code: upperCode }));
             }
             data = await res.json();
             airportCache.set(upperCode, data);
@@ -377,10 +377,10 @@ const LIVE_CACHE_TTL_MS = 10 * 60 * 1000;   // comme le cache du worker (quota A
 const MAX_FLIGHT_RESULTS = 30;
 
 const FLIGHT_STATUS = {
-    'en-route':  { label: t('En vol'),  color: 'var(--accent-green)' },
-    'scheduled': { label: t('Prévu'),   color: 'var(--accent-amber)' },
-    'landed':    { label: t('Atterri'), color: 'var(--text-muted)' },
-    'cancelled': { label: t('Annulé'),  color: 'var(--accent-red)' }
+    'en-route':  { label: tr('En vol'),  color: 'var(--accent-green)' },
+    'scheduled': { label: tr('Prévu'),   color: 'var(--accent-amber)' },
+    'landed':    { label: tr('Atterri'), color: 'var(--text-muted)' },
+    'cancelled': { label: tr('Annulé'),  color: 'var(--accent-red)' }
 };
 
 let iataIndexMap = new Map();
@@ -416,7 +416,7 @@ function setSearchMode(mode, focus = true) {
     if (!isFlight && viewMode === 'map') setViewMode('diagram');
 
     const label = document.getElementById('searchLabel');
-    label.textContent = isFlight ? t('Rechercher un vol') : t('Rechercher un aéroport');
+    label.textContent = isFlight ? tr('Rechercher un vol') : tr('Rechercher un aéroport');
     label.htmlFor = isFlight ? 'flightInput' : 'airportInput';
 
     if (focus) document.getElementById(isFlight ? 'flightInput' : 'airportInput').focus();
@@ -488,14 +488,14 @@ function renderDemoFlights(raw) {
         .filter(f => !q || [f.flight_iata, f.flight_icao, f.dep_iata, f.arr_iata].some(v => (v || '').startsWith(q)))
         .sort((a, b) => (a.flight_iata || '').localeCompare(b.flight_iata || '', LANG, { numeric: true }));
     renderFlightResults({ q, flightParam: 'flight_iata', complete: false }, matches, null);
-    if (!matches.length) showFlightMessage(t('Aucun vol de démonstration ne correspond à <b>{q}</b>.', { q: escapeHtml(q) }));
+    if (!matches.length) showFlightMessage(tr('Aucun vol de démonstration ne correspond à <b>{q}</b>.', { q: escapeHtml(q) }));
 }
 
 async function callFlightApi(path) {
     const res = await fetch(`${FLIGHT_API_BASE}${path}`, { headers: accessCode ? { 'X-Access-Code': accessCode } : {} });
     const body = await res.json().catch(() => null);
     if (!body || body.error) {
-        throw new Error(body && body.error ? t(body.error.message) : t('Erreur du service de vols ({status})', { status: res.status }));
+        throw new Error(body && body.error ? tr(body.error.message) : tr('Erreur du service de vols ({status})', { status: res.status }));
     }
     return body.response;
 }
@@ -529,7 +529,7 @@ function handleFlightInput(val) {
     const box = document.getElementById('flightResults');
 
     if (!FLIGHT_API_BASE) {
-        showFlightMessage(t('Service de vols non configuré (URL du Worker manquante).'));
+        showFlightMessage(tr('Service de vols non configuré (URL du Worker manquante).'));
         return;
     }
     // Mode démo : filtrage local des 20 vols, aucun appel au service
@@ -543,11 +543,11 @@ function handleFlightInput(val) {
     }
     const p = parseFlightQuery(val);
     if (!p) {
-        showFlightMessage(t('Saisissez un code compagnie puis un numéro (ex : AF173, AFR173).'));
+        showFlightMessage(tr('Saisissez un code compagnie puis un numéro (ex : AF173, AFR173).'));
         return;
     }
 
-    showFlightMessage(t('Recherche des vols en direct…'));
+    showFlightMessage(tr('Recherche des vols en direct…'));
     flightInputTimer = setTimeout(async () => {
         let flights = [];
         let liveError = null;
@@ -585,8 +585,8 @@ function renderFlightResults(p, matches, liveError) {
         const el = document.createElement('div');
         el.className = 'autocomplete-item';
         el.innerHTML = `
-            <div><b>${escapeHtml(p.q)}</b> <span style="color:var(--n-9ca3af); font-size:11px; margin-left:4px;">${t('pas en vol actuellement')}</span></div>
-            <div style="color:var(--mode-accent); font-size:11px;">${t('Afficher le dernier vol connu ➔')}</div>
+            <div><b>${escapeHtml(p.q)}</b> <span style="color:var(--n-9ca3af); font-size:11px; margin-left:4px;">${tr('pas en vol actuellement')}</span></div>
+            <div style="color:var(--mode-accent); font-size:11px;">${tr('Afficher le dernier vol connu ➔')}</div>
         `;
         el.onclick = () => selectFlight(p.q, p.flightParam);
         box.appendChild(el);
@@ -620,8 +620,8 @@ function renderFlightResults(p, matches, liveError) {
 
     if (!box.children.length) {
         showFlightMessage(liveError
-            ? t('Vols en direct indisponibles : {error}', { error: escapeHtml(liveError) })
-            : t('Aucun vol en direct commençant par <b>{q}</b>. Tapez le numéro complet pour voir le dernier vol connu.', { q: escapeHtml(p.q) }));
+            ? tr('Vols en direct indisponibles : {error}', { error: escapeHtml(liveError) })
+            : tr('Aucun vol en direct commençant par <b>{q}</b>. Tapez le numéro complet pour voir le dernier vol connu.', { q: escapeHtml(p.q) }));
         return;
     }
     box.style.display = 'block';
@@ -672,18 +672,18 @@ async function selectFlight(code, param) {
     clearTimeout(flightInputTimer);
     const seq = ++flightQuerySeq;
     document.getElementById('flightInput').value = code;
-    showFlightMessage(t('Chargement du vol {code}…', { code: escapeHtml(code) }));
+    showFlightMessage(tr('Chargement du vol {code}…', { code: escapeHtml(code) }));
 
     let flight;
     try {
         flight = await callFlightApi(`/flight?${param}=${encodeURIComponent(code)}`);
     } catch (err) {
-        if (seq === flightQuerySeq) showFlightMessage(t('Impossible de charger le vol : {error}', { error: escapeHtml(err.message) }));
+        if (seq === flightQuerySeq) showFlightMessage(tr('Impossible de charger le vol : {error}', { error: escapeHtml(err.message) }));
         return;
     }
     if (seq !== flightQuerySeq) return;
     if (!flight || Array.isArray(flight) || !(flight.dep_iata || flight.dep_icao)) {
-        showFlightMessage(t('Aucun vol connu pour <b>{code}</b>.', { code: escapeHtml(code) }));
+        showFlightMessage(tr('Aucun vol connu pour <b>{code}</b>.', { code: escapeHtml(code) }));
         return;
     }
 
@@ -717,8 +717,8 @@ function renderFlightAirportBlock(f, side) {
     const delay = f[`${side}_delayed`];
     const extras = [
         f[`${side}_terminal`] ? `Terminal ${f[`${side}_terminal`]}` : '',
-        f[`${side}_gate`] ? t('Porte {gate}', { gate: f[`${side}_gate`] }) : '',
-        side === 'arr' && f.arr_baggage ? t('Tapis {belt}', { belt: f.arr_baggage }) : ''
+        f[`${side}_gate`] ? tr('Porte {gate}', { gate: f[`${side}_gate`] }) : '',
+        side === 'arr' && f.arr_baggage ? tr('Tapis {belt}', { belt: f.arr_baggage }) : ''
     ].filter(Boolean).join(' · ');
 
     let timeHtml = scheduled ? `${flightTime(scheduled)} <span style="color:var(--text-dim); font-size:11px;">${flightDate(scheduled)}</span>` : '--:--';
@@ -729,9 +729,9 @@ function renderFlightAirportBlock(f, side) {
 
     return `
         <div class="flight-ap ${side}">
-            <div class="flight-ap-label">${side === 'dep' ? t('Départ') : t('Arrivée')}</div>
+            <div class="flight-ap-label">${side === 'dep' ? tr('Départ') : tr('Arrivée')}</div>
             <div class="flight-ap-code">${escapeHtml(iata || icao || '?')}${iata && icao ? `<small>${escapeHtml(icao)}</small>` : ''}</div>
-            <div class="flight-ap-name" title="${escapeHtml(ap ? ap.name : '')}">${escapeHtml(ap ? (ap.municipality || ap.name) : t('Aéroport inconnu'))}</div>
+            <div class="flight-ap-name" title="${escapeHtml(ap ? ap.name : '')}">${escapeHtml(ap ? (ap.municipality || ap.name) : tr('Aéroport inconnu'))}</div>
             <div class="flight-ap-time">${timeHtml}</div>
             ${extras ? `<div class="flight-ap-extra">${escapeHtml(extras)}</div>` : ''}
             ${ap ? `<div class="flight-ap-notam" data-notam="${escapeHtml(ap.ident)}" hidden></div>` : ''}
@@ -742,20 +742,20 @@ function renderFlightAirportBlock(f, side) {
 function renderFlightDiagramButton(f, side) {
     const ap = findAirport(f[`${side}_icao`], f[`${side}_iata`]);
     if (!ap) {
-        return `<button class="btn-ap-diagram" disabled>${side === 'dep' ? t('Départ : diagramme indisponible') : t('Arrivée : diagramme indisponible')}</button>`;
+        return `<button class="btn-ap-diagram" disabled>${side === 'dep' ? tr('Départ : diagramme indisponible') : tr('Arrivée : diagramme indisponible')}</button>`;
     }
-    return `<button class="btn-ap-diagram" data-icao="${escapeHtml(ap.ident)}" onclick="openFlightAirport('${escapeHtml(ap.ident)}')">${side === 'dep' ? t('Diagramme départ') : t('Diagramme arrivée')} · ${escapeHtml(ap.ident)}</button>`;
+    return `<button class="btn-ap-diagram" data-icao="${escapeHtml(ap.ident)}" onclick="openFlightAirport('${escapeHtml(ap.ident)}')">${side === 'dep' ? tr('Diagramme départ') : tr('Diagramme arrivée')} · ${escapeHtml(ap.ident)}</button>`;
 }
 
 function renderFlightCard(f) {
     const card = document.getElementById('flightCard');
-    const status = FLIGHT_STATUS[f.status] || { label: f.status || t('Inconnu'), color: 'var(--text-muted)' };
+    const status = FLIGHT_STATUS[f.status] || { label: f.status || tr('Inconnu'), color: 'var(--text-muted)' };
     const isLive = f.status === 'en-route';
     const code = f.flight_iata || f.flight_icao;
     const meta = [
         f.airline_name || '',
         f.flight_iata && f.flight_icao ? f.flight_icao : '',
-        f.aircraft_icao ? t('Appareil {type}', { type: f.aircraft_icao }) : '',
+        f.aircraft_icao ? tr('Appareil {type}', { type: f.aircraft_icao }) : '',
         f.reg_number ? f.reg_number : '',
         f.duration ? `${Math.floor(f.duration / 60)}h${String(f.duration % 60).padStart(2, '0')}` : ''
     ].filter(Boolean).join(' · ');
@@ -763,19 +763,19 @@ function renderFlightCard(f) {
     card.innerHTML = `
         <div class="info-card-header">
             <div>
-                <h2>${t('Dossier de vol')}</h2>
+                <h2>${tr('Dossier de vol')}</h2>
                 <div class="flight-meta">
                     <span class="flight-status" style="color:${status.color};">${escapeHtml(status.label)}</span>${escapeHtml(meta)}
                 </div>
             </div>
             <div style="display:flex; align-items:center; gap:6px;">
                 ${airlineLogo(f, 'airline-logo airline-logo-lg')}<span class="ident-badge">${escapeHtml(code)}</span>
-                <button class="btn-close-card" onclick="closeFlightCard()" title="${t('Fermer le dossier de vol')}">×</button>
+                <button class="btn-close-card" onclick="closeFlightCard()" title="${tr('Fermer le dossier de vol')}">×</button>
             </div>
         </div>
         <div class="flight-note ${isLive ? 'live' : ''}">
-            ${isLive ? (f.demo ? t('Vol en cours.') : t('● Vol en cours : données en direct.')) : t('Pas en vol actuellement : affichage du vol connu le plus proche.')}
-            ${t('Heures locales.')}
+            ${isLive ? (f.demo ? tr('Vol en cours.') : tr('● Vol en cours : données en direct.')) : tr('Pas en vol actuellement : affichage du vol connu le plus proche.')}
+            ${tr('Heures locales.')}
         </div>
         <div class="flight-route">
             ${renderFlightAirportBlock(f, 'dep')}
@@ -787,7 +787,7 @@ function renderFlightCard(f) {
         <div class="flight-diagram-btns">
             <button class="btn-flight-map" onclick="showFlightMap(true)">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3.5 3 14.5 0 18M12 3c-3 3.5-3 14.5 0 18"/></svg>
-                ${t('Voir la route sur la carte')}
+                ${tr('Voir la route sur la carte')}
             </button>
             ${renderFlightDiagramButton(f, 'dep')}
             ${renderFlightDiagramButton(f, 'arr')}
@@ -997,8 +997,9 @@ function renderOverflownList(f, list, routeKnown) {
     const shown = visibleOverflown(list);
     const rows = shown.map(o => {
         const code = airportCode(o.ap);
-        const side = Math.round(Math.abs(o.xtrack)) < 1 ? 'sur la route' : `${Math.round(Math.abs(o.xtrack))} nm ${o.xtrack > 0 ? 'à droite' : 'à gauche'}`;
-        return `<button type="button" class="overflown-row${isLargeOnRoute(o.ap) ? '' : ' is-medium'}" onclick="openFlightAirport('${escapeHtml(o.ap.ident)}')" title="${escapeHtml(o.ap.name)} — ouvrir le diagramme">
+        const nm = Math.round(Math.abs(o.xtrack));
+        const side = nm < 1 ? tr('sur la route') : tr(o.xtrack > 0 ? '{nm} nm à droite' : '{nm} nm à gauche', { nm });
+        return `<button type="button" class="overflown-row${isLargeOnRoute(o.ap) ? '' : ' is-medium'}" onclick="openFlightAirport('${escapeHtml(o.ap.ident)}')" title="${escapeHtml(o.ap.name)} — ${tr('ouvrir le diagramme')}">
             <b><i class="wx-dot ${wxCat(o.ap.ident) || ''}"></i>${escapeHtml(code)}</b>
             <span class="overflown-city">${escapeHtml(o.ap.municipality && o.ap.municipality !== 'N/A' ? o.ap.municipality : o.ap.name)}</span>
             <span class="overflown-dist">${side}</span>
@@ -1006,13 +1007,13 @@ function renderOverflownList(f, list, routeKnown) {
     }).join('');
     box.innerHTML = `
         <details${wasOpen ? ' open' : ''}>
-            <summary>Aéroports le long de la route <span class="overflown-count">${shown.length}</span></summary>
+            <summary>${tr('Aéroports le long de la route')} <span class="overflown-count">${shown.length}</span></summary>
             <label class="overflown-filter">
                 <input type="checkbox" ${mapPrefs.largeOnly ? 'checked' : ''} onchange="setLargeOnly(this.checked)">
                 <span class="overflown-switch"></span>
-                Grands aéroports seulement
+                ${tr('Grands aéroports seulement')}
             </label>
-            ${shown.length ? `<div class="overflown-list">${rows}</div>` : `<div class="overflown-empty">${mapPrefs.largeOnly && list.length ? 'Aucun grand aéroport le long de la route.' : 'Aucun aéroport éligible le long de la route.'}</div>`}
+            ${shown.length ? `<div class="overflown-list">${rows}</div>` : `<div class="overflown-empty">${mapPrefs.largeOnly && list.length ? tr('Aucun grand aéroport le long de la route.') : tr('Aucun aéroport éligible le long de la route.')}</div>`}
         </details>`;
 }
 
@@ -1062,8 +1063,8 @@ function renderFlightProgress() {
             <svg class="flight-progress-plane" style="left:${pct}%" viewBox="0 0 24 24"><path fill="currentColor" transform="rotate(90 12 12)" d="M12 1.5 L13.6 8.5 L22 13.5 L22 15.5 L13.6 12.8 L13.2 19 L16 21 L16 22.5 L12 21.5 L8 22.5 L8 21 L10.8 19 L10.4 12.8 L2 15.5 L2 13.5 L10.4 8.5 Z"/></svg>
         </div>
         <div class="flight-progress-info">
-            <span>${formatDuration(info.elapsed)} de vol · ${Math.round(info.ratio * 100)} %</span>
-            <span>${info.remaining > 0 ? `Arrivée dans <b>${formatDuration(info.remaining)}</b>` : '<b>Arrivée imminente</b>'}</span>
+            <span>${tr('{duration} de vol · {pct} %', { duration: formatDuration(info.elapsed), pct: Math.round(info.ratio * 100) })}</span>
+            <span>${info.remaining > 0 ? tr('Arrivée dans <b>{duration}</b>', { duration: formatDuration(info.remaining) }) : `<b>${tr('Arrivée imminente')}</b>`}</span>
         </div>`;
 }
 
@@ -1104,9 +1105,9 @@ function updateViewToggle() {
         if (!f) return;
         const ap = findAirport(f[`${side}_icao`], f[`${side}_iata`]);
         const label = (f[`${side}_iata`] || f[`${side}_icao`] || '?').toUpperCase();
-        btn.querySelector('span').textContent = `Diagramme ${label}`;
+        btn.querySelector('span').textContent = tr('Diagramme {code}', { code: label });
         btn.disabled = !ap;
-        btn.title = ap ? `Diagramme de pistes de ${ap.name}` : 'Diagramme indisponible pour cet aéroport';
+        btn.title = ap ? tr('Diagramme de pistes de {name}', { name: ap.name }) : tr('Diagramme indisponible pour cet aéroport');
         btn.onclick = ap ? () => openFlightAirport(ap.ident) : null;
         const active = !isMap && !!ap && ap.ident === currentAirportCode;
         btn.classList.toggle('active', active);
@@ -1156,7 +1157,7 @@ function applyFilterAndRefresh() {
     ['shortRwyBtn', 'fsFilterBtn'].forEach(id => {
         const btn = document.getElementById(id);
         btn.classList.toggle('active', hideShortRunways);
-        btn.querySelector('.short-rwy-label').textContent = hideShortRunways ? 'Afficher petites pistes' : 'Masquer petites pistes';
+        btn.querySelector('.short-rwy-label').textContent = hideShortRunways ? tr('Afficher petites pistes') : tr('Masquer petites pistes');
     });
 
     updateSidebarInfo(currentAirportCode);
@@ -1192,7 +1193,7 @@ function displayAirportInfo(data) {
     // Header plein écran
     document.getElementById('fsIdent').innerText = data.ident;
     document.getElementById('fsName').innerText = data.name || data.ident;
-    document.getElementById('fsRunwaysCount').innerText = `${(data.runways || []).length} piste(s)`;
+    document.getElementById('fsRunwaysCount').innerText = tr('{n} piste(s)', { n: (data.runways || []).length });
     
     // Badge onglet mobile
     document.getElementById('tabRunwayBadge').innerText = (data.runways || []).length;
@@ -1226,7 +1227,7 @@ function displayAirportInfo(data) {
     freqList.innerHTML = '';
 
     if (freqs.length === 0) {
-        freqList.innerHTML = `<div class="panel-box-status">Aucune fréquence répertoriée</div>`;
+        freqList.innerHTML = `<div class="panel-box-status">${tr('Aucune fréquence répertoriée')}</div>`;
     } else {
         freqs.forEach(f => {
             const item = document.createElement('div');
@@ -1347,7 +1348,7 @@ function openApproachCharts(ident, key, clientX, clientY) {
 
 function approachTagsHtml(ident) {
     const tags = approachTags(ident);
-    if (!tags.length) return '<span class="approach-none">Aucune approche IFR publiée</span>';
+    if (!tags.length) return `<span class="approach-none">${tr('Aucune approche IFR publiée')}</span>`;
     return tags.map(t => `<button type="button" class="appr-tag ${t.cls}" data-ident="${escapeHtml(ident)}" data-key="${t.key}"
         title="${escapeHtml(t.charts.map(c => c.name).join('\n'))}">${t.label}</button>`).join('');
 }
@@ -1365,9 +1366,7 @@ function appendApproachInfo(listEl) {
     box.innerHTML = `
         <div class="approach-legend">${legend}</div>
         <div class="approach-source">
-            Approches IFR : FAA (d-TPP / CIFP), cycle AIRAC ${escapeHtml(data.approaches_cycle || '')}.
-            Cliquez sur une pastille pour ouvrir la carte d'approche (PDF FAA). Information indicative —
-            ne pas utiliser pour la navigation.
+            ${tr("Approches IFR : FAA (d-TPP / CIFP), cycle AIRAC {cycle}. Cliquez sur une pastille pour ouvrir la carte d'approche (PDF FAA). Information indicative — ne pas utiliser pour la navigation.", { cycle: escapeHtml(data.approaches_cycle || '') })}
         </div>`;
     listEl.appendChild(box);
 }
@@ -1380,16 +1379,16 @@ function updateSidebarInfo(code) {
         const lengthM = Math.round(r.length_m);
         const hasDisp = r.le_disp_ft > 0 || r.he_disp_ft > 0;
         let dispInfo = '';
-        if (r.le_disp_ft > 0) dispInfo += `Seuil ${r.le_ident}: ${Math.round(r.le_disp_ft)}ft `;
-        if (r.he_disp_ft > 0) dispInfo += `Seuil ${r.he_ident}: ${Math.round(r.he_disp_ft)}ft`;
+        if (r.le_disp_ft > 0) dispInfo += tr('Seuil {rwy}: {ft}ft', { rwy: r.le_ident, ft: Math.round(r.le_disp_ft) }) + ' ';
+        if (r.he_disp_ft > 0) dispInfo += tr('Seuil {rwy}: {ft}ft', { rwy: r.he_ident, ft: Math.round(r.he_disp_ft) });
 
         const item = document.createElement('div');
         const isShort = r.length_m < MIN_RUNWAY_LENGTH_M;
         item.className = isShort ? 'runway-item is-short' : 'runway-item';
         item.innerHTML = `
             <div>
-                <span class="runway-ident">${r.le_ident}/${r.he_ident}</span>${isShort ? '<span class="short-rwy-tag">PETITE PISTE</span>' : ''}
-                <div style="color:var(--n-94a3b8); font-size:11px; margin-top:2px;">Largeur: ${Math.round(r.width_m)}m (${Math.round(r.width_ft)}ft)</div>
+                <span class="runway-ident">${r.le_ident}/${r.he_ident}</span>${isShort ? `<span class="short-rwy-tag">${tr('PETITE PISTE')}</span>` : ''}
+                <div style="color:var(--n-94a3b8); font-size:11px; margin-top:2px;">${tr('Largeur : {m}m ({ft}ft)', { m: Math.round(r.width_m), ft: Math.round(r.width_ft) })}</div>
                 ${hasDisp ? `<div style="color:var(--disp-text); font-size:10px; margin-top:3px; font-weight:500;">${dispInfo}</div>` : ''}
             </div>
             <div style="text-align:right;">
@@ -1958,7 +1957,7 @@ function loadWorld() {
     if (!flightMap.worldPromise) {
         // Version dans l'URL : à changer à chaque régénération de world.json (évite l'ancien fichier en cache)
         flightMap.worldPromise = fetch('./data/world.json?v=3-evitement')
-            .then(res => { if (!res.ok) throw new Error('Fond de carte indisponible'); return res.json(); })
+            .then(res => { if (!res.ok) throw new Error(tr('Fond de carte indisponible')); return res.json(); })
             .then(w => {
                 const u = w.unit, land = new Path2D(), borders = new Path2D();
                 const add = (path, a, close) => {
@@ -1984,14 +1983,14 @@ function loadWorld() {
 // --- Zones de conflit : bulletins EASA (CZIB), FIR concernées -------------------------------
 // data/conflict_zones.json est produit chaque nuit par scripts/build_conflict_zones.py (parsing des bulletins).
 const CONFLICT_STYLES = {
-    high:    { fill: 'rgba(239, 68, 68, 0.22)',  stroke: 'rgba(239, 68, 68, 0.9)',  label: 'Zone de conflit : ne pas opérer (EASA)' },
-    caution: { fill: 'rgba(245, 158, 11, 0.20)', stroke: 'rgba(245, 158, 11, 0.9)', label: 'Zone de conflit : prudence (EASA)' }
+    high:    { fill: 'rgba(239, 68, 68, 0.22)',  stroke: 'rgba(239, 68, 68, 0.9)',  label: tr('Zone de conflit : ne pas opérer (EASA)') },
+    caution: { fill: 'rgba(245, 158, 11, 0.20)', stroke: 'rgba(245, 158, 11, 0.9)', label: tr('Zone de conflit : prudence (EASA)') }
 };
 let conflictPromise = null;
 function loadConflictZones() {
     if (!conflictPromise) {
         conflictPromise = fetch('./data/conflict_zones.json', { cache: 'no-cache' })
-            .then(res => { if (!res.ok) throw new Error('Zones de conflit indisponibles'); return res.json(); })
+            .then(res => { if (!res.ok) throw new Error(tr('Zones de conflit indisponibles')); return res.json(); })
             .then(d => {
                 const u = d.unit || 0.01;
                 const decode = a => {
@@ -2056,11 +2055,11 @@ async function getAirportData(icao) {
 // Trajectoire du vol en cours via le worker (ADS-B). Ne lève jamais d'exception.
 async function loadFlightTrack(f) {
     const notices = {
-        scheduled: 'Vol pas encore parti : route estimée',
-        landed: 'Vol atterri : route estimée',
-        cancelled: 'Vol annulé : route estimée'
+        scheduled: tr('Vol pas encore parti : route estimée'),
+        landed: tr('Vol atterri : route estimée'),
+        cancelled: tr('Vol annulé : route estimée')
     };
-    if (f.status !== 'en-route') return { data: null, notice: notices[f.status] || 'Vol non suivi : route estimée' };
+    if (f.status !== 'en-route') return { data: null, notice: notices[f.status] || tr('Vol non suivi : route estimée') };
     // La fiche AirLabs (/flight) d'un vol en cours contient déjà sa position : aucun appel de plus
     if (typeof f.lat === 'number' && typeof f.lng === 'number') {
         const num = v => (typeof v === 'number' && Number.isFinite(v) ? v : null);
@@ -2081,12 +2080,12 @@ async function loadFlightTrack(f) {
         };
     }
     const callsign = (f.flight_icao || `${f.airline_icao || ''}${f.flight_number || ''}`).toUpperCase();
-    if (!/^[A-Z0-9]{3,8}$/.test(callsign)) return { data: null, notice: 'Vol non suivi : route estimée' };
+    if (!/^[A-Z0-9]{3,8}$/.test(callsign)) return { data: null, notice: tr('Vol non suivi : route estimée') };
     try {
         const data = await callFlightApi(`/track?callsign=${encodeURIComponent(callsign)}`);
-        return data ? { data, notice: '' } : { data: null, notice: 'Position actuelle indisponible : route estimée' };
+        return data ? { data, notice: '' } : { data: null, notice: tr('Position actuelle indisponible : route estimée') };
     } catch (err) {
-        return { data: null, notice: `${err.message} : route estimée` };
+        return { data: null, notice: tr('{error} : route estimée', { error: err.message }) };
     }
 }
 
@@ -2800,7 +2799,7 @@ function drawFlightMap() {
                 let x = ox + (lon + k * 360) * s;
                 const y = oy + mapY(lat) * s;
                 if (x < -150 || x > w + 150 || y < 10 || y > h - 10) continue;
-                const text = `${airportCode(l.ap)} · ${Math.round(l.d).toLocaleString('fr-FR')} nm${l.min !== null ? ' · ' + formatDuration(Math.round(l.min)) : ''}`;
+                const text = `${airportCode(l.ap)} · ${Math.round(l.d).toLocaleString(LOCALE)} nm${l.min !== null ? ' · ' + formatDuration(Math.round(l.min)) : ''}`;
                 const tw = mctx.measureText(text).width;
                 if (x < -tw || x > w + tw) continue;
                 x = Math.max(tw / 2 + 8, Math.min(w - tw / 2 - 8, x));   // l'étiquette reste dans le cadre
@@ -2877,18 +2876,18 @@ function updateMapOverlay() {
 
     if (f && t && t.now) {
         const n = t.now;
-        const hm = ts => new Date(ts * 1000).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+        const hm = ts => new Date(ts * 1000).toLocaleTimeString(LOCALE, { hour: '2-digit', minute: '2-digit' });
         const time = n.ts ? (n.estimated
-            ? new Date(n.ts * 1000).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+            ? new Date(n.ts * 1000).toLocaleTimeString(LOCALE, { hour: '2-digit', minute: '2-digit', second: '2-digit' })
             : hm(n.ts)) : '';
         hud.innerHTML = [
             `${airlineLogo(f)}<b>${escapeHtml(f.flight_iata || f.flight_icao || '')}</b>`,
-            n.alt != null ? `${n.alt.toLocaleString('fr-FR')} ft` : '',
+            n.alt != null ? `${n.alt.toLocaleString(LOCALE)} ft` : '',
             n.gs != null ? `${n.gs} kt` : '',
-            n.track != null ? `cap ${String(n.track).padStart(3, '0')}°` : '',
+            n.track != null ? tr('cap {hdg}°', { hdg: String(n.track).padStart(3, '0') }) : '',
             time ? (n.estimated
-                ? `<span class="dim" title="Position extrapolée à partir de la dernière position reçue (${hm(n.fixTs)}), de la vitesse et de la route">position estimée à ${time}</span>`
-                : `<span class="dim">position à ${time}</span>`) : ''
+                ? `<span class="dim" title="${tr('Position extrapolée à partir de la dernière position reçue ({time}), de la vitesse et de la route', { time: hm(n.fixTs) })}">${tr('position estimée à {time}', { time })}</span>`
+                : `<span class="dim">${tr('position à {time}', { time })}</span>`) : ''
         ].filter(Boolean).join('<i></i>');
         hud.hidden = false;
     } else {
@@ -2901,15 +2900,15 @@ function updateMapOverlay() {
     const line = (css, text) => `<div><svg width="30" height="6"><line x1="1" y1="3" x2="29" y2="3" ${css}/></svg>${text}</div>`;
     const items = [];
     if (route && route.hasTrack) {
-        items.push(line(`stroke="${MAP_COLORS.route}" stroke-width="3" stroke-linecap="round"`, 'Route suivie (ADS-B)'));
-        if (route.hasGap) items.push(line(`stroke="${MAP_COLORS.route}" stroke-width="2" stroke-dasharray="5 4" opacity=".75"`, 'Sans réception'));
-        if (route.hasRemaining) items.push(line(`stroke="${MAP_COLORS.route}" stroke-width="2.4" stroke-dasharray="0.1 5" stroke-linecap="round" opacity=".75"`, 'Reste à parcourir (estimé)'));
+        items.push(line(`stroke="${MAP_COLORS.route}" stroke-width="3" stroke-linecap="round"`, tr('Route suivie (ADS-B)')));
+        if (route.hasGap) items.push(line(`stroke="${MAP_COLORS.route}" stroke-width="2" stroke-dasharray="5 4" opacity=".75"`, tr('Sans réception')));
+        if (route.hasRemaining) items.push(line(`stroke="${MAP_COLORS.route}" stroke-width="2.4" stroke-dasharray="0.1 5" stroke-linecap="round" opacity=".75"`, tr('Reste à parcourir (estimé)')));
     } else if (route && route.hasPosition) {
-        items.push(`<div><svg width="30" height="14" viewBox="0 0 30 14"><g transform="translate(8 0) scale(0.58) rotate(90 12 12)"><path fill="${MAP_COLORS.plane}" d="M12 1.5 L13.6 8.5 L22 13.5 L22 15.5 L13.6 12.8 L13.2 19 L16 21 L16 22.5 L12 21.5 L8 22.5 L8 21 L10.8 19 L10.4 12.8 L2 15.5 L2 13.5 L10.4 8.5 Z"/></g></svg>${t && t.source === 'demo' ? "Position simulée de l'avion (démo)" : "Position de l'avion"}${t && t.now && t.now.estimated ? ', estimée toutes les 20 s' : ''}</div>`);
-        items.push(line(`stroke="${MAP_COLORS.route}" stroke-width="2.4" stroke-linecap="round" opacity=".75"`, 'Parcouru (estimé)'));
-        if (route.hasRemaining) items.push(line(`stroke="${MAP_COLORS.route}" stroke-width="2.4" stroke-dasharray="0.1 5" stroke-linecap="round" opacity=".75"`, 'Reste à parcourir (estimé)'));
+        items.push(`<div><svg width="30" height="14" viewBox="0 0 30 14"><g transform="translate(8 0) scale(0.58) rotate(90 12 12)"><path fill="${MAP_COLORS.plane}" d="M12 1.5 L13.6 8.5 L22 13.5 L22 15.5 L13.6 12.8 L13.2 19 L16 21 L16 22.5 L12 21.5 L8 22.5 L8 21 L10.8 19 L10.4 12.8 L2 15.5 L2 13.5 L10.4 8.5 Z"/></g></svg>${t && t.source === 'demo' ? tr("Position simulée de l'avion (démo)") : tr("Position de l'avion")}${t && t.now && t.now.estimated ? tr(', estimée toutes les 20 s') : ''}</div>`);
+        items.push(line(`stroke="${MAP_COLORS.route}" stroke-width="2.4" stroke-linecap="round" opacity=".75"`, tr('Parcouru (estimé)')));
+        if (route.hasRemaining) items.push(line(`stroke="${MAP_COLORS.route}" stroke-width="2.4" stroke-dasharray="0.1 5" stroke-linecap="round" opacity=".75"`, tr('Reste à parcourir (estimé)')));
     } else if (route) {
-        items.push(line('stroke="#64748b" stroke-width="2" stroke-dasharray="5 5"', 'Route directe (estimation)'));
+        items.push(line('stroke="#64748b" stroke-width="2" stroke-dasharray="5 5"', tr('Route directe (estimation)')));
     }
     if (route && visibleOverflown().length) {
         const hasLarge = visibleOverflown().some(o => isLargeOnRoute(o.ap));
@@ -2917,12 +2916,12 @@ function updateMapOverlay() {
         const wxOn = visibleOverflown().some(o => wxCat(o.ap.ident));
         // Avec la météo, la couleur indique la catégorie de vol ; la taille du point, le type d'aéroport
         const colL = wxOn ? MAP_COLORS.legendDot : MAP_COLORS.apLarge, colM = wxOn ? MAP_COLORS.legendDotMedium : MAP_COLORS.apMedium;
-        if (hasLarge) items.push(`<div><svg width="30" height="10"><circle cx="15" cy="5" r="3.6" fill="${colL}" stroke="${MAP_COLORS.edge}" stroke-width="1.5"/></svg>Grand aéroport sur la route</div>`);
-        if (hasMedium) items.push(`<div><svg width="30" height="10"><circle cx="15" cy="5" r="2.7" fill="${colM}" stroke="${MAP_COLORS.edge}" stroke-width="1.5"/></svg>Aéroport moyen (piste ≥ 2 500 m)</div>`);
+        if (hasLarge) items.push(`<div><svg width="30" height="10"><circle cx="15" cy="5" r="3.6" fill="${colL}" stroke="${MAP_COLORS.edge}" stroke-width="1.5"/></svg>${tr('Grand aéroport sur la route')}</div>`);
+        if (hasMedium) items.push(`<div><svg width="30" height="10"><circle cx="15" cy="5" r="2.7" fill="${colM}" stroke="${MAP_COLORS.edge}" stroke-width="1.5"/></svg>${tr('Aéroport moyen (piste ≥ 2 500 m)')}</div>`);
         if (wxOn) items.push(`<div class="wx-legend">${Object.entries(WX_CATS).map(([k, c]) => `<span title="${c.help}"><i class="wx-dot" style="background:${c.color}"></i>${k}</span>`).join('')}</div>`);
     }
     if (mapPrefs.spider && route && route.plane) {
-        items.push(line(`stroke="${MAP_COLORS.spider}" stroke-width="1.7" stroke-dasharray="6 4"`, 'Dégagements : 3 aéroports les plus proches'));
+        items.push(line(`stroke="${MAP_COLORS.spider}" stroke-width="1.7" stroke-dasharray="6 4"`, tr('Dégagements : 3 aéroports les plus proches')));
     }
     if (mapPrefs.conflict && flightMap.conflict) {
         const levels = new Set(flightMap.conflict.zones.map(z => z.level));
@@ -2932,10 +2931,10 @@ function updateMapOverlay() {
     }
     const isDemo = (t && t.source === 'demo') || (flightMap.flight && flightMap.flight.demo);
     const credit = isDemo
-        ? 'Vol de démonstration : données fictives · fond Natural Earth'
-        : t && t.source === 'airlabs' ? 'Position : AirLabs · fond Natural Earth' : 'Fond de carte : Natural Earth';
+        ? tr('Vol de démonstration : données fictives · fond Natural Earth')
+        : t && t.source === 'airlabs' ? tr('Position : AirLabs · fond Natural Earth') : tr('Fond de carte : Natural Earth');
     legend.innerHTML = items.length
-        ? `${items.join('')}<small>${credit}${mapPrefs.conflict && flightMap.conflict ? ' · zones de conflit : EASA, FIR : VATSpy (CC-BY-SA)' : ''}<br>Plan de vol non public · indicatif, ne pas utiliser pour la navigation</small>`
+        ? `${items.join('')}<small>${credit}${mapPrefs.conflict && flightMap.conflict ? tr(' · zones de conflit : EASA, FIR : VATSpy (CC-BY-SA)') : ''}<br>${tr('Plan de vol non public · indicatif, ne pas utiliser pour la navigation')}</small>`
         : '';
     legend.hidden = !items.length;
     // Le contenu (donc la taille) de ces boîtes vient de changer : la trajectoire doit rester dégagée
@@ -2952,7 +2951,7 @@ function syncFullscreenHeader() {
     } else if (currentAirportData) {
         document.getElementById('fsIdent').innerText = currentAirportData.ident;
         document.getElementById('fsName').innerText = currentAirportData.name || currentAirportData.ident;
-        document.getElementById('fsRunwaysCount').innerText = `${(currentAirportData.runways || []).length} piste(s)`;
+        document.getElementById('fsRunwaysCount').innerText = tr('{n} piste(s)', { n: (currentAirportData.runways || []).length });
     }
 }
 
@@ -2965,7 +2964,7 @@ function setViewMode(mode) {
     const isMap = mode === 'map';
     updateViewToggle();
     const tabLabel = document.querySelector('#tabBtnDiagram span');
-    if (tabLabel) tabLabel.textContent = isMap ? 'Carte du vol' : 'Schéma Pistes';
+    if (tabLabel) tabLabel.textContent = isMap ? tr('Carte du vol') : tr('Schéma Pistes');
     syncFullscreenHeader();
     if (isMap) {
         resizeMapCanvas();
@@ -3053,7 +3052,7 @@ async function showFlightMap(reuse = false) {
 
     const seq = ++flightMap.seq;
     stopMapRefresh();
-    Object.assign(flightMap, { flight: f, dep: null, arr: null, track: null, trackBase: null, route: null, plan: null, planS: 0, notice: 'Chargement de la carte…' });
+    Object.assign(flightMap, { flight: f, dep: null, arr: null, track: null, trackBase: null, route: null, plan: null, planS: 0, notice: tr('Chargement de la carte…') });
     syncFullscreenHeader();
     updateMapOverlay();
     scheduleMapDraw();
@@ -3071,10 +3070,10 @@ async function showFlightMap(reuse = false) {
     flightMap.route = buildFlightRoute();
     refreshOverflown();
     flightMap.loadedAt = Date.now();
-    flightMap.notice = world.status === 'rejected' ? 'Fond de carte indisponible'
+    flightMap.notice = world.status === 'rejected' ? tr('Fond de carte indisponible')
         : (tracked.value ? tracked.value.notice : '');
     if (!flightMap.route.points.length && !flightMap.notice) {
-        flightMap.notice = 'Position des aéroports indisponible : route non affichable';
+        flightMap.notice = tr('Position des aéroports indisponible : route non affichable');
     }
     updateMapOverlay();
     flightMap.needsFit = true;
@@ -3133,9 +3132,9 @@ async function shareLink() {
     const btn = document.getElementById('shareBtn');
     const done = () => {
         btn.classList.add('copied');
-        btn.title = 'Lien copié !';
+        btn.title = tr('Lien copié !');
         clearTimeout(shareTimer);
-        shareTimer = setTimeout(() => { btn.classList.remove('copied'); btn.title = 'Copier le lien de cette vue'; }, 2000);
+        shareTimer = setTimeout(() => { btn.classList.remove('copied'); btn.title = tr('Copier le lien de cette vue'); }, 2000);
     };
     try {
         if (navigator.share && window.matchMedia('(pointer: coarse)').matches) {
@@ -3146,7 +3145,7 @@ async function shareLink() {
         done();
     } catch (err) {
         if (err && err.name === 'AbortError') return;   // partage annulé
-        window.prompt('Copiez ce lien :', url.href);     // presse-papiers indisponible
+        window.prompt(tr('Copiez ce lien :'), url.href);     // presse-papiers indisponible
     }
 }
 function setTheme(next) { applyTheme(next); }
@@ -3203,10 +3202,10 @@ syncMapSettings();
 // Couleurs des aéroports sur la carte selon la catégorie de vol : VFR, MVFR, IFR, LIFR
 // ========================================================
 const WX_CATS = {
-    VFR:  { color: '#22c55e', label: 'VFR',  help: 'visibilité > 8 km et plafond > 3 000 ft' },
-    MVFR: { color: '#3b82f6', label: 'MVFR', help: 'visibilité 5 à 8 km ou plafond 1 000 à 3 000 ft' },
-    IFR:  { color: '#ef4444', label: 'IFR',  help: 'visibilité 1,6 à 5 km ou plafond 500 à 1 000 ft' },
-    LIFR: { color: '#d946ef', label: 'LIFR', help: 'visibilité < 1,6 km ou plafond < 500 ft' }
+    VFR:  { color: '#22c55e', label: 'VFR',  help: tr('visibilité > 8 km et plafond > 3 000 ft') },
+    MVFR: { color: '#3b82f6', label: 'MVFR', help: tr('visibilité 5 à 8 km ou plafond 1 000 à 3 000 ft') },
+    IFR:  { color: '#ef4444', label: 'IFR',  help: tr('visibilité 1,6 à 5 km ou plafond 500 à 1 000 ft') },
+    LIFR: { color: '#d946ef', label: 'LIFR', help: tr('visibilité < 1,6 km ou plafond < 500 ft') }
 };
 const WX_METAR_MAX_AGE_MS = 5 * 60 * 1000;
 const WX_TAF_MAX_AGE_MS = 15 * 60 * 1000;
@@ -3272,27 +3271,32 @@ function wxCat(icao) {
 }
 const wxColor = icao => { const c = wxCat(icao); return c ? WX_CATS[c].color : null; };
 
-// --- Mise en forme (français, unités aéronautiques usuelles) ---
+// --- Mise en forme (langue du site, unités aéronautiques usuelles) ---
 function wxFmtVis(v) {
     const sm = wxVisSM(v);
     if (sm === null) return null;
     const km = sm * 1.609344;
     if (km >= 9.5 || (String(v).endsWith('+') && sm >= 6)) return '≥ 10 km';
     if (km >= 5) return `${Math.round(km)} km`;
-    if (km >= 1) return `${km.toFixed(1).replace('.', ',')} km`;
+    if (km >= 1) return `${km.toLocaleString(LOCALE, { minimumFractionDigits: 1, maximumFractionDigits: 1 })} km`;
     return `${Math.max(50, Math.round(km * 10) * 100)} m`;
 }
 function wxFmtWind(dir, spd, gst) {
     if (spd === null || spd === undefined) return null;
-    if (spd === 0) return 'Calme';
-    const d = (dir === 'VRB' || dir === null || dir === undefined) ? 'Variable' : `${String(dir).padStart(3, '0')}°`;
-    return `${d} · ${spd} kt${gst ? ` (rafales ${gst})` : ''}`;
+    if (spd === 0) return tr('Calme');
+    const d = (dir === 'VRB' || dir === null || dir === undefined) ? tr('Variable') : `${String(dir).padStart(3, '0')}°`;
+    return `${d} · ${spd} kt${gst ? tr(' (rafales {gust})', { gust: gst }) : ''}`;
 }
 function wxFmtClouds(clouds) {
-    if (!clouds || !clouds.length) return 'Dégagé';
-    return clouds.map(([c, base]) => typeof base === 'number' ? `${c} ${base.toLocaleString('fr-FR')} ft` : c).join(' · ');
+    if (!clouds || !clouds.length) return tr('Dégagé');
+    return clouds.map(([c, base]) => typeof base === 'number' ? `${c} ${base.toLocaleString(LOCALE)} ft` : c).join(' · ');
 }
-const WX_PHENOMENA = {
+const WX_PHENOMENA = LANG === 'en' ? {
+    RA: 'rain', SN: 'snow', DZ: 'drizzle', TS: 'thunderstorm', SH: 'showers', FG: 'fog', BR: 'mist', HZ: 'haze',
+    FZ: 'freezing', GR: 'hail', GS: 'small hail', SG: 'snow grains', PL: 'ice pellets', IC: 'ice crystals',
+    DU: 'dust', SA: 'sand', FU: 'smoke', VA: 'volcanic ash', SQ: 'squalls', FC: 'funnel cloud', DS: 'duststorm',
+    SS: 'sandstorm', MI: 'shallow', BC: 'patches', PR: 'partial', DR: 'low drifting', BL: 'blowing', UP: 'precipitation'
+} : {
     RA: 'pluie', SN: 'neige', DZ: 'bruine', TS: 'orage', SH: 'averses', FG: 'brouillard', BR: 'brume', HZ: 'brume sèche',
     FZ: 'verglaçant', GR: 'grêle', GS: 'grésil', SG: 'neige en grains', PL: 'granules de glace', IC: 'cristaux de glace',
     DU: 'poussière', SA: 'sable', FU: 'fumée', VA: 'cendres volcaniques', SQ: 'grains', FC: 'tornade', DS: 'tempête de poussière',
@@ -3304,7 +3308,7 @@ function wxFmtWeather(wx) {
         const m = tok.match(/^([-+]|VC)?((?:[A-Z]{2})+)$/);
         if (!m) return tok;
         const words = m[2].match(/../g).map(c => WX_PHENOMENA[c] || c);
-        const pre = m[1] === '-' ? 'faible ' : m[1] === '+' ? 'fort ' : m[1] === 'VC' ? 'à proximité : ' : '';
+        const pre = m[1] === '-' ? tr('faible ') : m[1] === '+' ? tr('fort ') : m[1] === 'VC' ? tr('à proximité : ') : '';
         return pre + words.join(' ');
     }).join(', ');
 }
@@ -3315,7 +3319,7 @@ function wxObsTime(ts) {
     if (!ts) return '';
     const d = new Date(ts * 1000), min = Math.round((Date.now() - d.getTime()) / 60000);
     const hm = `${wxPad(d.getUTCHours())}:${wxPad(d.getUTCMinutes())} UTC`;
-    return min >= 0 && min < 90 ? `${hm} · il y a ${min} min` : hm;
+    return min >= 0 && min < 90 ? `${hm} · ${tr('il y a {min} min', { min })}` : hm;
 }
 
 // Heure estimée de passage de l'avion à un aéroport, cohérente avec l'heure d'atterrissage.
@@ -3377,7 +3381,7 @@ function wxTafActive(taf, ts) {
 
 function wxFmtEta(ts) {
     const min = Math.round((ts - Date.now() / 1000) / 60);
-    const rel = min < 1 ? 'imminent' : min < 60 ? `dans ${min} min` : `dans ${Math.floor(min / 60)} h ${wxPad(min % 60)}`;
+    const rel = min < 1 ? tr('imminent') : min < 60 ? tr('dans {min} min', { min }) : tr('dans {h} h {min}', { h: Math.floor(min / 60), min: wxPad(min % 60) });
     return `${wxDayHour(ts)} · ${rel}`;
 }
 
@@ -3385,7 +3389,7 @@ function wxTafHtml(taf, pass) {
     const now = Date.now() / 1000;
     const eta = pass && !pass.passed ? pass.ts : null;
     const active = eta ? wxTafActive(taf, eta) : new Set();
-    const etaTitle = `Valable à l'heure estimée ${pass && pass.arrival ? "d'atterrissage" : 'de passage'}`;
+    const etaTitle = pass && pass.arrival ? tr("Valable à l'heure estimée d'atterrissage") : tr("Valable à l'heure estimée de passage");
     const rows = taf.fc.map((f, i) => ({ f, i })).filter(({ f, i }) => f.t > now || active.has(i)).map(({ f, i }) => {
         const tag = [f.p ? `PROB${f.p}` : '', f.ch || ''].filter(Boolean).join(' ');
         const when = (!f.ch || f.ch === 'FM' || f.ch === 'BECMG') && !f.p ? wxDayHour(f.f) : `${wxHour(f.f)}–${wxHour(f.t)}`;
@@ -3396,10 +3400,10 @@ function wxTafHtml(taf, pass) {
             <span class="wx-taf-what"><i class="wx-dot ${cat || ''}"></i>${tag ? `<span class="wx-tag">${tag}</span>` : ''}${escapeHtml(parts)}</span></div>`;
     }).join('');
     return `<div class="wx-taf">
-        <div class="wx-head wx-taf-title"><span class="wx-label">TAF · prévision</span><span class="wx-age">émis ${taf.issue ? wxDayHour(taf.issue) : ''}</span></div>
-        ${eta ? `<div class="wx-eta">✈ ${pass.arrival ? 'Atterrissage' : 'Passage'} estimé <b>${wxFmtEta(eta)}</b>${eta >= taf.to ? ' · au-delà de la validité du TAF' : ''}</div>` : ''}
-        ${pass && pass.passed ? '<div class="wx-eta wx-eta-past">✈ Aéroport déjà survolé</div>' : ''}
-        ${rows || '<div class="wx-none">Prévision expirée</div>'}
+        <div class="wx-head wx-taf-title"><span class="wx-label">${tr('TAF · prévision')}</span><span class="wx-age">${tr('émis {time}', { time: taf.issue ? wxDayHour(taf.issue) : '' })}</span></div>
+        ${eta ? `<div class="wx-eta">✈ ${pass.arrival ? tr('Atterrissage estimé') : tr('Passage estimé')} <b>${wxFmtEta(eta)}</b>${eta >= taf.to ? tr(' · au-delà de la validité du TAF') : ''}</div>` : ''}
+        ${pass && pass.passed ? `<div class="wx-eta wx-eta-past">✈ ${tr('Aéroport déjà survolé')}</div>` : ''}
+        ${rows || `<div class="wx-none">${tr('Prévision expirée')}</div>`}
     </div>`;
 }
 
@@ -3407,31 +3411,31 @@ function wxTafHtml(taf, pass) {
 // (METAR décodé + brut, puis TAF) ; body null tant qu'il n'y a pas de METAR
 function wxParts(icao, { taf = true } = {}) {
     const e = wxStore.get(icao);
-    if (!e || (e.metar === undefined && !e.failed)) return { status: 'Chargement…', body: null };
-    if (e.metar === undefined) return { status: 'Météo indisponible', body: null };
+    if (!e || (e.metar === undefined && !e.failed)) return { status: tr('Chargement…'), body: null };
+    if (e.metar === undefined) return { status: tr('Météo indisponible'), body: null };
     const m = e.metar;
-    if (!m) return { status: 'Pas de METAR pour cet aéroport', body: null };
+    if (!m) return { status: tr('Pas de METAR pour cet aéroport'), body: null };
     const cat = m.cat || wxCategory(m.vis, m.clouds) || 'VFR';
     const rows = [
-        ['Vent', wxFmtWind(m.wdir, m.wspd, m.wgst)],
-        ['Visibilité', wxFmtVis(m.vis)],
-        ['Nuages', wxFmtClouds(m.clouds)],
-        ['Phénomènes', wxFmtWeather(m.wx)],
-        ['Température', m.temp !== null ? `${m.temp}° · point de rosée ${m.dewp !== null ? m.dewp + '°' : '—'}` : null],
+        [tr('Vent'), wxFmtWind(m.wdir, m.wspd, m.wgst)],
+        [tr('Visibilité'), wxFmtVis(m.vis)],
+        [tr('Nuages'), wxFmtClouds(m.clouds)],
+        [tr('Phénomènes'), wxFmtWeather(m.wx)],
+        [tr('Température'), m.temp !== null ? `${m.temp}° · ${tr('point de rosée {dew}', { dew: m.dewp !== null ? m.dewp + '°' : '—' })}` : null],
         ['QNH', m.alt !== null ? `${Math.round(m.alt)} hPa` : null]
     ].filter(r => r[1]).map(([k, v]) => `<dt>${k}</dt><dd>${escapeHtml(v)}</dd>`).join('');
     return {
         head: `<span class="wx-pill ${cat}" title="${WX_CATS[cat].help}">${cat}</span><span class="wx-age">METAR ${wxObsTime(m.t)}</span>`,
         body: `<dl class="wx-grid">${rows}</dl>
         <div class="wx-raw">${escapeHtml(m.raw)}</div>
-        ${taf ? (e.taf ? wxTafHtml(e.taf, flightPassage(icao)) : (e.taf === null ? '<div class="wx-taf"><div class="wx-none">Pas de TAF pour cet aéroport</div></div>' : '')) : ''}`
+        ${taf ? (e.taf ? wxTafHtml(e.taf, flightPassage(icao)) : (e.taf === null ? `<div class="wx-taf"><div class="wx-none">${tr('Pas de TAF pour cet aéroport')}</div></div>` : '')) : ''}`
     };
 }
 
 // Bloc météo de l'infobulle de la carte
 function wxBlock(icao, opts) {
     if (!FLIGHT_API_BASE) return '';
-    const p = wxParts(icao, opts), label = '<span class="wx-label">Météo</span>';
+    const p = wxParts(icao, opts), label = `<span class="wx-label">${tr('Météo')}</span>`;
     if (!p.body) return `<div class="wx"><div class="wx-head">${label}</div><div class="wx-none">${p.status}</div></div>`;
     return `<div class="wx"><div class="wx-head">${label}${p.head}</div>${p.body}</div>`;
 }
@@ -3442,7 +3446,7 @@ function wxPanelBlock(icao) {
     const p = wxParts(icao);
     const open = p.body && wxClosedIcao !== icao;
     return `<details class="panel-box wx"${open ? ' open' : ''}${p.body ? '' : ' data-empty'} ontoggle="wxClosedIcao = this.open ? null : '${escapeHtml(icao)}'">
-        <summary><span class="panel-box-title">Météo</span>${p.body ? p.head : `<span class="panel-box-status">${p.status}</span>`}</summary>
+        <summary><span class="panel-box-title">${tr('Météo')}</span>${p.body ? p.head : `<span class="panel-box-status">${p.status}</span>`}</summary>
         ${p.body ? `<div class="panel-box-body">${p.body}</div>` : ''}
     </details>`;
 }
@@ -3486,10 +3490,11 @@ function loadWeatherForMap() {
 //               ou balisage hors service, espace aérien, carburant, procédures modifiées ou indisponibles ;
 //   info      : tout le reste (voies de circulation, obstacles, oiseaux, services, aires de trafic…), replié par défaut.
 // ========================================================
+// Libellés des compteurs (infobulle et lecteurs d'écran) : singulier, pluriel
 const NOTAM_LEVELS = {
-    critical:  { label: 'Critique',    plural: 'critiques' },
-    important: { label: 'Important',   plural: 'importants' },
-    info:      { label: 'Information', plural: 'informations' }
+    critical:  ['{n} NOTAM critique', '{n} NOTAM critiques'],
+    important: ['{n} NOTAM important', '{n} NOTAM importants'],
+    info:      ['{n} NOTAM d\'information', '{n} NOTAM d\'information']
 };
 const NOTAM_ORDER = { critical: 0, important: 1, info: 2 };
 const NOTAM_MAX_AGE_MS = 30 * 60 * 1000;
@@ -3627,16 +3632,16 @@ const notamHidden = icao => {
 
 function notamValidity(n) {
     const d = ts => `${wxPad(new Date(ts * 1000).getUTCDate())}/${wxPad(new Date(ts * 1000).getUTCMonth() + 1)} ${wxPad(new Date(ts * 1000).getUTCHours())}:${wxPad(new Date(ts * 1000).getUTCMinutes())}Z`;
-    if (n.soon) return `à partir du ${d(n.from)}${n.to ? ` jusqu'au ${d(n.to)}` : ''}`;
-    return n.to ? `jusqu'au ${d(n.to)}` : 'permanent';
+    if (n.soon) return n.to ? tr("à partir du {from} jusqu'au {to}", { from: d(n.from), to: d(n.to) }) : tr('à partir du {from}', { from: d(n.from) });
+    return n.to ? tr("jusqu'au {to}", { to: d(n.to) }) : tr('permanent');
 }
 
 function notamRow(n) {
     return `<div class="notam-row ${n.level}">
-        <div class="notam-meta"><span class="notam-cat">${escapeHtml(n.cat)}</span>${n.soon ? '<span class="notam-soon">À venir</span>' : ''}<span class="notam-when">${escapeHtml(notamValidity(n))}</span></div>
+        <div class="notam-meta"><span class="notam-cat">${escapeHtml(tr(n.cat))}</span>${n.soon ? `<span class="notam-soon">${tr('À venir')}</span>` : ''}<span class="notam-when">${escapeHtml(notamValidity(n))}</span></div>
         <div class="notam-text">${escapeHtml(n.text || n.raw)}</div>
-        ${n.schedule ? `<div class="notam-when">Horaires : ${escapeHtml(n.schedule)}</div>` : ''}
-        <details class="notam-rawbox"><summary>${escapeHtml(n.id || 'Texte complet')}</summary><div class="wx-raw">${escapeHtml(n.raw)}</div></details>
+        ${n.schedule ? `<div class="notam-when">${tr('Horaires : {schedule}', { schedule: escapeHtml(n.schedule) })}</div>` : ''}
+        <details class="notam-rawbox"><summary>${escapeHtml(n.id || tr('Texte complet'))}</summary><div class="wx-raw">${escapeHtml(n.raw)}</div></details>
     </div>`;
 }
 
@@ -3652,7 +3657,7 @@ function notamCounts(list, { withInfo = true } = {}) {
     const by = { critical: 0, important: 0, info: 0 };
     list.forEach(n => by[n.level]++);
     return Object.keys(by).filter(k => by[k] && (withInfo || k !== 'info')).map(k => {
-        const label = `${by[k]} NOTAM ${by[k] > 1 ? NOTAM_LEVELS[k].plural : NOTAM_LEVELS[k].label.toLowerCase()}`;
+        const label = tr(NOTAM_LEVELS[k][by[k] > 1 ? 1 : 0], { n: by[k] });
         return `<span class="notam-count ${k}" title="${label}" aria-label="${label}">${NOTAM_ICONS[k]}<b>${by[k]}</b></span>`;
     }).join('');
 }
@@ -3664,19 +3669,19 @@ function notamBlock(icao) {
     const e = notamStore.get(icao);
     let summary = '', body = '';
     if (!e || (!e.list && !e.error)) {
-        summary = '<span class="panel-box-status">Chargement…</span>';
+        summary = `<span class="panel-box-status">${tr('Chargement…')}</span>`;
     } else if (!e.list) {
-        summary = `<span class="panel-box-status">${e.error === 'notam_budget' ? 'Limite du jour atteinte' : e.error === 'notam_quota' ? 'Quota épuisé' : 'Indisponibles'}</span>`;
+        summary = `<span class="panel-box-status">${e.error === 'notam_budget' ? tr('Limite du jour atteinte') : e.error === 'notam_quota' ? tr('Quota épuisé') : tr('Indisponibles')}</span>`;
     } else {
         const list = notamsFor(icao);
         if (!list.length) {
-            summary = '<span class="panel-box-status">Aucun en vigueur</span>';
+            summary = `<span class="panel-box-status">${tr('Aucun en vigueur')}</span>`;
         } else {
             const main = list.filter(n => n.level !== 'info'), info = list.filter(n => n.level === 'info');
             summary = `<span class="notam-counts">${notamCounts(list)}</span>`;
-            body = `${e.demo ? '<div class="notam-demo">Démo - NE PAS UTILISER</div>' : ''}${main.map(notamRow).join('')}
-                ${info.length ? `<details class="notam-more"${main.length ? '' : ' open'}><summary>${info.length} NOTAM d'information</summary>${info.map(notamRow).join('')}</details>` : ''}
-                <div class="notam-foot">Indicatif, ne pas utiliser pour la navigation${e.fetched ? ` · relevés à ${wxPad(new Date(e.fetched * 1000).getUTCHours())}:${wxPad(new Date(e.fetched * 1000).getUTCMinutes())}Z` : ''}</div>`;
+            body = `${e.demo ? `<div class="notam-demo">${tr('Démo - NE PAS UTILISER')}</div>` : ''}${main.map(notamRow).join('')}
+                ${info.length ? `<details class="notam-more"${main.length ? '' : ' open'}><summary>${tr(NOTAM_LEVELS.info[info.length > 1 ? 1 : 0], { n: info.length })}</summary>${info.map(notamRow).join('')}</details>` : ''}
+                <div class="notam-foot">${tr('Indicatif, ne pas utiliser pour la navigation')}${e.fetched ? tr(' · relevés à {time}Z', { time: `${wxPad(new Date(e.fetched * 1000).getUTCHours())}:${wxPad(new Date(e.fetched * 1000).getUTCMinutes())}` }) : ''}</div>`;
         }
     }
     const open = body && notamOpenIcao === icao;
@@ -3706,7 +3711,7 @@ function renderFlightNotams(f) {
         const list = notamHidden(icao) ? null : notamsFor(icao);
         const counts = list ? notamCounts(list, { withInfo: false }) : '';
         el.hidden = !counts;
-        el.innerHTML = counts ? `<button type="button" class="flight-ap-notam-btn" onclick="openFlightAirport('${escapeHtml(icao)}', { notams: true })" title="Voir les NOTAM de l'aéroport"><span class="flight-ap-notam-label">NOTAM</span>${counts}</button>` : '';
+        el.innerHTML = counts ? `<button type="button" class="flight-ap-notam-btn" onclick="openFlightAirport('${escapeHtml(icao)}', { notams: true })" title="${tr("Voir les NOTAM de l'aéroport")}"><span class="flight-ap-notam-label">NOTAM</span>${counts}</button>` : '';
     });
 }
 
@@ -3767,11 +3772,11 @@ function renderMapTip(icao, data) {
         const all = data.runways || [];
         const long = all.filter(r => gcDist({ lat: r.le_lat, lon: r.le_lon }, { lat: r.he_lat, lon: r.he_lon }) * 6371000 >= MIN_RUNWAY_LENGTH_M);
         const nRwy = (long.length ? long : all).length;
-        rows = `<div class="map-tooltip-row"><b>${nRwy}</b> piste${nRwy > 1 ? 's' : ''}`;
+        rows = `<div class="map-tooltip-row">${tr(nRwy > 1 ? '<b>{n}</b> pistes' : '<b>{n}</b> piste', { n: nRwy })}`;
         const len = Math.round(longestRunway(data));
-        if (len) rows += ` · plus longue&nbsp;: <b>${len.toLocaleString('fr-FR')} m</b> (${Math.round(len / FT_TO_M).toLocaleString('fr-FR')} ft)`;
+        if (len) rows += tr(' · plus longue&nbsp;: <b>{m} m</b> ({ft} ft)', { m: len.toLocaleString(LOCALE), ft: Math.round(len / FT_TO_M).toLocaleString(LOCALE) });
     } else {
-        rows = '<div class="map-tooltip-row"><span style="color:var(--text-dim)">Chargement…</span>';
+        rows = `<div class="map-tooltip-row"><span style="color:var(--text-dim)">${tr('Chargement…')}</span>`;
     }
     rows += '</div>';
     const tags = data ? airportApproachTags(data) : [];
@@ -3783,7 +3788,7 @@ function renderMapTip(icao, data) {
         ${tags.length ? `<div class="map-tooltip-tags">${tags.map(t => `<span class="appr-tag ${t.cls}">${t.label}</span>`).join('')}</div>` : ''}
         <div class="map-tooltip-wx">${wxBlock(icao)}</div>
         ${data && (data.runways || []).length ? '<canvas class="map-tooltip-diagram" width="248" height="150"></canvas>' : ''}
-        <div class="map-tooltip-hint">Clic : ouvrir le diagramme</div>`;
+        <div class="map-tooltip-hint">${tr('Clic : ouvrir le diagramme')}</div>`;
     const mini = mapTip.querySelector('.map-tooltip-diagram');
     if (mini) drawMiniDiagram(mini, data);
 }
@@ -3898,9 +3903,9 @@ function showLayerTip(clientX, clientY) {
             <div class="map-tooltip-name">${escapeHtml(z.title)}</div>
             <div class="map-tooltip-row" style="color:${CONFLICT_STYLES[z.level].stroke}">${escapeHtml(CONFLICT_STYLES[z.level].label)}</div>
             <div class="map-tooltip-row">${escapeHtml(z.scope.replace(/\s+/g, ' '))}</div>
-            <div class="map-tooltip-row" style="color:var(--text-dim)">${escapeHtml(z.id)} · valable jusqu'au ${escapeHtml(z.valid_until)}</div>`).join('');
+            <div class="map-tooltip-row" style="color:var(--text-dim)">${escapeHtml(z.id)} · ${tr("valable jusqu'au {date}", { date: escapeHtml(z.valid_until) })}</div>`).join('');
         mapTip.innerHTML = conflictHtml +
-            `<div class="map-tooltip-hint">Bulletins EASA (CZIB) : indicatif, ne pas utiliser pour la navigation</div>`;
+            `<div class="map-tooltip-hint">${tr('Bulletins EASA (CZIB) : indicatif, ne pas utiliser pour la navigation')}</div>`;
     }
     mapTip.hidden = false;
     positionMapTip(clientX, clientY);

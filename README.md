@@ -142,6 +142,12 @@ Toutes les routes estimées (tracé, avancée de l'avion toutes les 20 s, liste 
 
 À partir de 1 360 px de large, les infos et les pistes de l'aéroport s'affichent dans un **deuxième panneau latéral**, à droite du premier : le dossier de vol et sa liste d'aéroports restent sous les yeux pendant qu'on clique d'un aéroport à l'autre. Sur écran plus étroit ou téléphone, tout reste dans le panneau unique (onglet « Détails & Pistes »).
 
+## Langues (français / anglais)
+
+- **Choix** : bouton `EN` / `FR` de l'en-tête, ou `?lang=en` / `?lang=fr` dans l'adresse ; le choix est mémorisé dans le navigateur (`pleinaxe.lang`). Sans choix, la langue du navigateur décide (français si elle commence par `fr`, anglais sinon).
+- **Code** : `js/i18n.js`, chargé avant `app.js`. Le texte français sert de clé : `tr('Fréquences radio')`, avec variables `tr('{n} piste(s)', { n })` ; le dictionnaire `I18N_EN` donne l'anglais (un texte absent reste en français). Dans `index.html`, attributs `data-i18n` (texte), `data-i18n-html`, `data-i18n-title`, `data-i18n-placeholder`, `data-i18n-aria` ; l'aide est rédigée dans les deux langues (blocs `data-lang="fr"` / `data-lang="en"`). Les messages d'erreur du worker, en français, passent aussi par `tr()`.
+- **Ajouter un texte** : l'écrire en français dans `tr(...)` (ou un attribut `data-i18n`) et ajouter sa traduction dans `I18N_EN`.
+
 ## Thème clair / sombre
 
 Le site est sombre par défaut. Le bouton ☀ / ☾ de l'en-tête (et la ligne « Thème » des réglages de la carte, avec les codes et le couloir) bascule en **mode clair** pour toute l'application : panneaux, carte (fond Natural Earth clair), schéma des pistes, infobulles, aide. Le choix est mémorisé dans le navigateur (`pleinaxe.theme`) et appliqué avant le premier affichage, sans clignotement.

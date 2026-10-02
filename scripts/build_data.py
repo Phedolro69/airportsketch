@@ -334,14 +334,19 @@ def build_data(output_dir: str, copy_html: bool = True, faa_cache: str = None):
     else:
         print("WARNING: scripts/assets/world.json missing - flight map background unavailable")
 
-    # 7. Optionally copy index.html
+    # 7. Optionally copy the site (index.html, style.css, js/)
     if copy_html:
         root_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-        src_html = os.path.join(root_dir, "index.html")
-        dst_html = os.path.join(output_dir, "index.html")
-        if os.path.exists(src_html) and os.path.abspath(src_html) != os.path.abspath(dst_html):
-            print(f"Copying index.html to {dst_html}...")
-            shutil.copy2(src_html, dst_html)
+        if os.path.abspath(root_dir) != os.path.abspath(output_dir):
+            for name in ("index.html", "style.css"):
+                src = os.path.join(root_dir, name)
+                if os.path.exists(src):
+                    print(f"Copying {name} to {output_dir}...")
+                    shutil.copy2(src, os.path.join(output_dir, name))
+            js_src = os.path.join(root_dir, "js")
+            if os.path.isdir(js_src):
+                print(f"Copying js/ to {output_dir}...")
+                shutil.copytree(js_src, os.path.join(output_dir, "js"), dirs_exist_ok=True)
 
     elapsed = time.time() - start_time
     print(f"Build completed successfully in {elapsed:.2f}s!")

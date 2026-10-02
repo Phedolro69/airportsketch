@@ -1,10 +1,4 @@
-/**
- * Routes des vols de démonstration : plus court chemin qui contourne la Russie, l'Ukraine et le Bélarus
- * (couloirs imposés Europe <-> Japon/Corée compris).
- *
- * FICHIER GÉNÉRÉ par scripts/sync_airspace.py à partir du bloc « airspace-router » de js/airspace-router.js : ne pas
- * modifier ici. Les zones et la matrice de visibilité sont dans avoid.json (généré par scripts/make_world.py).
- */
+// >>> airspace-router (copié tel quel dans worker/airspace.js par scripts/sync_airspace.py)
 const AV = {
     v(lat, lon) {
         const la = lat * Math.PI / 180, lo = lon * Math.PI / 180;
@@ -32,7 +26,7 @@ function arcsCross(a, b, c, d) {
     return false;
 }
 
-export class AirspaceRouter {
+class AirspaceRouter {
     constructor(avoid) {
         this.edges = [];
         avoid.zones.forEach(ring => {
@@ -117,40 +111,4 @@ function corridorWaypoints(dep, arr) {
     return [];
 }
 
-const EARTH_NM_W = 3440.065;
-const gcAng = (a, b) => AV.ang(AV.v(a[0], a[1]), AV.v(b[0], b[1]));
-
-/** Route estimée dep -> arr ([lat, lon]) : couloir éventuel, puis contournement des zones tronçon par tronçon. */
-export function planPath(router, dep, arr) {
-    const pts = [dep, ...corridorWaypoints(dep, arr), arr];
-    const out = [pts[0]];
-    for (let i = 1; i < pts.length; i++) out.push(...router.route(pts[i - 1], pts[i]).slice(1));
-    return out;
-}
-
-export const pathLengthNm = path => path.slice(1).reduce((n, p, i) => n + gcAng(path[i], p), 0) * EARTH_NM_W;
-
-/** Point à la fraction f (0 à 1) de la longueur de la route : [lat, lon, cap]. */
-export function pointAlong(path, f) {
-    const lens = path.slice(1).map((p, i) => gcAng(path[i], p));
-    const target = Math.max(0, Math.min(1, f)) * lens.reduce((a, b) => a + b, 0);
-    const at = (i, g) => {
-        const a = AV.v(path[i][0], path[i][1]), b = AV.v(path[i + 1][0], path[i + 1][1]), d = lens[i];
-        if (!d) return path[i];
-        const s1 = Math.sin((1 - g) * d) / Math.sin(d), s2 = Math.sin(g * d) / Math.sin(d);
-        return AV.ll([s1 * a[0] + s2 * b[0], s1 * a[1] + s2 * b[1], s1 * a[2] + s2 * b[2]]);
-    };
-    let acc = 0;
-    for (let i = 0; i < lens.length; i++) {
-        if (target <= acc + lens[i] || i === lens.length - 1) {
-            const g = lens[i] ? Math.min(1, Math.max(0, (target - acc) / lens[i])) : 0;
-            const p = at(i, g), q = g < 0.99 ? at(i, Math.min(1, g + 0.01)) : at(i, 1), from = g < 0.99 ? p : at(i, 0.98);
-            const dl = (q[1] - from[1]) * Math.PI / 180, r = Math.PI / 180;
-            const y = Math.sin(dl) * Math.cos(q[0] * r);
-            const x = Math.cos(from[0] * r) * Math.sin(q[0] * r) - Math.sin(from[0] * r) * Math.cos(q[0] * r) * Math.cos(dl);
-            return [p[0], p[1], Math.round((Math.atan2(y, x) / r + 360) % 360)];
-        }
-        acc += lens[i];
-    }
-    return [path[0][0], path[0][1], 0];
-}
+// <<< airspace-router

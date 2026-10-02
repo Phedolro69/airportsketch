@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
 Le routeur d'espaces aériens (Russie, Ukraine, Bélarus) existe en deux endroits qui doivent rester identiques :
-le site (bloc balisé « airspace-router » de index.html) et le worker (worker/airspace.js, qui sert aux positions
-des vols de démonstration). index.html est la source ; ce script régénère worker/airspace.js.
+le site (bloc balisé « airspace-router » de js/airspace-router.js) et le worker (worker/airspace.js, qui sert aux positions
+des vols de démonstration). js/airspace-router.js est la source ; ce script régénère worker/airspace.js.
 
     python scripts/sync_airspace.py          # régénère
     python scripts/sync_airspace.py --check  # échoue si worker/airspace.js n'est plus à jour (CI)
@@ -12,14 +12,14 @@ import re
 import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-HTML = os.path.join(ROOT, "index.html")
+HTML = os.path.join(ROOT, "js", "airspace-router.js")
 OUT = os.path.join(ROOT, "worker", "airspace.js")
 
 HEADER = """/**
  * Routes des vols de démonstration : plus court chemin qui contourne la Russie, l'Ukraine et le Bélarus
  * (couloirs imposés Europe <-> Japon/Corée compris).
  *
- * FICHIER GÉNÉRÉ par scripts/sync_airspace.py à partir du bloc « airspace-router » de index.html : ne pas
+ * FICHIER GÉNÉRÉ par scripts/sync_airspace.py à partir du bloc « airspace-router » de js/airspace-router.js : ne pas
  * modifier ici. Les zones et la matrice de visibilité sont dans avoid.json (généré par scripts/make_world.py).
  */
 """
@@ -69,10 +69,8 @@ def generate():
     html = open(HTML, encoding="utf-8").read()
     m = re.search(r"// >>> airspace-router[^\n]*\n(.*?)\n\s*// <<< airspace-router", html, re.S)
     if not m:
-        sys.exit("Bloc « airspace-router » introuvable dans index.html")
-    block = "\n".join(line[8:] if line.startswith("        ") else line for line in m.group(1).split("\n"))
-    block = block.replace("const inBox = ", "const inBox = ").replace("class AirspaceRouter", "export class AirspaceRouter")
-    block = block.replace("        const ", "const ")
+        sys.exit("Bloc « airspace-router » introuvable dans js/airspace-router.js")
+    block = m.group(1).replace("class AirspaceRouter", "export class AirspaceRouter")
     return HEADER + block.rstrip() + "\n" + FOOTER
 
 

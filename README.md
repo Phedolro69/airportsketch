@@ -32,7 +32,7 @@ L'application utilise une architecture statique pré-compilée :
 3. **Job nocturne automatisé (GitHub Actions)** :
    - Le workflow [`.github/workflows/nightly-update.yml`](.github/workflows/nightly-update.yml) s'exécute chaque nuit à **03h00 UTC**.
    - Il télécharge les dernières données OurAirports et FAA, génère le site et le déploie sur **GitHub Pages** sous forme d'artefact sans polluer l'historique Git.
-   - Il se déclenche aussi à chaque push sur `main` qui modifie `index.html`, `scripts/` ou le workflow.
+   - Il se déclenche aussi à chaque push sur `main` qui modifie `index.html`, `style.css`, `js/`, `scripts/` ou le workflow.
    - La source de GitHub Pages doit être réglée sur **GitHub Actions** (Settings → Pages) : en « Deploy from a branch », le déploiement automatique de la branche écraserait le site sans le dossier `data/` (ignoré par Git).
 
 4. **Recherche de vols & dossier de vol (AirLabs)** :
@@ -120,7 +120,7 @@ Toutes les routes estimées (tracé, avancée de l'avion toutes les 20 s, liste 
 - **Plus court chemin** : si le grand cercle traverse une zone, le site calcule le plus court trajet qui la contourne (graphe de visibilité sur la sphère entre les coins des contours, algorithme A*). Ce trajet devient la route estimée.
 - **Couloirs imposés** (réalité opérationnelle, plus long que le plus court chemin) : Europe → Japon/Corée par la Turquie, Erevan et Urumqi ; Japon/Corée → Europe par le Pacifique nord, le détroit de Béring et le Groenland. Chaque tronçon est lui aussi contourné si besoin.
 - **Position de l'avion** : si la position reçue est à moins de 60 nm de la route estimée, l'avion est calé dessus ; sinon la route passe par sa position réelle.
-- **Code** : `scripts/airspace.py` construit les zones (Natural Earth, simplifiées à 0,15°) et la matrice de visibilité, écrites dans `world.json` (clé `avoid`, relu par `make_world.py`) et `worker/avoid.json`. Le routeur JavaScript du site (bloc `airspace-router` de `index.html`) est recopié dans `worker/airspace.js` par `python scripts/sync_airspace.py` (`--check` vérifie qu'il est à jour).
+- **Code** : `scripts/airspace.py` construit les zones (Natural Earth, simplifiées à 0,15°) et la matrice de visibilité, écrites dans `world.json` (clé `avoid`, relu par `make_world.py`) et `worker/avoid.json`. Le routeur JavaScript du site (bloc `airspace-router` de `js/airspace-router.js`) est recopié dans `worker/airspace.js` par `python scripts/sync_airspace.py` (`--check` vérifie qu'il est à jour).
 - **Test** : `python scripts/airspace.py` calcule 24 routes (CDG↔NRT, FRA→PVG, HEL→PEK…) et vérifie, sur les contours **complets** et non simplifiés, qu'aucun point à moins de 5 nm n'est dans une zone.
 
 ## Météo (METAR / TAF)

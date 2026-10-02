@@ -2029,8 +2029,8 @@
     :root[data-theme="light"] #mapBand { accent-color: #7c3aed; }
     :root[data-theme="light"] .flight-overflown summary::before { color: #7c3aed; }
     :root[data-theme="light"] .overflown-filter input:focus-visible + .overflown-switch { outline-color: #7c3aed; }
-    :root[data-theme="light"] .demo-notice { background: rgba(124, 58, 237, 0.08); border-color: rgba(124, 58, 237, 0.3); }
-    :root[data-theme="light"] .demo-notice b { color: #6d28d9; }
+    :root[data-theme="light"] .demo-notice { background: rgba(250, 204, 21, 0.18); border-color: rgba(202, 138, 4, 0.55); color: #c2410c; }
+    :root[data-theme="light"] .demo-notice b { color: #9a3412; }
     :root[data-theme="light"] .demo-tag { background: rgba(124, 58, 237, 0.1); border-color: rgba(124, 58, 237, 0.4); }
     :root[data-theme="light"] .appr-vor,
     :root[data-theme="light"] .appr-ndb { background: rgba(79, 70, 229, 0.12); border-color: #6366f1; color: #3730a3; }

@@ -29,7 +29,7 @@ position simulée le long du grand cercle avec un léger écart latéral ; pas d
 
 Route /wx?ids=LFPG,KJFK&taf=1 (METAR / TAF au format compact de worker/weather.js) : météo simulée,
 hors ligne, déterministe par aéroport et par heure (un mélange de VFR / MVFR / IFR / LIFR, avec des
-aéroports sans METAR ou sans TAF). `--wx real` interroge NOAA à la place.
+aéroports sans METAR ou sans TAF, sauf les grands aéroports d'Europe, des USA et du Canada qui ont toujours les deux). `--wx real` interroge NOAA à la place.
     &mock=<scénario> ................. force la météo de tous les ids : cavok · fog · mist · rain · snow
                                        storm · gusty · hot   (ou --wx-scenario au lancement du simulateur)
     ZZZZ ............................. aéroport sans METAR ni TAF
@@ -319,7 +319,25 @@ WX_SCENARIOS = ("cavok", "fog", "mist", "rain", "snow", "storm", "gusty", "hot")
 # Répartition par défaut (None = temps ordinaire) : une route montre ainsi les 4 catégories de vol
 WX_MIX = [(None, 38), ("cavok", 14), ("mist", 14), ("rain", 12), ("fog", 6), ("snow", 4), ("storm", 6), ("gusty", 6)]
 WX_NO_METAR = 0.12   # part des aéroports sans METAR (petits terrains)
-WX_NO_TAF = 0.30     # part des aéroports sans TAF
+WX_NO_TAF = 0.30     # part des aéroports sans TAF (hors grands aéroports d'Europe, des USA et du Canada)
+
+
+# Grands aéroports d'Europe, des États-Unis et du Canada : toujours un METAR et un TAF, comme en réalité (NOAA ne couvre
+# pas bien le reste du monde). Liste tirée de data/search_index.json (type large_airport) ; absente, seul le hasard joue.
+_BIG_PREFIXES = ("E", "L", "BI", "BK", "K", "PA", "PH", "CY")
+_BIG = None
+
+
+def _is_big(icao):
+    global _BIG
+    if _BIG is None:
+        path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data", "search_index.json")
+        try:
+            with open(path, encoding="utf-8") as f:
+                _BIG = {a["ident"] for a in json.load(f) if a.get("type") == "large_airport" and a["ident"].startswith(_BIG_PREFIXES)}
+        except (OSError, ValueError):
+            _BIG = set()
+    return icao in _BIG
 
 
 def _scenario_for(icao, hour, forced):
@@ -406,7 +424,7 @@ def _utc_ts(dt):
 
 def _mock_metar(icao, now, forced):
     """METAR compact, ou None (aéroport sans METAR)."""
-    if not forced and rng_for("wx-no-metar", icao).random() < WX_NO_METAR:
+    if not forced and not _is_big(icao) and rng_for("wx-no-metar", icao).random() < WX_NO_METAR:
         return None
     us = icao[0] in "KCP"  # unités américaines dans le texte brut : milles et inHg
     hour = now.replace(minute=0, second=0, microsecond=0)
@@ -452,7 +470,7 @@ def _mock_metar(icao, now, forced):
 
 def _mock_taf(icao, now, forced):
     """TAF compact de 24 h en 3 périodes, ou None (aéroport sans TAF)."""
-    if not forced and rng_for("wx-no-taf", icao).random() < WX_NO_TAF:
+    if not forced and not _is_big(icao) and rng_for("wx-no-taf", icao).random() < WX_NO_TAF:
         return None
     issue = now.replace(minute=0, second=0, microsecond=0)
     issue -= datetime.timedelta(hours=issue.hour % 6)  # émis toutes les 6 h

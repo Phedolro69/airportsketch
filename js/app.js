@@ -1935,8 +1935,8 @@ function loadConflictZones() {
                     return pts;
                 };
                 const paths = { high: new Path2D(), caution: new Path2D() };
-                const zones = d.zones.filter(z => z.firs.length && paths[z.level]).map(z => {
-                    const rings = z.firs.flatMap(c => (d.firs[c] || []).map(decode));
+                const zones = d.zones.filter(z => (z.firs.length || (z.rings && z.rings.length)) && paths[z.level]).map(z => {
+                    const rings = (z.rings || z.firs.flatMap(c => d.firs[c] || [])).map(decode);   // z.rings : FIR découpées par le bulletin
                     rings.forEach(pts => {
                         pts.forEach(([lon, lat], i) => paths[z.level][i ? 'lineTo' : 'moveTo'](lon, mapY(lat)));
                         paths[z.level].closePath();
@@ -2608,8 +2608,17 @@ function drawFlightMap() {
 
         if (mapPrefs.conflict && flightMap.conflict) {
             for (const [level, st] of Object.entries(CONFLICT_STYLES)) {
+                // FIR = terres + mer : la mer reçoit un voile léger, les terres le remplissage complet (zone ≈ pays)
                 mctx.fillStyle = st.fill;
+                mctx.globalAlpha = 0.35;
                 mctx.fill(flightMap.conflict.paths[level], 'nonzero');
+                mctx.globalAlpha = 1;
+                if (world) {
+                    mctx.save();
+                    mctx.clip(world.land, 'evenodd');
+                    mctx.fill(flightMap.conflict.paths[level], 'nonzero');
+                    mctx.restore();
+                }
                 mctx.strokeStyle = st.stroke;
                 mctx.lineWidth = 1.2 / s;
                 mctx.setLineDash([6 / s, 4 / s]);

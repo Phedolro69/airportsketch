@@ -100,6 +100,30 @@ def simplify(pts, tol):
     return [p for p, k in zip(pts, keep) if k]
 
 
+def clip_lon(ring, lon_max=None, lon_min=None):
+    """Découpe un anneau [[lon, lat]...] au demi-plan lon <= lon_max (ou lon >= lon_min) : Sutherland-Hodgman."""
+    keep = (lambda p: p[0] <= lon_max) if lon_max is not None else (lambda p: p[0] >= lon_min)
+    edge = lon_max if lon_max is not None else lon_min
+    out = []
+    for a, b in zip(ring, ring[1:] + ring[:1]):
+        ka, kb = keep(a), keep(b)
+        if ka:
+            out.append(a)
+        if ka != kb:
+            t = (edge - a[0]) / (b[0] - a[0])
+            out.append([edge, a[1] + t * (b[1] - a[1])])
+    return out
+
+
+def scope_clip(scope):
+    """« west of longitude 60° East » -> {"lon_max": 60} ; « east of longitude 30° West » -> {"lon_min": -30}."""
+    m = re.search(r"(west|east) of longitude\s+(\d+(?:\.\d+)?)\s*°?\s*(East|West|E|W)(?![a-z])", scope, re.I)
+    if not m:
+        return None
+    lon = float(m.group(2)) * (1 if m.group(3).lower().startswith("e") else -1)
+    return {"lon_max": lon} if m.group(1).lower() == "west" else {"lon_min": lon}
+
+
 def encode_ring(ring):
     """Anneau [[lon, lat]...] -> [x0, y0, dx1, dy1, ...] en centièmes de degré ; longitudes rendues continues."""
     out, prev = [], None
@@ -138,20 +162,28 @@ def main():
 
     wanted = {c for z in zones for c in z["firs"]}
     geo = json.loads(fetch(FIR_URL))
-    firs = {}
+    raw, firs = {}, {}
     for feat in geo["features"]:
         fid = feat["properties"]["id"]
         if fid not in wanted:
             continue
         g = feat["geometry"]
         polys = g["coordinates"] if g["type"] == "MultiPolygon" else [g["coordinates"]]
-        rings = [encode_ring(simplify(poly[0], SIMPLIFY_DEG)) for poly in polys]   # contour extérieur seulement
-        firs.setdefault(fid, []).extend(rings)
+        raw[fid] = [simplify(poly[0], SIMPLIFY_DEG) for poly in polys]   # contour extérieur seulement
     for z in zones:
-        missing = [c for c in z["firs"] if c not in firs]
+        missing = [c for c in z["firs"] if c not in raw]
         if missing:
             print(f"  ! {z['id']}: contour introuvable pour {', '.join(missing)}", file=sys.stderr)
-        z["firs"] = [c for c in z["firs"] if c in firs]
+        z["firs"] = [c for c in z["firs"] if c in raw]
+        clip = scope_clip(z["scope"])
+        if clip:
+            # Le bulletin ne vise qu'une partie des FIR : les anneaux découpés sont portés par la zone elle-même
+            z["clip"] = clip
+            z["rings"] = [encode_ring(r) for c in z["firs"] for ring in raw[c] if len(r := clip_lon(ring, **clip)) >= 3]
+            print(f"  {z['id']}: découpé {clip}")
+        else:
+            for c in z["firs"]:
+                firs.setdefault(c, [encode_ring(r) for r in raw[c]])
 
     out_dir = os.path.join(args.output, "data")
     os.makedirs(out_dir, exist_ok=True)

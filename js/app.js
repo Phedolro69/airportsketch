@@ -1353,10 +1353,6 @@ function appendApproachInfo(listEl) {
 }
 
 function updateSidebarInfo(code) {
-    document.getElementById('statsBox').style.display = 'flex';
-    const filterNotice = currentRunways.length < rawRunways.length ? ' (petites pistes masquées)' : '';
-    document.getElementById('statsTitle').innerText = `${code} : ${currentRunways.length} Piste(s)${filterNotice}`;
-    
     const listEl = document.getElementById('runwayList');
     listEl.innerHTML = '';
 
@@ -3381,15 +3377,14 @@ function wxTafHtml(taf, pass) {
     </div>`;
 }
 
-// Bloc météo d'un aéroport (infobulle et panneau latéral) : METAR décodé + brut, puis TAF
-function wxBlock(icao, { taf = true } = {}) {
-    if (!FLIGHT_API_BASE) return '';
+// Météo d'un aéroport en deux parties : en-tête (catégorie, heure du METAR, ou message d'état) et corps
+// (METAR décodé + brut, puis TAF) ; body null tant qu'il n'y a pas de METAR
+function wxParts(icao, { taf = true } = {}) {
     const e = wxStore.get(icao);
-    const label = '<span class="wx-label">Météo</span>';
-    if (!e || (e.metar === undefined && !e.failed)) return `<div class="wx"><div class="wx-head">${label}</div><div class="wx-none">Chargement…</div></div>`;
-    if (e.metar === undefined) return `<div class="wx"><div class="wx-head">${label}</div><div class="wx-none">Météo indisponible</div></div>`;
+    if (!e || (e.metar === undefined && !e.failed)) return { status: 'Chargement…', body: null };
+    if (e.metar === undefined) return { status: 'Météo indisponible', body: null };
     const m = e.metar;
-    if (!m) return `<div class="wx"><div class="wx-head">${label}</div><div class="wx-none">Pas de METAR pour cet aéroport</div></div>`;
+    if (!m) return { status: 'Pas de METAR pour cet aéroport', body: null };
     const cat = m.cat || wxCategory(m.vis, m.clouds) || 'VFR';
     const rows = [
         ['Vent', wxFmtWind(m.wdir, m.wspd, m.wgst)],
@@ -3399,12 +3394,31 @@ function wxBlock(icao, { taf = true } = {}) {
         ['Température', m.temp !== null ? `${m.temp}° · point de rosée ${m.dewp !== null ? m.dewp + '°' : '—'}` : null],
         ['QNH', m.alt !== null ? `${Math.round(m.alt)} hPa` : null]
     ].filter(r => r[1]).map(([k, v]) => `<dt>${k}</dt><dd>${escapeHtml(v)}</dd>`).join('');
-    return `<div class="wx">
-        <div class="wx-head">${label}<span class="wx-pill ${cat}" title="${WX_CATS[cat].help}">${cat}</span><span class="wx-age">METAR ${wxObsTime(m.t)}</span></div>
-        <dl class="wx-grid">${rows}</dl>
+    return {
+        head: `<span class="wx-pill ${cat}" title="${WX_CATS[cat].help}">${cat}</span><span class="wx-age">METAR ${wxObsTime(m.t)}</span>`,
+        body: `<dl class="wx-grid">${rows}</dl>
         <div class="wx-raw">${escapeHtml(m.raw)}</div>
-        ${taf ? (e.taf ? wxTafHtml(e.taf, flightPassage(icao)) : (e.taf === null ? '<div class="wx-taf"><div class="wx-none">Pas de TAF pour cet aéroport</div></div>' : '')) : ''}
-    </div>`;
+        ${taf ? (e.taf ? wxTafHtml(e.taf, flightPassage(icao)) : (e.taf === null ? '<div class="wx-taf"><div class="wx-none">Pas de TAF pour cet aéroport</div></div>' : '')) : ''}`
+    };
+}
+
+// Bloc météo de l'infobulle de la carte
+function wxBlock(icao, opts) {
+    if (!FLIGHT_API_BASE) return '';
+    const p = wxParts(icao, opts), label = '<span class="wx-label">Météo</span>';
+    if (!p.body) return `<div class="wx"><div class="wx-head">${label}</div><div class="wx-none">${p.status}</div></div>`;
+    return `<div class="wx"><div class="wx-head">${label}${p.head}</div>${p.body}</div>`;
+}
+
+// Fiche aéroport du panneau latéral : bloc « Météo » encadré, déplié par défaut (comme le bloc NOTAM, replié lui)
+let wxClosedIcao = null;   // aéroport dont l'utilisateur a replié la météo (conservé quand le bloc est redessiné)
+function wxPanelBlock(icao) {
+    const p = wxParts(icao);
+    const open = p.body && wxClosedIcao !== icao;
+    return `<details class="panel-box wx"${open ? ' open' : ''}${p.body ? '' : ' data-empty'} ontoggle="wxClosedIcao = this.open ? null : '${escapeHtml(icao)}'">
+        <summary><span class="panel-box-title">Météo</span>${p.body ? p.head : `<span class="panel-box-status">${p.status}</span>`}</summary>
+        ${p.body ? `<div class="panel-box-body">${p.body}</div>` : ''}
+    </details>`;
 }
 
 // Fiche aéroport du panneau latéral + pastille sous le titre du diagramme
@@ -3413,7 +3427,7 @@ function renderAirportWeather() {
     const icao = currentAirportCode;
     if (!icao || !FLIGHT_API_BASE) { box.hidden = true; chip.innerHTML = ''; return; }
     box.hidden = false;
-    box.innerHTML = wxBlock(icao);
+    box.innerHTML = wxPanelBlock(icao);
     const e = wxStore.get(icao), m = e && e.metar;
     chip.innerHTML = m ? `<span class="wx-pill ${wxCat(icao)}">${wxCat(icao)}</span><span>${escapeHtml([wxFmtWind(m.wdir, m.wspd, m.wgst), wxFmtVis(m.vis)].filter(Boolean).join(' · '))}</span>` : '';
 }
@@ -3590,13 +3604,13 @@ function notamBlock(icao) {
     const e = notamStore.get(icao);
     let summary = '', body = '';
     if (!e || (!e.list && !e.error)) {
-        summary = '<span class="notam-status">Chargement…</span>';
+        summary = '<span class="panel-box-status">Chargement…</span>';
     } else if (!e.list) {
-        summary = `<span class="notam-status">${e.error === 'notam_budget' ? 'Limite du jour atteinte' : e.error === 'notam_quota' ? 'Quota épuisé' : 'Indisponibles'}</span>`;
+        summary = `<span class="panel-box-status">${e.error === 'notam_budget' ? 'Limite du jour atteinte' : e.error === 'notam_quota' ? 'Quota épuisé' : 'Indisponibles'}</span>`;
     } else {
         const list = notamsFor(icao);
         if (!list.length) {
-            summary = '<span class="notam-status">Aucun en vigueur</span>';
+            summary = '<span class="panel-box-status">Aucun en vigueur</span>';
         } else {
             const main = list.filter(n => n.level !== 'info'), info = list.filter(n => n.level === 'info');
             summary = `<span class="notam-counts">${notamCounts(list)}</span>`;
@@ -3606,9 +3620,9 @@ function notamBlock(icao) {
         }
     }
     const open = body && notamOpenIcao === icao;
-    return `<details class="notam"${open ? ' open' : ''}${body ? '' : ' data-empty'} ontoggle="notamOpenIcao = this.open ? '${escapeHtml(icao)}' : null">
-        <summary><span class="notam-title">NOTAM</span>${summary}</summary>
-        ${body ? `<div class="notam-body">${body}</div>` : ''}
+    return `<details class="panel-box notam"${open ? ' open' : ''}${body ? '' : ' data-empty'} ontoggle="notamOpenIcao = this.open ? '${escapeHtml(icao)}' : null">
+        <summary><span class="panel-box-title">NOTAM</span>${summary}</summary>
+        ${body ? `<div class="panel-box-body">${body}</div>` : ''}
     </details>`;
 }
 
@@ -3644,7 +3658,7 @@ function loadFlightNotams(f) {
 const wideLayout = window.matchMedia('(min-width: 1360px)');
 function placeAirportBlocks() {
     const target = wideLayout.matches ? document.getElementById('airportPanel') : document.getElementById('detailsSection');
-    ['airportCard', 'statsBox', 'runwayList'].forEach(id => target.appendChild(document.getElementById(id)));
+    ['airportCard', 'runwayList'].forEach(id => target.appendChild(document.getElementById(id)));
 }
 placeAirportBlocks();
 wideLayout.addEventListener('change', () => {

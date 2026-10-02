@@ -8,7 +8,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css?v=10">
+    <link rel="stylesheet" href="style.css?v=11">
 </head>
 <body data-mobile-tab="diagram" data-search-mode="airport">
 
@@ -186,8 +186,8 @@
                 <!-- Dossier de vol -->
                 <div id="flightCard" class="info-card flight-card" hidden></div>
 
-                <!-- Informations Générales de l'Aéroport -->
-                <div id="airportCard" class="info-card" style="display: none;">
+                <!-- Informations Générales de l'Aéroport : en-tête (nom) collé en haut du panneau au défilement -->
+                <div id="airportHead" class="airport-head" style="display: none;">
                     <div class="info-card-header">
                         <div>
                             <h2 id="apName">Nice-Côte d'Azur</h2>
@@ -195,7 +195,8 @@
                         </div>
                         <span id="apIdent" class="ident-badge">LFMN</span>
                     </div>
-
+                </div>
+                <div id="airportCard" class="info-card" style="display: none;">
                     <div class="info-grid">
                         <div><span class="info-label">IATA : </span><span id="apIata" class="info-val">-</span></div>
                         <div><span class="info-label">Ville : </span><span id="apMunicipality" class="info-val">-</span></div>
@@ -385,7 +386,7 @@
     </div>
 
     <script src="js/airspace-router.js?v=2"></script>
-    <script src="js/app.js?v=17"></script>
+    <script src="js/app.js?v=18"></script>
     <!-- Menu de choix de carte d'approche (pastille regroupant plusieurs cartes) -->
     <div id="chartMenu" class="chart-menu" hidden></div>
 </body>

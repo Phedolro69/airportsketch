@@ -1154,6 +1154,14 @@ function applyFilterAndRefresh() {
     resetView();
 }
 
+// En-tête de la fiche aéroport collé en haut du panneau : ombre quand la fiche (ou la liste des pistes) défile dessous
+document.addEventListener('scroll', (e) => {
+    const head = document.getElementById('airportHead');
+    if (!(e.target instanceof Element) || !e.target.contains(head)) return;
+    const card = document.getElementById('airportCard');
+    head.classList.toggle('is-stuck', card.getBoundingClientRect().top < head.getBoundingClientRect().bottom - 1);
+}, true);
+
 function displayAirportInfo(data) {
     const card = document.getElementById('airportCard');
     // Affiche le deuxième panneau (grand écran) ; la zone de dessin change de taille : on la remesure tout de suite,
@@ -1161,6 +1169,7 @@ function displayAirportInfo(data) {
     if (document.body.classList.toggle('airport-open', !!data)) resizeCanvas(false);
     if (!data) {
         card.style.display = 'none';
+        document.getElementById('airportHead').style.display = 'none';
         return;
     }
 
@@ -1223,6 +1232,7 @@ function displayAirportInfo(data) {
     }
 
     card.style.display = 'flex';
+    document.getElementById('airportHead').style.display = '';
     loadAirportWeather(data.ident);
     loadAirportNotams(data.ident);
 }
@@ -3583,6 +3593,7 @@ async function loadNotams(icao) {
             } else {
                 entry.list = Array.isArray(body.notams) ? body.notams : [];
                 entry.fetched = body.t || null;
+                entry.demo = body.demo === true;   // simulateur local : NOTAM de test
             }
         } catch (err) {
             entry.error = 'network';
@@ -3648,7 +3659,7 @@ function notamBlock(icao) {
         } else {
             const main = list.filter(n => n.level !== 'info'), info = list.filter(n => n.level === 'info');
             summary = `<span class="notam-counts">${notamCounts(list)}</span>`;
-            body = `${main.map(notamRow).join('')}
+            body = `${e.demo ? '<div class="notam-demo">Démo - NE PAS UTILISER</div>' : ''}${main.map(notamRow).join('')}
                 ${info.length ? `<details class="notam-more"${main.length ? '' : ' open'}><summary>${info.length} NOTAM d'information</summary>${info.map(notamRow).join('')}</details>` : ''}
                 <div class="notam-foot">Indicatif, ne pas utiliser pour la navigation${e.fetched ? ` · relevés à ${wxPad(new Date(e.fetched * 1000).getUTCHours())}:${wxPad(new Date(e.fetched * 1000).getUTCMinutes())}Z` : ''}</div>`;
         }
@@ -3692,7 +3703,7 @@ function loadFlightNotams(f) {
 const wideLayout = window.matchMedia('(min-width: 1360px)');
 function placeAirportBlocks() {
     const target = wideLayout.matches ? document.getElementById('airportPanel') : document.getElementById('detailsSection');
-    ['airportCard', 'runwayList'].forEach(id => target.appendChild(document.getElementById(id)));
+    ['airportHead', 'airportCard', 'runwayList'].forEach(id => target.appendChild(document.getElementById(id)));
 }
 placeAirportBlocks();
 wideLayout.addEventListener('change', () => {

@@ -584,7 +584,7 @@ def mock_notams(ident):
         return 502, {"error": {"message": "Service NOTAM indisponible"}}
     now = int(time.time())
     if ident == "ZZZZ":
-        return 200, {"t": now, "notams": []}
+        return 200, {"t": now, "demo": True, "notams": []}
     # Vrais NOTAM exportés de la FAA (scripts/parse_notam_pdf.py) : dates décalées pour que la situation soit
     # celle du moment de l'export (mêmes NOTAM en vigueur, mêmes durées restantes)
     path = os.path.join(NOTAM_MOCK_DIR, f"{ident}.json")
@@ -593,7 +593,7 @@ def mock_notams(ident):
             data = json.load(f)
         shift = now - (data.get("queried") or now)
         moved = lambda ts: ts + shift if ts is not None else None
-        return 200, {"t": now, "notams": [{**n, "from": moved(n["from"]), "to": moved(n["to"])} for n in data["notams"]]}
+        return 200, {"t": now, "demo": True, "notams": [{**n, "from": moved(n["from"]), "to": moved(n["to"])} for n in data["notams"]]}
     fmt = lambda ts: time.strftime("%y%m%d%H%M", time.gmtime(ts))
     out = []
     for i, (q, e, start_h, dur_h) in enumerate(MOCK_NOTAMS):
@@ -604,7 +604,7 @@ def mock_notams(ident):
         raw = "\n".join([f"{nid} NOTAMN", f"Q) {ident[:2]}XX/{q}/IV/NBO/A/000/999", f"A) {ident} B) {fmt(start)} C) {fmt(end) if end else 'PERM'}", f"E) {text}"])
         out.append({"id": nid, "raw": raw, "text": text, "from": start, "to": end, "q": q, "scope": "AERODROME", "schedule": None})
     out.sort(key=lambda n: -(n["from"] or 0))
-    return 200, {"t": now, "notams": out}
+    return 200, {"t": now, "demo": True, "notams": out}
 
 
 LIVE_FIELDS = ["flight_iata", "flight_icao", "flight_number", "airline_iata", "airline_icao",

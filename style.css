@@ -511,6 +511,24 @@
         align-items: flex-start;
         gap: 8px;
     }
+    /* En-tête de la fiche aéroport (nom, type, code) : haut de la carte, collé en haut du panneau quand on fait
+       défiler NOTAM, fréquences ou pistes. Ombre seulement quand du contenu passe dessous (classe posée par app.js) */
+    .airport-head {
+        position: sticky;
+        top: 0;
+        z-index: 4;
+        margin-bottom: -12px;   /* annule l'écart du panneau : la carte continue juste en dessous */
+        padding: 14px 14px 10px;
+        background-color: var(--bg-card);
+        border: 1px solid var(--border-card);
+        border-bottom: none;
+        border-radius: 10px 10px 0 0;
+        transition: box-shadow 0.15s ease, border-radius 0.15s ease;
+    }
+    .airport-head + #airportCard { border-top: none; border-top-left-radius: 0; border-top-right-radius: 0; padding-top: 0; }
+    .airport-head.is-stuck { border-bottom: 1px solid var(--border-card); border-radius: 0 0 10px 10px; box-shadow: 0 6px 14px -6px rgb(0 0 0 / 0.45); }
+    :root[data-theme="light"] .airport-head.is-stuck { box-shadow: 0 6px 14px -8px rgb(15 23 42 / 0.25); }
+    .sidebar-airport .airport-head { top: -16px; }   /* panneau grand écran : colle au bord, par-dessus sa marge */
     .info-card h2 {
         font-size: 15px;
         font-weight: 700;
@@ -644,6 +662,13 @@
     .notam-rawbox .wx-raw { margin-top: 3px; white-space: pre-wrap; }
     .notam-more { margin-top: 6px; }
     .notam-more > summary { font-weight: 600; color: var(--text-muted); }
+    /* Simulateur local : bandeau orange avant le premier NOTAM */
+    .notam-demo {
+        /* Bande pleine largeur collée sous l'en-tête du bloc (annule la marge du corps), pour ne pas ressembler à un NOTAM */
+        margin: 0 -10px 6px; padding: 4px 10px;
+        background: #ea580c; color: #fff;
+        font-size: 10.5px; font-weight: 800; letter-spacing: 0.6px; text-align: center;
+    }
     .notam-foot { margin-top: 8px; font-size: 10px; color: var(--text-dim); font-style: italic; }
     /* Dossier de vol : résumé sous le départ et l'arrivée */
     .flight-ap-notam { margin-top: 4px; }

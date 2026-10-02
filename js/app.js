@@ -1923,7 +1923,7 @@ const CONFLICT_STYLES = {
 let conflictPromise = null;
 function loadConflictZones() {
     if (!conflictPromise) {
-        conflictPromise = fetch('./data/conflict_zones.json')
+        conflictPromise = fetch('./data/conflict_zones.json', { cache: 'no-cache' })
             .then(res => { if (!res.ok) throw new Error('Zones de conflit indisponibles'); return res.json(); })
             .then(d => {
                 const u = d.unit || 0.01;
@@ -1967,7 +1967,7 @@ const airspaces = { index: undefined, tiles: new Map(), loading: new Set(), fetc
 
 function loadAirspaceIndex() {
     if (!airspaces.fetching) {
-        airspaces.fetching = fetch('./data/airspaces/index.json')
+        airspaces.fetching = fetch('./data/airspaces/index.json', { cache: 'no-cache' })
             .then(res => res.ok ? res.json() : null)
             .then(idx => { airspaces.index = idx; document.getElementById('mapAirspacesRow').hidden = !idx; })
             .catch(() => { airspaces.index = null; });

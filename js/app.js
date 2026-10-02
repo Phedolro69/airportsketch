@@ -568,10 +568,15 @@ function handleFlightInput(val) {
 
 // Logo de la compagnie (icônes Kiwi.com, par code IATA ; avion gris générique pour une compagnie inconnue).
 // Simple confort visuel : l'image disparaît si elle ne se charge pas.
+// Logos fournis par nos soins, prioritaires sur Kiwi.com (SVG intégré : aucun fichier à publier)
+const AIRLINE_LOGOS = {
+    AF: 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="-40 -70 452 390"><path d="M215 0H372L168 250H0C40 250 62 232 84 200Z" fill="#ED1C24"/></svg>')
+};
 function airlineLogo(f, cls = 'airline-logo') {
     const iata = (f && (f.airline_iata || (f.flight_iata || '').slice(0, 2)) || '').toUpperCase();
     if (!/^[A-Z0-9]{2}$/.test(iata)) return '';
-    return `<img class="${cls}" src="https://images.kiwi.com/airlines/64/${iata}.png" alt="" width="64" height="64" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()">`;
+    const src = AIRLINE_LOGOS[iata] || `https://images.kiwi.com/airlines/64/${iata}.png`;
+    return `<img class="${cls}" src="${src}" alt="" width="64" height="64" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()">`;
 }
 
 function renderFlightResults(p, matches, liveError) {

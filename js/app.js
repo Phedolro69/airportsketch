@@ -794,13 +794,14 @@ function renderFlightCard(f) {
 const EARTH_NM = 3440.065;
 // Réglages de la carte du vol, mémorisés dans le navigateur (simple confort, facultatif)
 const MAP_PREFS_KEY = 'airportsketch.mapPrefs';
-const mapPrefs = { code: 'icao', band: 100, largeOnly: false, style: 'standard', conflict: true, airspaces: false,
+const mapPrefs = { code: 'icao', band: 100, largeOnly: false, style: 'standard', conflict: true, airspaces: false, spider: false,
     aspTypes: [3, 1, 2, 4, 7, 26, 12], aspClasses: ['A', 'B', 'C', 'D', 'E', 'F', 'G'] };   // code : 'icao' (KJFK, par défaut) | 'iata' (JFK) ; couloir en nm ; style : 'standard' | 'inverted' | 'contrast'
 try {
     const saved = JSON.parse(localStorage.getItem(MAP_PREFS_KEY) || '{}');
     if (['standard', 'inverted', 'contrast'].includes(saved.style)) mapPrefs.style = saved.style;
     if (typeof saved.conflict === 'boolean') mapPrefs.conflict = saved.conflict;
     if (typeof saved.airspaces === 'boolean') mapPrefs.airspaces = saved.airspaces;
+    if (typeof saved.spider === 'boolean') mapPrefs.spider = saved.spider;
     if (Array.isArray(saved.aspTypes)) mapPrefs.aspTypes = saved.aspTypes.filter(Number.isInteger);
     if (Array.isArray(saved.aspClasses)) mapPrefs.aspClasses = saved.aspClasses.filter(c => /^[A-G]$/.test(c));
     if (saved.code === 'iata' || saved.code === 'icao') mapPrefs.code = saved.code;
@@ -1839,7 +1840,7 @@ const MAP_THEMES = {
         capitalText: 'rgba(226, 232, 240, 0.72)', capitalDot: 'rgba(226, 232, 240, 0.55)',
         apLarge: '#facc15', apLargeText: '#fde68a', apMedium: 'rgba(250, 204, 21, 0.45)', apMediumText: 'rgba(254, 243, 199, 0.62)',
         labelBg: 'rgba(13, 19, 34, 0.75)', chipBg: 'rgba(15, 23, 42, 0.92)', chipText: '#f8fafc', planeGlow: 'rgba(167, 139, 250, 0.65)',
-        legendDot: '#cbd5e1', legendDotMedium: 'rgba(203, 213, 225, 0.55)'
+        legendDot: '#cbd5e1', legendDotMedium: 'rgba(203, 213, 225, 0.55)', spider: '#38bdf8'
     },
     light: {
         sea: '#d6e4f1', land: '#f7f8fa', coast: '#9db3c9', border: 'rgba(100, 116, 139, 0.38)',
@@ -1848,7 +1849,7 @@ const MAP_THEMES = {
         capitalText: 'rgba(30, 41, 59, 0.75)', capitalDot: 'rgba(30, 41, 59, 0.55)',
         apLarge: '#475569', apLargeText: '#1e293b', apMedium: 'rgba(71, 85, 105, 0.5)', apMediumText: 'rgba(51, 65, 85, 0.8)',
         labelBg: 'rgba(255, 255, 255, 0.82)', chipBg: 'rgba(255, 255, 255, 0.95)', chipText: '#0f172a', planeGlow: 'rgba(124, 58, 237, 0.45)',
-        legendDot: '#334155', legendDotMedium: 'rgba(51, 65, 85, 0.5)'
+        legendDot: '#334155', legendDotMedium: 'rgba(51, 65, 85, 0.5)', spider: '#0284c7'
     }
 };
 // Styles de carte : « standard » = palette du thème ; « inversé » échange mer et continents ; « contrasté » accentue l'écart
@@ -2596,6 +2597,24 @@ if (document.fonts && document.fonts.ready) document.fonts.ready.then(scheduleMa
 window.addEventListener('resize', () => { if (viewMode === 'map') resizeMapCanvas(); });
 document.addEventListener('visibilitychange', () => { if (!document.hidden) applyEstimatedPosition(); });
 
+// Mode « spider » : liens entre l'avion et les 3 aéroports les plus proches (parmi ceux affichés, départ et arrivée compris),
+// avec la distance orthodromique et le temps de vol à la vitesse sol actuelle.
+function spiderLinks() {
+    const pl = flightMap.route && flightMap.route.plane;
+    if (!mapPrefs.spider || !pl) return [];
+    const aps = new Map();
+    visibleOverflown().forEach(o => aps.set(o.ap.ident, o.ap));
+    [flightMap.dep, flightMap.arr].forEach(a => { if (a && Number.isFinite(a.lat) && Number.isFinite(a.lon)) aps.set(a.ident, a); });
+    const gs = flightMap.track && flightMap.track.now && flightMap.track.now.gs > 50 ? flightMap.track.now.gs : null;
+    return [...aps.values()]
+        .map(ap => {
+            const d = gcDist(pl, ap) * EARTH_NM;
+            return { ap, d, min: gs ? d / gs * 60 : null, arc: greatCircle(pl.lat, pl.lon, ap.lat, ap.lon) };
+        })
+        .sort((p, q) => p.d - q.d)
+        .slice(0, 3);
+}
+
 function scheduleMapDraw() {
     if (flightMap.raf || viewMode !== 'map') return;
     flightMap.raf = requestAnimationFrame(() => { flightMap.raf = 0; drawFlightMap(); });
@@ -2690,6 +2709,8 @@ function drawFlightMap() {
         mctx.restore();
     }
 
+    const spider = spiderLinks();
+
     // Route : après TOUTES les copies du fond (sinon la copie suivante repeint ses terres par-dessus), et dans
     // les copies voisines, car une route qui franchit l'antiméridien s'étend sur plus de 360° de longitude
     if (route) {
@@ -2739,6 +2760,18 @@ function drawFlightMap() {
                     mctx.lineWidth = 2 / s;
                     mctx.stroke(route.direct);
                 }
+                mctx.setLineDash([]);
+            }
+            for (const l of spider) {
+                mctx.beginPath();
+                l.arc.forEach(([lat, lon], i) => { if (i) mctx.lineTo(lon, mapY(lat)); else mctx.moveTo(lon, mapY(lat)); });
+                mctx.setLineDash([7 / s, 5 / s]);
+                mctx.strokeStyle = MAP_COLORS.casing;
+                mctx.lineWidth = 3.4 / s;
+                mctx.stroke();
+                mctx.strokeStyle = MAP_COLORS.spider;
+                mctx.lineWidth = 1.7 / s;
+                mctx.stroke();
                 mctx.setLineDash([]);
             }
             mctx.restore();
@@ -2827,6 +2860,35 @@ function drawFlightMap() {
                 mctx.fillText(name, x + 5, y);
             }
         }
+    }
+
+    // Étiquettes du spider : code, distance et temps de vol, au milieu de chaque lien
+    if (spider.length) {
+        mctx.font = '600 10px sans-serif';
+        mctx.textAlign = 'center';
+        mctx.textBaseline = 'middle';
+        for (let k = k0 - 1; k <= k1 + 1; k++) {
+            for (const l of spider) {
+                // Un peu plus près de l'aéroport que du milieu : les étiquettes ne s'empilent pas sur l'avion
+                const [lat, lon] = l.arc[Math.floor(l.arc.length * 0.65)];
+                let x = ox + (lon + k * 360) * s;
+                const y = oy + mapY(lat) * s;
+                if (x < -150 || x > w + 150 || y < 10 || y > h - 10) continue;
+                const text = `${airportCode(l.ap)} · ${Math.round(l.d).toLocaleString('fr-FR')} nm${l.min !== null ? ' · ' + formatDuration(Math.round(l.min)) : ''}`;
+                const tw = mctx.measureText(text).width;
+                if (x < -tw || x > w + tw) continue;
+                x = Math.max(tw / 2 + 8, Math.min(w - tw / 2 - 8, x));   // l'étiquette reste dans le cadre
+                pathRoundRect(mctx, x - tw / 2 - 5, y - 8, tw + 10, 16, 4);
+                mctx.fillStyle = MAP_COLORS.chipBg;
+                mctx.fill();
+                mctx.strokeStyle = MAP_COLORS.spider;
+                mctx.lineWidth = 1;
+                mctx.stroke();
+                mctx.fillStyle = MAP_COLORS.chipText;
+                mctx.fillText(text, x, y + 0.5);
+            }
+        }
+        mctx.textAlign = 'left';
     }
 
     for (let k = k0; k <= k1; k++) {
@@ -2932,6 +2994,9 @@ function updateMapOverlay() {
         if (hasLarge) items.push(`<div><svg width="30" height="10"><circle cx="15" cy="5" r="3.6" fill="${colL}" stroke="${MAP_COLORS.edge}" stroke-width="1.5"/></svg>Grand aéroport sur la route</div>`);
         if (hasMedium) items.push(`<div><svg width="30" height="10"><circle cx="15" cy="5" r="2.7" fill="${colM}" stroke="${MAP_COLORS.edge}" stroke-width="1.5"/></svg>Aéroport moyen (piste ≥ 2 500 m)</div>`);
         if (wxOn) items.push(`<div class="wx-legend">${Object.entries(WX_CATS).map(([k, c]) => `<span title="${c.help}"><i class="wx-dot" style="background:${c.color}"></i>${k}</span>`).join('')}</div>`);
+    }
+    if (mapPrefs.spider && route && route.plane) {
+        items.push(line(`stroke="${MAP_COLORS.spider}" stroke-width="1.7" stroke-dasharray="6 4"`, 'Dégagements : 3 aéroports les plus proches'));
     }
     if (mapPrefs.conflict && flightMap.conflict) {
         const levels = new Set(flightMap.conflict.zones.map(z => z.level));
@@ -3123,6 +3188,7 @@ function syncMapSettings() {
     document.getElementById('mapLargeOnly').checked = mapPrefs.largeOnly;
     document.getElementById('mapConflict').checked = mapPrefs.conflict;
     document.getElementById('mapAirspaces').checked = mapPrefs.airspaces;
+    document.getElementById('mapSpider').checked = mapPrefs.spider;
     document.getElementById('mapAirspaceFilters').hidden = !mapPrefs.airspaces || !airspaces.index;
     document.querySelectorAll('#mapAirspaceFilters [data-asptype]').forEach(b => b.setAttribute('aria-pressed', String(mapPrefs.aspTypes.includes(+b.dataset.asptype))));
     document.querySelectorAll('#mapAirspaceFilters [data-aspclass]').forEach(b => b.setAttribute('aria-pressed', String(mapPrefs.aspClasses.includes(b.dataset.aspclass))));

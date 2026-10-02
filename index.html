@@ -343,6 +343,11 @@
                     <input type="range" id="mapBand" min="100" max="300" step="10" oninput="setMapBand(this.value)" title="Distance maximale de part et d'autre de la route">
                     <b id="mapBandValue">± 100 nm</b>
                 </label>
+                <label class="map-settings-row overflown-filter map-large-only" title="Relie l'avion aux 3 aéroports les plus proches, avec distance et temps de vol">
+                    <input type="checkbox" id="mapSpider" onchange="setMapLayer('spider', this.checked)">
+                    <span class="overflown-switch"></span>
+                    Dégagements (spider)
+                </label>
                 <label class="map-settings-row overflown-filter map-large-only">
                     <input type="checkbox" id="mapLargeOnly" onchange="setLargeOnly(this.checked)">
                     <span class="overflown-switch"></span>
@@ -382,7 +387,7 @@
     </div>
 
     <script src="js/airspace-router.js?v=2"></script>
-    <script src="js/app.js?v=14"></script>
+    <script src="js/app.js?v=16"></script>
     <!-- Menu de choix de carte d'approche (pastille regroupant plusieurs cartes) -->
     <div id="chartMenu" class="chart-menu" hidden></div>
 </body>

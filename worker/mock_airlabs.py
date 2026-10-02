@@ -26,6 +26,14 @@ Route /track?callsign=AFR1 (position actuelle du vol en cours, comme AirLabs en 
 position simulée le long du grand cercle avec un léger écart latéral ; pas d'historique (track vide).
     vol pas en l'air ou compagnie ZZZ ... réponse null
     numéro 429 ....................... erreur « quota atteint » (HTTP 503)
+
+Route /wx?ids=LFPG,KJFK&taf=1 (METAR / TAF au format compact de worker/weather.js) : météo simulée,
+hors ligne, déterministe par aéroport et par heure (un mélange de VFR / MVFR / IFR / LIFR, avec des
+aéroports sans METAR ou sans TAF). `--wx real` interroge NOAA à la place.
+    &mock=<scénario> ................. force la météo de tous les ids : cavok · fog · mist · rain · snow
+                                       storm · gusty · hot   (ou --wx-scenario au lancement du simulateur)
+    ZZZZ ............................. aéroport sans METAR ni TAF
+    XXXX ............................. erreur météo simulée (HTTP 502)
 """
 
 import argparse
@@ -302,8 +310,180 @@ def generate_track(airline, number: int, now):
     }
 
 
-# --- Météo : vraie météo NOAA (gratuite, sans clé), même format compact que worker/weather.js -------------
+# --- Météo : /wx, même format compact que worker/weather.js ----------------------------------------------
+# Par défaut la météo est simulée (hors ligne, déterministe par aéroport et par heure) ; `--wx real` interroge NOAA.
 _WX_CACHE = {}
+WX_MODE = "mock"
+WX_DEFAULT_SCENARIO = None
+WX_SCENARIOS = ("cavok", "fog", "mist", "rain", "snow", "storm", "gusty", "hot")
+# Répartition par défaut (None = temps ordinaire) : une route montre ainsi les 4 catégories de vol
+WX_MIX = [(None, 38), ("cavok", 14), ("mist", 14), ("rain", 12), ("fog", 6), ("snow", 4), ("storm", 6), ("gusty", 6)]
+WX_NO_METAR = 0.12   # part des aéroports sans METAR (petits terrains)
+WX_NO_TAF = 0.30     # part des aéroports sans TAF
+
+
+def _scenario_for(icao, hour, forced):
+    if forced:
+        return forced
+    r = rng_for("wx-scenario", icao, hour)
+    x = r.uniform(0, sum(w for _, w in WX_MIX))
+    for name, w in WX_MIX:
+        x -= w
+        if x <= 0:
+            return name
+    return None
+
+
+def _miles(meters):
+    return round(meters / 1609.34, 2 if meters < 1600 else 1)
+
+
+def _wx_sky(r, scenario):
+    """(couches [[couverture, base ft]], phénomène, visibilité en milles)."""
+    if scenario == "cavok":
+        return [], None, "10+"
+    if scenario == "fog":
+        return [["VV", 100]], "FG", _miles(r.choice([100, 200, 400]))
+    if scenario == "mist":
+        return [["BKN", 2500]], "BR", _miles(r.choice([2000, 3500, 4500]))
+    if scenario == "rain":
+        return [["SCT", 700], ["OVC", 1100]], r.choice(["RA", "-RA"]), _miles(r.choice([3000, 4500, 6000]))
+    if scenario == "snow":
+        return [["BKN", 800], ["OVC", 1500]], r.choice(["-SN", "SN"]), _miles(r.choice([1200, 2000, 3000]))
+    if scenario == "storm":
+        return [["FEW", 1500], ["BKN", 2500], ["OVC", 4000]], r.choice(["TSRA", "+TSRA"]), _miles(r.choice([2000, 3000, 4000]))
+    layers = []
+    base = r.choice([None, 1500, 3000, 4500, 8000, 12000])
+    if base:
+        layers.append([r.choice(["FEW", "SCT"]), base])
+        if r.random() < 0.4:
+            layers.append([r.choice(["SCT", "BKN"]), base + r.choice([2000, 5000, 9000])])
+    return layers, None, "10+"
+
+
+def _flight_cat(vis, layers):
+    sm = 10 if vis == "10+" else vis
+    ceiling = min((b for c, b in layers if c in ("BKN", "OVC", "VV")), default=None)
+    if sm < 1 or (ceiling is not None and ceiling < 500):
+        return "LIFR"
+    if sm < 3 or (ceiling is not None and ceiling < 1000):
+        return "IFR"
+    if sm <= 5 or (ceiling is not None and ceiling <= 3000):
+        return "MVFR"
+    return "VFR"
+
+
+def _wx_wind(r, scenario):
+    wspd, wgst = r.choice([0, 3, 5, 7, 8, 10, 12, 15]), None
+    if scenario == "gusty":
+        wspd, wgst = r.randint(25, 32), r.randint(40, 55)
+    elif scenario == "storm":
+        wspd, wgst = r.randint(18, 25), r.randint(32, 48)
+    elif scenario in ("fog", "cavok"):
+        wspd = min(wspd, 4 if scenario == "fog" else 8)
+    elif wspd >= 15 and r.random() < 0.5:
+        wgst = wspd + r.randint(8, 15)
+    if not wspd:
+        return 0, 0, None
+    wdir = "VRB" if wspd <= 3 and r.random() < 0.4 else r.randrange(10, 361, 10)
+    return wdir, wspd, wgst
+
+
+def _wind_txt(wdir, wspd, wgst):
+    if not wspd:
+        return "00000KT"
+    d = wdir if wdir == "VRB" else format(wdir, "03d")
+    return f"{d}{wspd:02d}" + (f"G{wgst:02d}" if wgst else "") + "KT"
+
+
+def _layers_txt(layers, empty):
+    return " ".join(f"{c}{b // 100:03d}" for c, b in layers) or empty
+
+
+def _utc_ts(dt):
+    return int(dt.replace(tzinfo=datetime.timezone.utc).timestamp())
+
+
+def _mock_metar(icao, now, forced):
+    """METAR compact, ou None (aéroport sans METAR)."""
+    if not forced and rng_for("wx-no-metar", icao).random() < WX_NO_METAR:
+        return None
+    us = icao[0] in "KCP"  # unités américaines dans le texte brut : milles et inHg
+    hour = now.replace(minute=0, second=0, microsecond=0)
+    obs = hour + datetime.timedelta(minutes=53 if us else 0)
+    if obs > now:  # le METAR de l'heure n'est pas encore paru
+        hour -= datetime.timedelta(hours=1)
+        obs -= datetime.timedelta(hours=1)
+    scenario = _scenario_for(icao, hour.isoformat(), forced)
+    r = rng_for("wx-metar", icao, hour.isoformat(), scenario)
+
+    temp = round(4 + 14 * (1 - abs(obs.month - 7) / 6) + r.uniform(-4, 4) + 4 * (1 - abs(obs.hour - 14) / 12))
+    if scenario == "hot":
+        temp = r.randint(36, 44)
+    elif scenario == "snow":
+        temp = r.randint(-8, 0)
+    elif scenario == "fog":
+        temp = r.randint(1, 8)
+    wet = scenario in ("fog", "snow", "rain", "storm", "mist")
+    dewp = temp - (r.randint(0, 1) if wet else r.randint(2, 12))
+    wdir, wspd, wgst = _wx_wind(r, scenario)
+    layers, wx, vis = _wx_sky(r, scenario)
+    qnh = r.randint(990, 1004) if scenario == "storm" else r.randint(1001, 1028)
+
+    # Texte brut cohérent avec les champs
+    cavok = not us and not layers and not wx and vis == "10+"
+    if cavok:
+        vis_txt = "CAVOK"
+    elif us:
+        vis_txt = "10SM" if vis == "10+" else f"{vis:g}SM"
+    else:
+        vis_txt = "9999" if vis == "10+" else f"{round(vis * 1609.34 / 100) * 100:04d}"
+    t_txt = lambda v: f"M{abs(v):02d}" if v < 0 else f"{v:02d}"
+    parts = ["METAR", icao, obs.strftime("%d%H%MZ"), _wind_txt(wdir, wspd, wgst), vis_txt]
+    if wx:
+        parts.append(wx)
+    if not cavok:
+        parts.append(_layers_txt(layers, "CLR" if us else "NSC"))
+    parts += [f"{t_txt(temp)}/{t_txt(dewp)}", f"A{round(qnh * 0.02953 * 100):04d}" if us else f"Q{qnh}"]
+    return {"raw": " ".join(parts), "cat": _flight_cat(vis, layers), "t": _utc_ts(obs),
+            "temp": temp, "dewp": dewp, "wdir": wdir, "wspd": wspd, "wgst": wgst, "vis": vis, "alt": qnh,
+            "clouds": layers or [["CAVOK" if cavok else "CLR", None]], "wx": wx}
+
+
+def _mock_taf(icao, now, forced):
+    """TAF compact de 24 h en 3 périodes, ou None (aéroport sans TAF)."""
+    if not forced and rng_for("wx-no-taf", icao).random() < WX_NO_TAF:
+        return None
+    issue = now.replace(minute=0, second=0, microsecond=0)
+    issue -= datetime.timedelta(hours=issue.hour % 6)  # émis toutes les 6 h
+    end = issue + datetime.timedelta(hours=24)
+    cuts = [issue, issue + datetime.timedelta(hours=9), issue + datetime.timedelta(hours=17), end]
+    fc, groups = [], []
+    for i in range(3):
+        # La première période suit le scénario du METAR ; les suivantes reviennent à un temps ordinaire ou évoluent
+        if forced:
+            scenario = forced
+        elif i == 0:
+            scenario = _scenario_for(icao, issue.isoformat(), None)
+        else:
+            scenario = rng_for("wx-taf", icao, issue.isoformat(), i).choice([None, None, "mist", "rain"])
+        r = rng_for("wx-taf-p", icao, issue.isoformat(), i, scenario)
+        wdir, wspd, wgst = _wx_wind(r, scenario)
+        layers, wx, vis = _wx_sky(r, scenario)
+        ch = None if i == 0 else r.choice(["BECMG", "TEMPO", "FM"])
+        fc.append({"f": _utc_ts(cuts[i]), "t": _utc_ts(cuts[i + 1]), "ch": ch, "p": None, "wdir": wdir, "wspd": wspd,
+                   "wgst": wgst, "vis": vis, "wx": wx, "clouds": layers or [["NSC", None]]})
+        group = f"{_wind_txt(wdir, wspd, wgst)} {'9999' if vis == '10+' else format(round(vis * 1609.34 / 100) * 100, '04d')}"
+        group += (f" {wx}" if wx else "") + " " + _layers_txt(layers, "NSC")
+        if ch == "FM":
+            prefix = "FM" + cuts[i].strftime("%d%H%M ")
+        elif ch:
+            prefix = f"{ch} {cuts[i].strftime('%d%H')}/{cuts[i + 1].strftime('%d%H')} "
+        else:
+            prefix = ""
+        groups.append(prefix + group)
+    raw = f"TAF {icao} {issue.strftime('%d%H%MZ')} {issue.strftime('%d%H')}/{end.strftime('%d%H')} " + "\n  ".join(groups)
+    return {"raw": raw, "issue": _utc_ts(issue), "from": _utc_ts(issue), "to": _utc_ts(end), "fc": fc}
 
 
 def _noaa(kind, ids):
@@ -333,6 +513,17 @@ def weather_response(query):
     if not ids or len(ids) > 150 or not all(re.fullmatch(r"[A-Z0-9]{3,4}", i) for i in ids):
         return 400, {"error": {"message": "Paramètre ids invalide (1 à 150 codes OACI)"}}
     want_taf = (query.get("taf") or [""])[0] == "1"
+    if WX_MODE == "mock":
+        forced = (query.get("mock") or [""])[0].lower() or WX_DEFAULT_SCENARIO
+        if forced and forced not in WX_SCENARIOS:
+            return 400, {"error": {"message": f"Scénario inconnu, valeurs : {', '.join(WX_SCENARIOS)}"}}
+        if "XXXX" in ids:
+            return 502, {"error": {"message": "Service météo indisponible (simulé)"}}
+        now = datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None)
+        out = {"metar": {i: None if i == "ZZZZ" else _mock_metar(i, now, forced) for i in ids}}
+        if want_taf:
+            out["taf"] = {i: None if i == "ZZZZ" else _mock_taf(i, now, forced) for i in ids}
+        return 200, out
     out = {}
     try:
         for kind, compact, ttl in (("metar", _compact_metar, 300), ("taf", _compact_taf, 900)):
@@ -457,8 +648,12 @@ def main():
     parser.add_argument("--port", type=int, default=8787, help="port d'écoute (défaut 8787, celui attendu par le site)")
     parser.add_argument("--host", default="0.0.0.0", help="interface (défaut 0.0.0.0 : accessible depuis un téléphone du réseau local)")
     parser.add_argument("--delay", type=int, default=300, help="latence simulée en ms (défaut 300)")
+    parser.add_argument("--wx", choices=["mock", "real"], default="mock", help="météo : simulée (défaut) ou vraie météo NOAA")
+    parser.add_argument("--wx-scenario", choices=WX_SCENARIOS, help="force la météo simulée de tous les aéroports (fog, storm…)")
     args = parser.parse_args()
 
+    global WX_MODE, WX_DEFAULT_SCENARIO
+    WX_MODE, WX_DEFAULT_SCENARIO = args.wx, args.wx_scenario
     Handler.delay_ms = args.delay
     # Sans SO_REUSEADDR : sous Windows il permettrait de partager le port avec `wrangler dev`
     # sans erreur, et on ne saurait plus qui répond

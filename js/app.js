@@ -3544,7 +3544,8 @@ async function loadNotams(icao) {
             const res = await fetch(`${FLIGHT_API_BASE}/notam?id=${icao}`, { headers: accessCode ? { 'X-Access-Code': accessCode } : {} });
             const body = await res.json().catch(() => null);
             if (!res.ok || !body || body.error) {
-                entry.error = (body && body.error && body.error.code) || 'network';
+                // 404 : worker antérieur à la route /notam, traité comme « non configuré » (bloc masqué)
+                entry.error = (body && body.error && body.error.code) || (res.status === 404 ? 'notam_unconfigured' : 'network');
                 // Pas de nouvel essai avant 5 min sur une erreur passagère
                 entry.t = Date.now() - NOTAM_MAX_AGE_MS + 5 * 60 * 1000;
             } else {

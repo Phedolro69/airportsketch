@@ -601,7 +601,8 @@
     :root[data-theme="light"] .wx-taf-row.is-eta { background: rgba(124, 58, 237, 0.10); box-shadow: inset 2px 0 0 #7c3aed; }
     .wx-tag { font-size: 9px; font-weight: 700; letter-spacing: 0.4px; color: var(--p-fde68a); }
     /* Blocs encadrés de la fiche aéroport (Météo dépliée par défaut, NOTAM repliée) */
-    .wx-card { margin-top: 12px; }
+    .wx-card { margin-top: -4px; }   /* 6 px entre les blocs (écart de 10 px de la fiche) */
+    #apWeather { margin-top: 2px; }
     .panel-box { background: var(--n-111827); border: 1px solid var(--n-2d3748); border-radius: 8px; }
     .panel-box > summary { display: flex; align-items: center; gap: 10px; padding: 8px 10px; cursor: pointer; list-style: none; user-select: none; }
     .panel-box > summary::-webkit-details-marker { display: none; }

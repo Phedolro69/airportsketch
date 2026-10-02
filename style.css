@@ -1034,22 +1034,6 @@
     .map-bottom > .map-toggles { display: none; }   /* téléphone seulement (voir plus bas) */
     .map-settings-row { display: flex; align-items: center; gap: 8px; }
     .map-settings-row[hidden] { display: none; }
-    /* Filtres des espaces aériens (sous l'interrupteur de la couche) */
-    .asp-filters { display: flex; flex-direction: column; gap: 6px; padding: 2px 0 2px 34px; max-width: 290px; }
-    .asp-filters[hidden] { display: none; }
-    .asp-filter-row { display: flex; align-items: flex-start; gap: 8px; }
-    .asp-filter-row > span { width: 46px; flex: none; padding-top: 3px; color: var(--text-muted); font-size: 11px; }
-    .asp-chips { display: flex; flex-wrap: wrap; gap: 4px; }
-    .asp-chip {
-        display: inline-flex; align-items: center; gap: 4px;
-        padding: 2px 7px; border-radius: 9999px; cursor: pointer;
-        border: 1px solid var(--n-374151); background: none; color: var(--text-muted);
-        font: inherit; font-size: 11px; font-weight: 600;
-    }
-    .asp-chip i { width: 7px; height: 7px; border-radius: 50%; opacity: 0.35; }
-    .asp-chip[aria-pressed="true"] { background: var(--n-1f2937); border-color: #7c3aed; color: var(--text-main); }
-    .asp-chip[aria-pressed="true"] i { opacity: 1; }
-    .asp-chip:focus-visible { outline: 2px solid #a78bfa; outline-offset: 1px; }
     .map-settings-row > span { width: 46px; color: var(--text-muted); }
     .map-settings .map-large-only { margin: 0; font-weight: 600; }
     .map-settings .map-large-only > .overflown-switch { width: 26px; }

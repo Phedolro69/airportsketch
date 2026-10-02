@@ -66,51 +66,6 @@ jobs:
         continue-on-error: true
         run: python scripts/build_conflict_zones.py --output dist
 
-      # Espaces aériens OpenAIP (CC BY-NC 4.0, usage non commercial). Secret OPENAIP_API_KEY à créer dans
-      # Settings > Secrets and variables > Actions ; sans lui, la couche reste simplement désactivée.
-      # Les données ne changent qu'avec le cycle AIRAC (28 jours) : un seul téléchargement par cycle, mis en
-      # cache (.cache/airspaces) ; si OpenAIP est injoignable, on republie le cycle précédent (restore-keys).
-      # Pour forcer un nouveau téléchargement : supprimer le cache « airspaces-… » (Actions > Caches).
-      - name: Restore airspaces cache
-        id: asp-cache
-        uses: actions/cache/restore@v4
-        with:
-          path: .cache/airspaces
-          key: airspaces-${{ steps.airac.outputs.cycle }}
-          restore-keys: airspaces-
-
-      - name: Build airspaces layer
-        id: asp-build
-        if: steps.asp-cache.outputs.cache-hit != 'true'
-        continue-on-error: true
-        env:
-          OPENAIP_API_KEY: ${{ secrets.OPENAIP_API_KEY }}
-        run: |
-          python scripts/build_airspaces.py --output .cache/airspaces-new
-          if [ -f .cache/airspaces-new/data/airspaces/index.json ]; then
-            rm -rf .cache/airspaces
-            mkdir -p .cache/airspaces
-            mv .cache/airspaces-new/data/airspaces .cache/airspaces/airspaces
-            echo "built=true" >> "$GITHUB_OUTPUT"
-          fi
-
-      - name: Save airspaces cache
-        if: steps.asp-build.outputs.built == 'true'
-        uses: actions/cache/save@v4
-        with:
-          path: .cache/airspaces
-          key: airspaces-${{ steps.airac.outputs.cycle }}
-
-      - name: Add airspaces layer to site
-        run: |
-          if [ -f .cache/airspaces/airspaces/index.json ]; then
-            mkdir -p dist/data
-            cp -r .cache/airspaces/airspaces dist/data/airspaces
-            echo "Espaces aériens ajoutés au site"
-          else
-            echo "Pas de données d'espaces aériens : couche désactivée"
-          fi
-
       # Clé = cycle réellement obtenu (peut être l'ancien si la FAA était en panne)
       - name: Read FAA cycle used
         id: faa-used

@@ -920,6 +920,8 @@
         }
         body[data-view="map"] .map-settings { display: flex; }
         .is-fullscreen .map-settings { top: 118px; }
+        .map-bottom { display: contents; }
+        .map-bottom > .map-large-btn { display: none; }   /* téléphone seulement (voir plus bas) */
         .map-settings-row { display: flex; align-items: center; gap: 8px; }
         .map-settings-row > span { width: 46px; color: var(--text-muted); }
         .map-settings .map-large-only { margin: 0; font-weight: 600; }
@@ -1643,12 +1645,37 @@
             .demo-notice { display: none !important; }
             .demo-pill:not([hidden]) { display: inline-block; }
 
-            /* Carte : la pastille d'info mobile est masquée, les boutons Diagramme / Carte remontent tout en haut
-               de la carte (juste sous les onglets), suivis du résumé du vol puis du message */
+            /* Carte : les boutons Diagramme / Carte remontent tout en haut (juste sous les onglets), suivis du message ;
+               les paramètres du vol et la bascule « grands aéroports » passent en bas, à gauche des boutons de zoom */
             body[data-view="map"] .canvas-area:not(.is-fullscreen) .canvas-top-center { top: 10px; }
-            body[data-view="map"] .canvas-area:not(.is-fullscreen) .map-hud { top: 52px; }
             body[data-view="map"] .canvas-area:not(.is-fullscreen) .map-notice { top: 52px; }
-            body[data-view="map"] .canvas-area:not(.is-fullscreen) .map-hud:not([hidden]) ~ .map-notice { top: 106px; }
+            .map-bottom {
+                display: flex;
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 6px;
+                position: absolute;
+                left: 14px;
+                right: 84px;
+                bottom: calc(16px + var(--safe-bottom));
+                z-index: 5;
+                pointer-events: none;
+            }
+            .map-bottom > * { pointer-events: auto; }
+            body[data-view="map"] .canvas-area .map-bottom .map-hud { position: static; max-width: 100%; }
+            body[data-view="map"] .map-large-btn {
+                display: inline-flex;
+                align-items: center;
+                gap: 7px;
+                padding: 3px 9px 3px 7px;
+                border-radius: 9999px;
+                background: rgba(15, 23, 42, 0.55);
+                border: 1px solid rgba(148, 163, 184, 0.2);
+                color: #94a3b8;
+                font-size: 10.5px;
+                font-weight: 600;
+                cursor: pointer;
+            }
 
             /* Mobile : le nom de l'aéroport est dans la pastille d'info, pas en titre sur le schéma */
             .diagram-title { display: none !important; }
@@ -1693,7 +1720,6 @@
             /* Carte du vol : le bandeau d'info mobile et la bascule se partagent le haut de l'écran */
             .canvas-top-center { top: 54px; max-width: calc(100% - 20px); width: max-content; }
             .view-toggle button { padding: 6px 8px; font-size: 11px; gap: 4px; white-space: nowrap; }
-            .map-hud { top: 14px; left: 14px; right: 14px; max-width: none; }
             .map-notice { top: 140px; }
             .map-settings { top: 96px; left: 14px; right: auto; flex-direction: row; flex-wrap: wrap; gap: 6px 12px; padding: 6px 8px; }
             .map-settings-row > span { width: auto; }
@@ -2026,7 +2052,16 @@
                 </button>
             </div>
 
-            <div class="map-hud" id="mapHud" hidden></div>
+            <!-- Bas de carte (téléphone) : paramètres du vol et bascule « grands aéroports ». Sur ordinateur, le conteneur
+                 n'a pas de boîte (display: contents) et le HUD garde sa place en haut à gauche. -->
+            <div class="map-bottom">
+                <div class="map-hud" id="mapHud" hidden></div>
+                <label class="map-large-btn overflown-filter" id="mapLargeBtn" title="N'afficher que les grands aéroports le long de la route">
+                    <input type="checkbox" id="mapLargeOnlyPhone" onchange="setLargeOnly(this.checked)">
+                    <span class="overflown-switch"></span>
+                    Grands aéroports uniquement
+                </label>
+            </div>
             <!-- Réglages de la carte du vol -->
             <div class="map-settings" id="mapSettings">
                 <div class="map-settings-row">
@@ -4398,7 +4433,7 @@
         // Rectangles (pixels du canvas) des éléments visibles posés sur la carte
         function mapObstacles() {
             const base = mapCanvas.getBoundingClientRect();
-            return ['#mapLegend', '#mapSettings', '#mapHud', '#mapNotice', '#viewToggle', '#shortRwyBtn', '.canvas-top-actions', '.controls-overlay', '#fullscreenHeader']
+            return ['#mapLegend', '#mapSettings', '#mapHud', '#mapLargeBtn', '#mapNotice', '#viewToggle', '#shortRwyBtn', '.canvas-top-actions', '.controls-overlay', '#fullscreenHeader']
                 .map(sel => document.querySelector(sel))
                 .filter(el => el && !el.hidden && el.offsetParent !== null && getComputedStyle(el).display !== 'none')
                 .map(el => {
@@ -4599,50 +4634,62 @@
                     mctx.stroke(world.land);
                 }
 
-                if (route) {
-                    if (route.hasTrack) {
-                        mctx.setLineDash([]);
-                        mctx.strokeStyle = MAP_COLORS.casing;
-                        mctx.lineWidth = 6 / s;
-                        mctx.stroke(route.solid);
-                        mctx.strokeStyle = MAP_COLORS.route;
-                        mctx.lineWidth = 3 / s;
-                        mctx.stroke(route.solid);
-                        if (route.hasGap) {
-                            mctx.setLineDash([7 / s, 6 / s]);
-                            mctx.strokeStyle = MAP_COLORS.routeSoft;
-                            mctx.lineWidth = 2.2 / s;
-                            mctx.stroke(route.dashed);
-                        }
-                        if (route.hasRemaining) {
-                            mctx.setLineDash([0.1 / s, 7 / s]);
-                            mctx.strokeStyle = MAP_COLORS.routeSoft;
-                            mctx.lineWidth = 2.4 / s;
-                            mctx.stroke(route.remaining);
-                        }
-                    } else if (route.hasPosition) {
-                        // Parcouru estimé : trait plein plus discret que la route réelle
-                        mctx.setLineDash([]);
-                        mctx.strokeStyle = MAP_COLORS.casing;
-                        mctx.lineWidth = 5 / s;
-                        mctx.stroke(route.flownEst);
-                        mctx.strokeStyle = MAP_COLORS.routeSoft;
-                        mctx.lineWidth = 2.4 / s;
-                        mctx.stroke(route.flownEst);
-                        if (route.hasRemaining) {
-                            mctx.setLineDash([0.1 / s, 7 / s]);
-                            mctx.lineWidth = 2.4 / s;
-                            mctx.stroke(route.remaining);
-                        }
-                    } else {
-                        mctx.setLineDash([6 / s, 7 / s]);
-                        mctx.strokeStyle = MAP_COLORS.direct;
-                        mctx.lineWidth = 2 / s;
-                        mctx.stroke(route.direct);
-                    }
-                    mctx.setLineDash([]);
-                }
                 mctx.restore();
+            }
+
+            // Route : après TOUTES les copies du fond (sinon la copie suivante repeint ses terres par-dessus), et dans
+            // les copies voisines, car une route qui franchit l'antiméridien s'étend sur plus de 360° de longitude
+            if (route) {
+                for (let k = k0 - 1; k <= k1 + 1; k++) {
+                    mctx.save();
+                    mctx.setTransform(dpr * s, 0, 0, dpr * s, dpr * (ox + k * 360 * s), dpr * oy);
+                    mctx.lineJoin = 'round';
+                    mctx.lineCap = 'round';
+                    if (route) {
+                        if (route.hasTrack) {
+                            mctx.setLineDash([]);
+                            mctx.strokeStyle = MAP_COLORS.casing;
+                            mctx.lineWidth = 6 / s;
+                            mctx.stroke(route.solid);
+                            mctx.strokeStyle = MAP_COLORS.route;
+                            mctx.lineWidth = 3 / s;
+                            mctx.stroke(route.solid);
+                            if (route.hasGap) {
+                                mctx.setLineDash([7 / s, 6 / s]);
+                                mctx.strokeStyle = MAP_COLORS.routeSoft;
+                                mctx.lineWidth = 2.2 / s;
+                                mctx.stroke(route.dashed);
+                            }
+                            if (route.hasRemaining) {
+                                mctx.setLineDash([0.1 / s, 7 / s]);
+                                mctx.strokeStyle = MAP_COLORS.routeSoft;
+                                mctx.lineWidth = 2.4 / s;
+                                mctx.stroke(route.remaining);
+                            }
+                        } else if (route.hasPosition) {
+                            // Parcouru estimé : trait plein plus discret que la route réelle
+                            mctx.setLineDash([]);
+                            mctx.strokeStyle = MAP_COLORS.casing;
+                            mctx.lineWidth = 5 / s;
+                            mctx.stroke(route.flownEst);
+                            mctx.strokeStyle = MAP_COLORS.routeSoft;
+                            mctx.lineWidth = 2.4 / s;
+                            mctx.stroke(route.flownEst);
+                            if (route.hasRemaining) {
+                                mctx.setLineDash([0.1 / s, 7 / s]);
+                                mctx.lineWidth = 2.4 / s;
+                                mctx.stroke(route.remaining);
+                            }
+                        } else {
+                            mctx.setLineDash([6 / s, 7 / s]);
+                            mctx.strokeStyle = MAP_COLORS.direct;
+                            mctx.lineWidth = 2 / s;
+                            mctx.stroke(route.direct);
+                        }
+                        mctx.setLineDash([]);
+                    }
+                    mctx.restore();
+                }
             }
 
             // Repères en pixels : aéroports puis avion
@@ -4991,6 +5038,7 @@
             document.getElementById('mapBand').value = mapPrefs.band;
             document.getElementById('mapBandValue').textContent = `± ${mapPrefs.band} nm`;
             document.getElementById('mapLargeOnly').checked = mapPrefs.largeOnly;
+            document.getElementById('mapLargeOnlyPhone').checked = mapPrefs.largeOnly;
         }
 
         function setMapCode(code) {

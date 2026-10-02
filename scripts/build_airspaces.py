@@ -6,7 +6,8 @@ Source : OpenAIP (https://www.openaip.net), licence CC BY-NC 4.0 : attribution o
 Clé d'API gratuite (compte openaip.net, Profil > API) dans la variable d'environnement OPENAIP_API_KEY ;
 sans clé, le script ne fait rien (la couche reste désactivée sur le site) et se termine en succès.
 
-Types retenus (par défaut) : 1 réglementée (R), 2 dangereuse (D), 3 interdite (P), 4 CTR, 7 TMA, 12 ADIZ.
+Types retenus (par défaut) : 1 réglementée (R), 2 dangereuse (D), 3 interdite (P), 4 CTR, 7 TMA, 12 ADIZ,
+26 CTA (régions de contrôle, où se trouve l'essentiel de la classe E).
 
 Sortie
     <output>/data/airspaces/index.json   {"updated", "source", "tile": 5, "unit": 0.01, "tiles": {"5_45": 12, ...}}
@@ -32,7 +33,7 @@ import urllib.parse
 import urllib.request
 
 API = "https://api.core.openaip.net/api/airspaces"
-DEFAULT_TYPES = [1, 2, 3, 4, 7, 12]
+DEFAULT_TYPES = [1, 2, 3, 4, 7, 12, 26]
 CLASSES = {0: "A", 1: "B", 2: "C", 3: "D", 4: "E", 5: "F", 6: "G"}
 TILE = 5
 SIMPLIFY_DEG = 0.01   # ~1 km

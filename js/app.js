@@ -794,12 +794,15 @@ function renderFlightCard(f) {
 const EARTH_NM = 3440.065;
 // Réglages de la carte du vol, mémorisés dans le navigateur (simple confort, facultatif)
 const MAP_PREFS_KEY = 'airportsketch.mapPrefs';
-const mapPrefs = { code: 'icao', band: 100, largeOnly: false, style: 'standard', conflict: true, airspaces: false };   // code : 'icao' (KJFK, par défaut) | 'iata' (JFK) ; couloir en nm ; style : 'standard' | 'inverted' | 'contrast'
+const mapPrefs = { code: 'icao', band: 100, largeOnly: false, style: 'standard', conflict: true, airspaces: false,
+    aspTypes: [3, 1, 2, 4, 7, 26, 12], aspClasses: ['A', 'B', 'C', 'D', 'E', 'F', 'G'] };   // code : 'icao' (KJFK, par défaut) | 'iata' (JFK) ; couloir en nm ; style : 'standard' | 'inverted' | 'contrast'
 try {
     const saved = JSON.parse(localStorage.getItem(MAP_PREFS_KEY) || '{}');
     if (['standard', 'inverted', 'contrast'].includes(saved.style)) mapPrefs.style = saved.style;
     if (typeof saved.conflict === 'boolean') mapPrefs.conflict = saved.conflict;
     if (typeof saved.airspaces === 'boolean') mapPrefs.airspaces = saved.airspaces;
+    if (Array.isArray(saved.aspTypes)) mapPrefs.aspTypes = saved.aspTypes.filter(Number.isInteger);
+    if (Array.isArray(saved.aspClasses)) mapPrefs.aspClasses = saved.aspClasses.filter(c => /^[A-G]$/.test(c));
     if (saved.code === 'iata' || saved.code === 'icao') mapPrefs.code = saved.code;
     if (typeof saved.largeOnly === 'boolean') mapPrefs.largeOnly = saved.largeOnly;
     if (Number.isFinite(saved.band)) mapPrefs.band = Math.min(300, Math.max(100, Math.round(saved.band / 10) * 10));
@@ -1961,15 +1964,21 @@ const AIRSPACE_STYLES = {
     2:  { fill: 'rgba(250, 204, 21, 0.16)', stroke: 'rgba(250, 204, 21, 0.95)', label: 'Zone dangereuse (D)' },
     4:  { fill: 'rgba(34, 211, 238, 0.14)', stroke: 'rgba(34, 211, 238, 0.9)',  label: 'CTR' },
     7:  { fill: 'rgba(99, 102, 241, 0.12)', stroke: 'rgba(129, 140, 248, 0.85)', label: 'TMA' },
+    26: { fill: 'rgba(163, 230, 53, 0.08)', stroke: 'rgba(163, 230, 53, 0.75)', label: 'CTA' },
     12: { fill: 'rgba(148, 163, 184, 0.08)', stroke: 'rgba(148, 163, 184, 0.8)', label: 'ADIZ' }
 };
+// Ordre et libellés courts des filtres (réglages de la carte) ; classes OACI filtrables
+const AIRSPACE_TYPE_ORDER = [[3, 'P'], [1, 'R'], [2, 'D'], [4, 'CTR'], [7, 'TMA'], [26, 'CTA'], [12, 'ADIZ']];
+const AIRSPACE_CLASSES = ['A', 'B', 'C', 'D', 'E', 'F', 'G'];
+// Un espace aérien est montré si son type est coché et, s'il a une classe OACI, si cette classe l'est aussi
+const airspaceShown = (t, c) => mapPrefs.aspTypes.includes(+t) && (!c || mapPrefs.aspClasses.includes(c));
 const airspaces = { index: undefined, tiles: new Map(), loading: new Set(), fetching: null };
 
 function loadAirspaceIndex() {
     if (!airspaces.fetching) {
         airspaces.fetching = fetch('./data/airspaces/index.json', { cache: 'no-cache' })
             .then(res => res.ok ? res.json() : null)
-            .then(idx => { airspaces.index = idx; document.getElementById('mapAirspacesRow').hidden = !idx; })
+            .then(idx => { airspaces.index = idx; document.getElementById('mapAirspacesRow').hidden = !idx; if (idx) buildAirspaceFilters(); syncMapSettings(); })
             .catch(() => { airspaces.index = null; });
     }
     return airspaces.fetching;
@@ -1989,7 +1998,8 @@ function loadAirspaceTile(key) {
                 let x = a.g[0], y = a.g[1];
                 pts.push([x * u, y * u]);
                 for (let i = 2; i < a.g.length; i += 2) { x += a.g[i]; y += a.g[i + 1]; pts.push([x * u, y * u]); }
-                const path = paths[a.t] || (paths[a.t] = new Path2D());
+                const pk = `${a.t}|${a.c || ''}`;
+                const path = paths[pk] || (paths[pk] = new Path2D());
                 pts.forEach(([lon, lat], i) => path[i ? 'lineTo' : 'moveTo'](lon, mapY(lat)));
                 path.closePath();
                 return { ...a, pts };
@@ -2635,9 +2645,10 @@ function drawFlightMap() {
             for (const key of airspaceTileKeys(lonMin, lonMax, latA, latB)) {
                 const tile = airspaces.tiles.get(key);
                 if (!tile) { loadAirspaceTile(key); continue; }
-                for (const [type, path] of Object.entries(tile.paths)) {
+                for (const [pk, path] of Object.entries(tile.paths)) {
+                    const [type, cls] = pk.split('|');
                     const st = AIRSPACE_STYLES[type];
-                    if (!st) continue;
+                    if (!st || !airspaceShown(type, cls)) continue;
                     mctx.fillStyle = st.fill;
                     mctx.fill(path, 'nonzero');
                     mctx.strokeStyle = st.stroke;
@@ -2892,7 +2903,7 @@ function updateMapOverlay() {
         }
     }
     if (mapPrefs.airspaces && airspaces.index) {
-        const chips = Object.entries(AIRSPACE_STYLES).map(([, st]) => `<span><i class="wx-dot" style="background:${st.stroke}"></i>${st.label.replace(/^Zone /, '')}</span>`).join('');
+        const chips = AIRSPACE_TYPE_ORDER.filter(([t]) => mapPrefs.aspTypes.includes(t)).map(([t]) => `<span><i class="wx-dot" style="background:${AIRSPACE_STYLES[t].stroke}"></i>${AIRSPACE_STYLES[t].label.replace(/^Zone /, '')}</span>`).join('');
         items.push(`<div class="wx-legend">${chips}</div>`);
         if (flightMap.scale < AIRSPACE_MIN_SCALE) items.push('<div style="color:var(--text-dim)">Espaces aériens : zoomez pour les afficher</div>');
     }
@@ -3072,6 +3083,9 @@ function syncMapSettings() {
     document.getElementById('mapLargeOnly').checked = mapPrefs.largeOnly;
     document.getElementById('mapConflict').checked = mapPrefs.conflict;
     document.getElementById('mapAirspaces').checked = mapPrefs.airspaces;
+    document.getElementById('mapAirspaceFilters').hidden = !mapPrefs.airspaces || !airspaces.index;
+    document.querySelectorAll('#mapAirspaceFilters [data-asptype]').forEach(b => b.setAttribute('aria-pressed', String(mapPrefs.aspTypes.includes(+b.dataset.asptype))));
+    document.querySelectorAll('#mapAirspaceFilters [data-aspclass]').forEach(b => b.setAttribute('aria-pressed', String(mapPrefs.aspClasses.includes(b.dataset.aspclass))));
     document.getElementById('mapLargeOnlyPhone').checked = mapPrefs.largeOnly;
 }
 
@@ -3126,6 +3140,30 @@ function setMapLayer(name, on) {
     syncMapSettings();
     if (flightMap.flight) updateMapOverlay();   // légende
     scheduleMapDraw();
+}
+
+// Filtres des espaces aériens : un clic coche / décoche un type ou une classe
+function toggleAirspaceFilter(kind, value) {
+    const list = kind === 'type' ? mapPrefs.aspTypes : mapPrefs.aspClasses;
+    const i = list.indexOf(value);
+    if (i >= 0) list.splice(i, 1); else list.push(value);
+    saveMapPrefs();
+    syncMapSettings();
+    hideMapTip();
+    if (flightMap.flight) updateMapOverlay();   // légende
+    scheduleMapDraw();
+}
+
+// Boutons des filtres, générés une fois (types colorés comme sur la carte)
+function buildAirspaceFilters() {
+    const types = AIRSPACE_TYPE_ORDER.map(([t, short]) =>
+        `<button type="button" class="asp-chip" data-asptype="${t}" title="${AIRSPACE_STYLES[t].label}" onclick="toggleAirspaceFilter('type', ${t})"><i style="background:${AIRSPACE_STYLES[t].stroke}"></i>${short}</button>`).join('');
+    const classes = AIRSPACE_CLASSES.map(c =>
+        `<button type="button" class="asp-chip" data-aspclass="${c}" title="Classe ${c}" onclick="toggleAirspaceFilter('class', '${c}')">${c}</button>`).join('');
+    document.getElementById('mapAirspaceFilters').innerHTML =
+        `<div class="asp-filter-row"><span>Types</span><div class="asp-chips">${types}</div></div>` +
+        `<div class="asp-filter-row"><span>Classes</span><div class="asp-chips">${classes}</div></div>` +
+        "<small>Les zones P, R, D et ADIZ n'ont en général pas de classe : seul leur type compte.</small>";
 }
 
 function setMapStyle(style) {
@@ -3536,7 +3574,7 @@ function showLayerTip(clientX, clientY) {
     const lon = flightMap.cx + (clientX - rect.left - rect.width / 2) / s;
     const lat = latOfWorldY(flightMap.cy + (clientY - rect.top - rect.height / 2) / s);
     const zones = conflictOn ? conflictZonesAt(lon, lat) : [];
-    const asp = airspacesOn ? airspacesAt(lon, lat).filter(a => AIRSPACE_STYLES[a.t]).slice(0, 6) : [];
+    const asp = airspacesOn ? airspacesAt(lon, lat).filter(a => AIRSPACE_STYLES[a.t] && airspaceShown(a.t, a.c)).slice(0, 6) : [];
     if (!zones.length && !asp.length) return false;
     const key = '#layers:' + zones.map(z => z.id).join(',') + '|' + asp.map(a => a.n + a.t).join(',');
     if (mapTipIcao !== key) {

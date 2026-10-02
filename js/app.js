@@ -834,6 +834,8 @@ function gcBearing(a, b) {
 
 const OVERFLY_STEP_NM = 50;     // pas d'échantillonnage de la route
 const OVERFLY_NEAREST = 2;      // toujours retenus en chaque point (dégagements océaniques)
+const DIVERT_NEAR_NM = 300;     // autour de l'avion : en dessous de ce nombre d'aéroports à moins de 300 nm,
+const DIVERT_MIN = 3;           // on ajoute les plus proches (même à 1 h 30 de vol), au moins 3, de chaque catégorie
 
 // Point à la fraction f du grand cercle a -> b
 function gcInterpolate(a, b, d, f) {
@@ -854,9 +856,12 @@ function gcInterpolate(a, b, d, f) {
  * Éligibles = aéroports dont l'index fournit les coordonnées (large_airport avec une piste ≥ 2 800 m, ou medium_airport avec
  * une piste d'au moins 2 500 m, voir build_data.py). Départ et arrivée exclus, ainsi que ce qui est
  * derrière le départ ou au-delà de l'arrivée.
- * Résultat trié dans l'ordre de passage : [{ ap, xtrack (nm, + = à droite), along (nm depuis le départ) }].
+ * Dégagements : si l'avion (pos) a moins de DIVERT_MIN aéroports à DIVERT_NEAR_NM ou moins parmi ceux retenus, on ajoute les
+ * plus proches de sa position, même très éloignés de la route, pour en avoir DIVERT_MIN : une fois pour tous les aéroports
+ * éligibles, une fois pour les grands seulement (réglage « grands aéroports seulement »).
+ * Résultat trié dans l'ordre de passage : [{ ap, xtrack (nm, + = à droite), along (nm depuis le départ), divert? }].
  */
-function computeOverflown(points, excluded) {
+function computeOverflown(points, excluded, pos = null) {
     const segs = [];
     let offset = 0;
     for (let i = 1; i < points.length; i++) {
@@ -895,8 +900,27 @@ function computeOverflown(points, excluded) {
         [n1, n2].slice(0, OVERFLY_NEAREST).forEach(n => { if (n) keep(n.ap, n.d, smp); });
     }
 
+    // Dégagements autour de la position de l'avion : les DIVERT_MIN aéroports éligibles les plus proches sont toujours
+    // montrés s'il y en a moins de DIVERT_MIN à moins de DIVERT_NEAR_NM. Deux passes, car « grands aéroports seulement »
+    // ne retient que les grands : `divert` (liste complète) et `divertLarge` (visible aussi quand seuls les grands sont affichés).
+    if (pos) {
+        const ranked = candidates.map(ap => ({ ap, d: gcDist(pos, ap) * EARTH_NM })).sort((p, q) => p.d - q.d);
+        const nearestSample = ap => samples.reduce((best, smp) => { const d = gcDist(smp, ap); return !best || d < best.d ? { smp, d } : best; }, null);
+        const ensure = (have, flag) => {
+            if (ranked.filter(x => x.d <= DIVERT_NEAR_NM && have(x.ap.ident)).length >= DIVERT_MIN) return;
+            ranked.slice(0, DIVERT_MIN).forEach(x => {
+                const cur = chosen.get(x.ap.ident);
+                if (cur) { if (!have(x.ap.ident)) cur[flag] = true; return; }
+                const { smp, d } = nearestSample(x.ap);
+                chosen.set(x.ap.ident, { ap: x.ap, d, smp, [flag]: true });
+            });
+        };
+        ensure(id => chosen.has(id), 'divert');
+        ensure(id => { const c = chosen.get(id); return !!c && (isLargeOnRoute(c.ap) || !!c.divertLarge); }, 'divertLarge');
+    }
+
     const out = [];
-    for (const { ap, d, smp } of chosen.values()) {
+    for (const { ap, d, smp, divert, divertLarge } of chosen.values()) {
         // Projection sur le tronçon de l'échantillon le plus proche : distance latérale signée et abscisse
         const sg = segs[smp.seg];
         const d13 = gcDist(sg.a, ap);
@@ -905,13 +929,15 @@ function computeOverflown(points, excluded) {
         let at = Math.acos(Math.max(-1, Math.min(1, Math.cos(d13) / Math.cos(xt))));
         if (Math.cos(dt) < 0) at = -at;
         const along = sg.offset + at;
-        // Derrière le départ ou au-delà de l'arrivée : exclu
-        if (along < 0 || along > total) continue;
-        const inside = at >= 0 && at <= sg.len;
+        // Derrière le départ ou au-delà de l'arrivée : exclu (sauf dégagement proche de l'avion)
+        if (!divert && !divertLarge && (along < 0 || along > total)) continue;
+        const inside = at >= 0 && at <= sg.len && along >= 0 && along <= total;
         out.push({
             ap,
             xtrack: (inside ? Math.abs(xt) : d) * Math.sign(xt || 1) * EARTH_NM,
-            along: (inside ? along : smp.along) * EARTH_NM
+            along: (inside ? along : smp.along) * EARTH_NM,
+            ...(divert || divertLarge ? { divert: true } : {}),
+            ...(divertLarge ? { divertLarge: true } : {})
         });
     }
     return out.sort((p, q) => p.along - q.along);
@@ -930,7 +956,10 @@ async function refreshOverflown({ fit = true } = {}) {
         const path = flightMap.flight === f && flightMap.plan
             ? flightMap.plan.path
             : planFlightPath([dep.lat, dep.lon], [arr.lat, arr.lon]);
-        list = computeOverflown(path.map(asLL), new Set([dep.ident, arr.ident]));
+        const n = flightMap.flight === f && f.status === 'en-route' && flightMap.track && flightMap.track.now;
+        const pos = n && typeof n.lat === 'number' && typeof n.lon === 'number' ? { lat: n.lat, lon: n.lon } : null;
+        flightMap.overflownAt = pos;   // position utilisée pour les dégagements (recalcul quand l'avion s'en éloigne)
+        list = computeOverflown(path.map(asLL), new Set([dep.ident, arr.ident]), pos);
     }
     flightMap.overflown = list;
     renderOverflownList(f, list, !!(dep && arr));
@@ -947,7 +976,8 @@ function isLargeOnRoute(ap) { return routeType(ap) === 'large_airport'; }
 
 // Aéroports le long de la route affichés (carte et liste), selon « grands aéroports seulement »
 function visibleOverflown(list = flightMap.overflown) {
-    return mapPrefs.largeOnly ? list.filter(o => isLargeOnRoute(o.ap)) : list.slice();
+    // Avec « grands aéroports seulement », les dégagements proches de l'avion (divertLarge) restent affichés
+    return mapPrefs.largeOnly ? list.filter(o => isLargeOnRoute(o.ap) || o.divertLarge) : list.slice();
 }
 
 function renderOverflownList(f, list, routeKnown) {
@@ -3003,6 +3033,9 @@ function applyEstimatedPosition() {
     if (!est) return;
     flightMap.track = { ...flightMap.trackBase, now: est };
     flightMap.planS = est.pathS;
+    // Dégagements : la liste dépend de la position de l'avion, recalculée dès qu'il a avancé de plus de 100 nm
+    const at = flightMap.overflownAt;
+    if (at && gcDist(at, est) * EARTH_NM > 100) { flightMap.overflownAt = { lat: est.lat, lon: est.lon }; refreshOverflown({ fit: false }); }
     flightMap.route = buildFlightRoute();
     updateMapOverlay();
     scheduleMapDraw();

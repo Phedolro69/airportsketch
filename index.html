@@ -23,6 +23,7 @@
             --accent-blue: #38bdf8;
             --accent-green: #10b981;
             --accent-amber: #f59e0b;
+            --disp-text: #f59e0b;
             --accent-red: #ef4444;
 
             color-scheme: dark;
@@ -1923,7 +1924,8 @@
             --text-dim: #64748b;
             --accent-blue: #0369a1;
             --accent-green: #047857;
-            --accent-amber: #b45309;
+            --accent-amber: #ea580c;
+            --disp-text: #6d28d9;
             --accent-red: #dc2626;
             --n-0b0f19: #eef2f7;
             --n-0d1322: #e3eaf3;
@@ -1945,7 +1947,7 @@
             --n-e2e8f0: #1e293b;
             --n-f3f4f6: #0f172a;
             --n-f8fafc: #0f172a;
-            --p-fde68a: #92400e;
+            --p-fde68a: #6d28d9;
             --p-6ee7b7: #047857;
             --p-ddd6fe: #5b21b6;
             --p-93c5fd: #1d4ed8;
@@ -1953,7 +1955,7 @@
             --p-86efac: #15803d;
             --p-99f6e4: #0f766e;
             --p-f0abfc: #a21caf;
-            --p-fcd34d: #b45309;
+            --p-fcd34d: #3730a3;
             --p-60a5fa: #2563eb;
             --p-c4b5fd: #6d28d9;
             --p-fecaca: #b91c1c;
@@ -2006,6 +2008,17 @@
         :root[data-theme="light"] .runway-item { background-color: #f1f5f9; }
         /* Aéroports le long de la route : pas de brun en clair (compteur, codes, bascule « grands aéroports ») */
         :root[data-theme="light"] .overflown-count { background: #ede9fe; color: #5b21b6; font-weight: 700; }
+        /* Pas de jaune ni de marron en clair : violet et ardoise à la place */
+        :root[data-theme="light"] #mapBand { accent-color: #7c3aed; }
+        :root[data-theme="light"] .flight-overflown summary::before { color: #7c3aed; }
+        :root[data-theme="light"] .overflown-filter input:focus-visible + .overflown-switch { outline-color: #7c3aed; }
+        :root[data-theme="light"] .demo-notice { background: rgba(124, 58, 237, 0.08); border-color: rgba(124, 58, 237, 0.3); }
+        :root[data-theme="light"] .demo-notice b { color: #6d28d9; }
+        :root[data-theme="light"] .demo-tag,
+        :root[data-theme="light"] .demo-pill { background: rgba(124, 58, 237, 0.1); border-color: rgba(124, 58, 237, 0.4); }
+        :root[data-theme="light"] .appr-vor,
+        :root[data-theme="light"] .appr-ndb { background: rgba(79, 70, 229, 0.12); border-color: #6366f1; color: #3730a3; }
+        :root[data-theme="light"] .help-card[style*="facc15"] { --c: #7c3aed !important; }
         :root[data-theme="light"] .overflown-row b { color: #1e293b; }
         :root[data-theme="light"] .overflown-row.is-medium b { color: #64748b; }
         :root[data-theme="light"] .overflown-filter input:checked + .overflown-switch { background: #7c3aed; }
@@ -2375,7 +2388,7 @@
                 grid: 'rgba(255, 255, 255, 0.04)', pillBase: 'rgba(11, 15, 25, 0.9)',
                 rwyFill: '#374151', rwyStroke: '#64748b', rwyCenter: '#f8fafc', rwyId: '#10b981',
                 shortFill: 'rgba(167, 139, 250, 0.35)', shortStroke: '#a78bfa', shortCenter: '#ede9fe', shortId: '#c4b5fd',
-                dimBg: 'rgba(15, 23, 42, 0.88)', dimText: '#38bdf8',
+                dimBg: 'rgba(15, 23, 42, 0.88)', dimText: '#38bdf8', dispFill: 'rgba(245, 158, 11, 0.25)', dispStroke: '#fbbf24',
                 miniBg: '#0d1322', miniRwyOuter: '#64748b', miniRwyInner: '#374151', miniShortInner: '#5b4a8a',
                 miniShortOuter: 'rgba(167, 139, 250, 0.7)', miniId: '#10b981', miniShortId: '#c4b5fd'
             },
@@ -2383,7 +2396,7 @@
                 grid: 'rgba(15, 23, 42, 0.06)', pillBase: 'rgba(255, 255, 255, 0.95)',
                 rwyFill: '#6b7280', rwyStroke: '#475569', rwyCenter: '#ffffff', rwyId: '#047857',
                 shortFill: 'rgba(139, 92, 246, 0.45)', shortStroke: '#7c3aed', shortCenter: '#ffffff', shortId: '#6d28d9',
-                dimBg: 'rgba(255, 255, 255, 0.9)', dimText: '#0369a1',
+                dimBg: 'rgba(255, 255, 255, 0.9)', dimText: '#0369a1', dispFill: 'rgba(234, 88, 12, 0.2)', dispStroke: '#ea580c',
                 miniBg: '#e3eaf3', miniRwyOuter: '#475569', miniRwyInner: '#6b7280', miniShortInner: '#a78bfa',
                 miniShortOuter: 'rgba(109, 40, 217, 0.8)', miniId: '#047857', miniShortId: '#6d28d9'
             }
@@ -3595,8 +3608,8 @@
             ILS1: { label: 'ILS CAT I',   cls: 'appr-ils1', bg: 'rgba(34,197,94,0.14)',   bd: '#16a34a', fg: '#86efac', fgL: '#15803d' },
             LOC:  { label: 'LOC',         cls: 'appr-loc',  bg: 'rgba(20,184,166,0.12)',  bd: '#14b8a6', fg: '#99f6e4', fgL: '#0f766e' },
             RNAV: { label: 'RNAV',        cls: 'appr-rnav', bg: 'rgba(217,70,239,0.18)',  bd: '#d946ef', fg: '#f0abfc', fgL: '#a21caf' },
-            VOR:  { label: 'VOR',         cls: 'appr-vor',  bg: 'rgba(245,158,11,0.16)',  bd: '#f59e0b', fg: '#fcd34d', fgL: '#b45309' },
-            NDB:  { label: 'NDB',         cls: 'appr-ndb',  bg: 'rgba(245,158,11,0.16)',  bd: '#f59e0b', fg: '#fcd34d', fgL: '#b45309' },
+            VOR:  { label: 'VOR',         cls: 'appr-vor',  bg: 'rgba(245,158,11,0.16)',  bd: '#f59e0b', fg: '#fcd34d', fgL: '#3730a3', bdL: '#6366f1', bgL: 'rgba(238,242,255,0.97)' },
+            NDB:  { label: 'NDB',         cls: 'appr-ndb',  bg: 'rgba(245,158,11,0.16)',  bd: '#f59e0b', fg: '#fcd34d', fgL: '#3730a3', bdL: '#6366f1', bgL: 'rgba(238,242,255,0.97)' },
             VIS:  { label: 'VIS',         cls: 'appr-vis',  bg: 'rgba(11,15,25,0.9)',     bd: '#475569', fg: '#94a3b8', fgL: '#475569', bgL: 'rgba(255,255,255,0.95)' }
         };
 
@@ -3698,7 +3711,7 @@
                     <div>
                         <span class="runway-ident">${r.le_ident}/${r.he_ident}</span>${isShort ? '<span class="short-rwy-tag">PETITE PISTE</span>' : ''}
                         <div style="color:var(--n-94a3b8); font-size:11px; margin-top:2px;">Largeur: ${Math.round(r.width_m)}m (${Math.round(r.width_ft)}ft)</div>
-                        ${hasDisp ? `<div style="color:var(--accent-amber); font-size:10px; margin-top:3px; font-weight:500;">${dispInfo}</div>` : ''}
+                        ${hasDisp ? `<div style="color:var(--disp-text); font-size:10px; margin-top:3px; font-weight:500;">${dispInfo}</div>` : ''}
                     </div>
                     <div style="text-align:right;">
                         <div style="font-weight:700; color:var(--n-f8fafc);">${lengthM} m</div>
@@ -3792,7 +3805,7 @@
 
             const pEnd = { x: pStart.x + ux * dispPx, y: pStart.y + uy * dispPx };
 
-            ctx.fillStyle = 'rgba(245, 158, 11, 0.25)';
+            ctx.fillStyle = DC.dispFill;
             ctx.beginPath();
             ctx.moveTo(pStart.x + nx * halfWidthPx, pStart.y + ny * halfWidthPx);
             ctx.lineTo(pEnd.x + nx * halfWidthPx, pEnd.y + ny * halfWidthPx);
@@ -3801,7 +3814,7 @@
             ctx.closePath();
             ctx.fill();
 
-            ctx.strokeStyle = '#fbbf24';
+            ctx.strokeStyle = DC.dispStroke;
             ctx.lineWidth = 4;
             ctx.beginPath();
             ctx.moveTo(pEnd.x + nx * (halfWidthPx + 4), pEnd.y + ny * (halfWidthPx + 4));
@@ -3867,7 +3880,7 @@
                 ctx.fill();
                 ctx.fillStyle = theme === 'light' && t.bgL ? t.bgL : t.bg;
                 ctx.fill();
-                ctx.strokeStyle = t.bd;
+                ctx.strokeStyle = theme === 'light' && t.bdL ? t.bdL : t.bd;
                 ctx.lineWidth = 1;
                 ctx.stroke();
                 ctx.fillStyle = theme === 'light' && t.fgL ? t.fgL : t.fg;
@@ -4165,8 +4178,8 @@
         const MAP_GAP_S = 1200;         // au-delà de 20 min sans position, le tracé est interpolé (pointillé)
         const MAP_THEMES = {
             dark: {
-                sea: '#0d1322', land: '#1a2438', coast: '#2e3f5e', border: 'rgba(100, 116, 139, 0.32)',
-                grid: 'rgba(255, 255, 255, 0.035)', route: '#a78bfa', routeSoft: 'rgba(167, 139, 250, 0.75)',
+                sea: '#2b3649', land: '#0f1521', coast: '#5a6d8a', border: 'rgba(148, 163, 184, 0.30)',
+                grid: 'rgba(255, 255, 255, 0.05)', halo: '#0f1521', edge: '#0b1220', route: '#a78bfa', routeSoft: 'rgba(167, 139, 250, 0.75)',
                 direct: '#64748b', casing: 'rgba(13, 19, 34, 0.85)', plane: '#c4b5fd',
                 capitalText: 'rgba(226, 232, 240, 0.72)', capitalDot: 'rgba(226, 232, 240, 0.55)',
                 apLarge: '#facc15', apLargeText: '#fde68a', apMedium: 'rgba(250, 204, 21, 0.45)', apMediumText: 'rgba(254, 243, 199, 0.62)',
@@ -4175,10 +4188,10 @@
             },
             light: {
                 sea: '#d6e4f1', land: '#f7f8fa', coast: '#9db3c9', border: 'rgba(100, 116, 139, 0.38)',
-                grid: 'rgba(15, 23, 42, 0.06)', route: '#7c3aed', routeSoft: 'rgba(124, 58, 237, 0.75)',
+                grid: 'rgba(15, 23, 42, 0.06)', halo: '#d6e4f1', edge: '#d6e4f1', route: '#7c3aed', routeSoft: 'rgba(124, 58, 237, 0.75)',
                 direct: '#64748b', casing: 'rgba(255, 255, 255, 0.9)', plane: '#6d28d9',
                 capitalText: 'rgba(30, 41, 59, 0.75)', capitalDot: 'rgba(30, 41, 59, 0.55)',
-                apLarge: '#ca8a04', apLargeText: '#78350f', apMedium: 'rgba(202, 138, 4, 0.5)', apMediumText: 'rgba(120, 53, 15, 0.72)',
+                apLarge: '#475569', apLargeText: '#1e293b', apMedium: 'rgba(71, 85, 105, 0.5)', apMediumText: 'rgba(51, 65, 85, 0.8)',
                 labelBg: 'rgba(255, 255, 255, 0.82)', chipBg: 'rgba(255, 255, 255, 0.95)', chipText: '#0f172a', planeGlow: 'rgba(124, 58, 237, 0.45)',
                 legendDot: '#334155', legendDotMedium: 'rgba(51, 65, 85, 0.5)'
             }
@@ -5006,7 +5019,7 @@
                     mctx.arc(x, y, big ? 3.6 : 2.7, 0, Math.PI * 2);
                     mctx.fillStyle = wxColor(o.ap.ident) || (big ? MAP_COLORS.apLarge : MAP_COLORS.apMedium);
                     mctx.fill();
-                    mctx.strokeStyle = MAP_COLORS.sea;
+                    mctx.strokeStyle = MAP_COLORS.edge;
                     mctx.lineWidth = 1.5;
                     mctx.stroke();
                     const label = mapAirportLabel(o.ap, airportCode(o.ap));
@@ -5055,7 +5068,7 @@
                         mctx.fillStyle = MAP_COLORS.capitalDot;
                         mctx.fill();
                         mctx.lineWidth = 3;
-                        mctx.strokeStyle = MAP_COLORS.sea;
+                        mctx.strokeStyle = MAP_COLORS.halo;
                         mctx.strokeText(name, x + 5, y);
                         mctx.fillStyle = MAP_COLORS.capitalText;
                         mctx.fillText(name, x + 5, y);
@@ -5084,7 +5097,7 @@
                     mctx.fillText(m.label, bx + 7, p.y + 0.5);
                     mctx.beginPath();
                     mctx.arc(p.x, p.y, 4.5, 0, Math.PI * 2);
-                    mctx.fillStyle = wxColor(m.icao) || MAP_COLORS.sea;
+                    mctx.fillStyle = wxColor(m.icao) || MAP_COLORS.edge;
                     mctx.fill();
                     mctx.strokeStyle = MAP_COLORS.plane;
                     mctx.lineWidth = 2;
@@ -5105,7 +5118,7 @@
                         mctx.fillStyle = MAP_COLORS.plane;
                         mctx.fill(PLANE_PATH);
                         mctx.shadowBlur = 0;
-                        mctx.strokeStyle = MAP_COLORS.sea;
+                        mctx.strokeStyle = MAP_COLORS.edge;
                         mctx.lineWidth = 1.3;
                         mctx.stroke(PLANE_PATH);
                         mctx.restore();
@@ -5163,8 +5176,8 @@
                 const wxOn = visibleOverflown().some(o => wxCat(o.ap.ident));
                 // Avec la météo, la couleur indique la catégorie de vol ; la taille du point, le type d'aéroport
                 const colL = wxOn ? MAP_COLORS.legendDot : MAP_COLORS.apLarge, colM = wxOn ? MAP_COLORS.legendDotMedium : MAP_COLORS.apMedium;
-                if (hasLarge) items.push(`<div><svg width="30" height="10"><circle cx="15" cy="5" r="3.6" fill="${colL}" stroke="${MAP_COLORS.sea}" stroke-width="1.5"/></svg>Grand aéroport sur la route</div>`);
-                if (hasMedium) items.push(`<div><svg width="30" height="10"><circle cx="15" cy="5" r="2.7" fill="${colM}" stroke="${MAP_COLORS.sea}" stroke-width="1.5"/></svg>Aéroport moyen (piste ≥ 2 500 m)</div>`);
+                if (hasLarge) items.push(`<div><svg width="30" height="10"><circle cx="15" cy="5" r="3.6" fill="${colL}" stroke="${MAP_COLORS.edge}" stroke-width="1.5"/></svg>Grand aéroport sur la route</div>`);
+                if (hasMedium) items.push(`<div><svg width="30" height="10"><circle cx="15" cy="5" r="2.7" fill="${colM}" stroke="${MAP_COLORS.edge}" stroke-width="1.5"/></svg>Aéroport moyen (piste ≥ 2 500 m)</div>`);
                 if (wxOn) items.push(`<div class="wx-legend">${Object.entries(WX_CATS).map(([k, c]) => `<span title="${c.help}"><i class="wx-dot" style="background:${c.color}"></i>${k}</span>`).join('')}</div>`);
             }
             const isDemo = (t && t.source === 'demo') || (flightMap.flight && flightMap.flight.demo);

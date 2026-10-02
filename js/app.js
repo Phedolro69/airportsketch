@@ -1822,15 +1822,15 @@ const MAP_THEMES = {
 // mer / terres et renforce côtes et frontières. Le halo et le liseré des points suivent la couleur qu'ils avaient (mer ou terres).
 const MAP_STYLE_OVERRIDES = {
     contrast: {
-        dark:  { sea: '#070b12', land: '#34425c', coast: '#9fb3d1', border: 'rgba(203, 213, 225, 0.45)' },
+        dark:  { sea: '#070b12', land: '#34425c', coast: '#8b5cf6', coastW: 1.7, border: 'rgba(203, 213, 225, 0.45)' },
         light: { sea: '#bcd3e8', land: '#ffffff', coast: '#5f83a8', border: 'rgba(51, 65, 85, 0.5)' }
     }
 };
 function mapPalette(t = theme) {
     const base = MAP_THEMES[t];
     const style = mapPrefs.style;
-    if (style === 'standard') return { ...base };
-    const p = { ...base };
+    if (style === 'standard') return { ...base, coastW: 0.9 };
+    const p = { ...base, coastW: 0.9 };
     if (style === 'inverted') { p.sea = base.land; p.land = base.sea; }
     else Object.assign(p, MAP_STYLE_OVERRIDES.contrast[t]);
     for (const k of ['halo', 'edge']) {
@@ -2602,7 +2602,7 @@ function drawFlightMap() {
             mctx.lineWidth = 0.7 / s;
             mctx.stroke(world.borders);
             mctx.strokeStyle = MAP_COLORS.coast;
-            mctx.lineWidth = 0.9 / s;
+            mctx.lineWidth = (MAP_COLORS.coastW || 0.9) / s;
             mctx.stroke(world.land);
         }
 

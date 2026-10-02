@@ -3457,9 +3457,9 @@ function loadWeatherForMap() {
 // NOTAM (route /notam du worker, mode réel seulement : quota du fournisseur limité)
 // Classement par importance, d'après le code Q OACI (lettres 2-3 : sujet, 4-5 : état), à défaut d'après le texte :
 //   critique  : aérodrome ou piste fermés, ILS ou approche aux instruments hors service / non autorisés ;
-//   important : restrictions d'aérodrome ou de piste, distances déclarées, voie de circulation fermée, radionavigation
+//   important : restrictions d'aérodrome ou de piste, distances déclarées, radionavigation
 //               ou balisage hors service, espace aérien, carburant, procédures modifiées ou indisponibles ;
-//   info      : tout le reste (obstacles, oiseaux, services, aires de trafic, avertissements…), replié par défaut.
+//   info      : tout le reste (voies de circulation, obstacles, oiseaux, services, aires de trafic…), replié par défaut.
 // ========================================================
 const NOTAM_LEVELS = {
     critical:  { label: 'Critique',    plural: 'critiques' },
@@ -3480,7 +3480,7 @@ const NOTAM_SUBJECTS = [
     [/^I/, 'ILS', 'important', 'important', 'important'],        // DME, balises, catégories d'ILS
     [/^PI/, 'Approche', 'critical', 'important', 'info'],          // amendement de minima ou de notes : info
     [/^P/, 'Procédure', 'important', 'important', 'info'],
-    [/^MX/, 'Voie de circulation', 'important', 'info', 'info'],
+    [/^MX/, 'Voie de circulation', 'info', 'info', 'info'],
     [/^M/, 'Aire de trafic', 'info', 'info', 'info'],
     [/^N|^G/, 'Radionavigation', 'important', 'info', 'info'],
     [/^L[XYBW]/, 'Balisage', 'info', 'info', 'info'],             // voies de circulation, phare d'aérodrome, hélistation

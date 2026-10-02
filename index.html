@@ -572,6 +572,19 @@
             white-space: nowrap;
         }
         .data-mode-pill[hidden] { display: none; }
+        /* Étiquette « Démo » de l'en-tête : téléphone uniquement (sur ordinateur, l'encart sous la recherche suffit) */
+        .demo-pill {
+            display: none;
+            margin-left: 8px;
+            padding: 2px 8px;
+            border-radius: 9999px;
+            background: rgba(250, 204, 21, 0.15);
+            border: 1px solid rgba(250, 204, 21, 0.5);
+            color: #fde68a;
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 0.3px;
+        }
 
         /* Pistes de moins de 2000 m : couleur dédiée et bouton de masquage */
         .short-rwy-btn {
@@ -666,10 +679,10 @@
             display: flex;
             flex-direction: column;
             gap: 8px;
-            /* Occupe toute la hauteur restante du panneau (minimum utilisable si la fiche est haute) */
-            flex: 1 1 0;
-            min-height: 220px;
-            overflow-y: auto;
+            /* Hauteur naturelle : la liste s'affiche en entier et c'est le panneau latéral qui défile
+               (avec un dossier de vol + un aéroport, elle n'est plus écrasée dans une petite zone) */
+            flex: 0 0 auto;
+            overflow: visible;
             -webkit-overflow-scrolling: touch;
         }
         .runway-item {
@@ -1624,6 +1637,19 @@
            ADAPTATION MOBILE (< 768px)
            ======================================================== */
         @media (max-width: 768px) {
+            /* Téléphone : carte du vol dégagée (ni légende ni réglages), mode démo signalé dans l'en-tête */
+            body[data-view="map"] .map-legend,
+            body[data-view="map"] .map-settings,
+            .demo-notice { display: none !important; }
+            .demo-pill:not([hidden]) { display: inline-block; }
+
+            /* Carte : la pastille d'info mobile est masquée, les boutons Diagramme / Carte remontent tout en haut
+               de la carte (juste sous les onglets), suivis du résumé du vol puis du message */
+            body[data-view="map"] .canvas-area:not(.is-fullscreen) .canvas-top-center { top: 10px; }
+            body[data-view="map"] .canvas-area:not(.is-fullscreen) .map-hud { top: 52px; }
+            body[data-view="map"] .canvas-area:not(.is-fullscreen) .map-notice { top: 52px; }
+            body[data-view="map"] .canvas-area:not(.is-fullscreen) .map-hud:not([hidden]) ~ .map-notice { top: 106px; }
+
             /* Mobile : le nom de l'aéroport est dans la pastille d'info, pas en titre sur le schéma */
             .diagram-title { display: none !important; }
             #quickPillText { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
@@ -1678,6 +1704,13 @@
             body[data-mobile-tab="diagram"] .sidebar {
                 height: auto;
                 flex: 0 0 auto;
+                overflow: visible;   /* la liste de suggestions déborde sur la carte au lieu d'être rognée */
+            }
+            /* Suggestions de recherche : au-dessus de la carte et de ses boutons, et beaucoup plus hautes */
+            .sidebar { z-index: 60; }
+            .search-section .autocomplete-results {
+                max-height: calc(100dvh - 240px);
+                box-shadow: 0 16px 32px -8px rgba(0, 0, 0, 0.8);
             }
             body[data-mobile-tab="diagram"] .details-section {
                 display: none;
@@ -1742,6 +1775,7 @@
                 <path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"/>
             </svg>
             <h1>Plein Axe&nbsp;!</h1>
+            <span class="demo-pill" id="demoModePill" hidden title="Mode démo : vols fictifs mais réalistes">Démo</span>
             <span class="data-mode-pill" id="liveModePill" hidden title="Vraies données AirLabs (code d'accès enregistré dans ce navigateur)">Données réelles</span>
         </div>
         <button class="btn-help" onclick="openHelp()" title="Que faire avec cette app ?" aria-haspopup="dialog">
@@ -2494,6 +2528,7 @@
             }
             document.body.dataset.flightData = flightDataMode || '';
             document.getElementById('demoNotice').hidden = flightDataMode !== 'demo';
+            document.getElementById('demoModePill').hidden = flightDataMode !== 'demo';
             // Repère pour le propriétaire seulement : vraies données grâce à son code
             document.getElementById('liveModePill').hidden = !(flightDataMode === 'live' && accessCode);
         }

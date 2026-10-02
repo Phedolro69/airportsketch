@@ -130,6 +130,14 @@ Toutes les routes estimées (tracé, avancée de l'avion toutes les 20 s, liste 
 - **Infobulle au survol** (PC) et **fiche de l'aéroport** (panneau latéral) : catégorie, vent, visibilité, nuages, phénomènes, température / point de rosée, QNH, METAR brut, puis TAF décodé période par période. Une pastille de catégorie figure aussi sous le titre du diagramme.
 - **Simulateur local** (`worker/mock_airlabs.py`) : la route `/wx` renvoie par défaut une météo simulée (hors ligne, même format compact que le worker), déterministe par aéroport et par heure, avec un mélange de VFR / MVFR / IFR / LIFR et des aéroports sans METAR ou sans TAF. `&mock=fog|mist|rain|snow|storm|gusty|hot|cavok` force la météo de tous les aéroports demandés (ou `--wx-scenario fog` au lancement), `ZZZZ` n'a ni METAR ni TAF, `XXXX` provoque une erreur 502. `--wx real` interroge NOAA pour de vrai.
 
+## NOTAM
+
+- **Source** : [SkyLink API](https://skylinkapi.com/docs/v3/notams/) (flux FAA SWIM, NOTAM mondiaux), offre gratuite de 1 000 appels par mois : secret `SKYLINK_API_KEY` du worker (`npx wrangler secret put SKYLINK_API_KEY`). Sans ce secret, la section NOTAM n'apparaît pas. La FAA NMS-API (gratuite, accès demandé à notams@faa.gov) pourra remplacer SkyLink dans `worker/notam.js` sans changer le format de réponse.
+- **Route** `GET /notam?id=LFPG` : un aéroport par requête, réservée au **mode réel** (code d'accès) pour protéger le quota ; cache KV 6 h par aéroport (absences comprises) ; au plus `NOTAM_DAILY_BUDGET` appels réels par jour (25 par défaut, soit ~750 par mois). Les NOTAM « checklist » (`QK…`) sont écartés.
+- **Importance**, calculée par le site (`classifyNotam` dans `js/app.js`) d'après le code Q (sujet + état), à défaut d'après le texte : **critique** (rouge) — aérodrome ou piste fermés, piste raccourcie, ILS / approche hors service ; **important** (orange) — voie de circulation fermée, radionavigation, balisage, obstacles, espace aérien, carburant, procédures ; **information** (gris, repliée) — le reste. Seuls les NOTAM en vigueur ou commençant dans les 24 h sont montrés (« À venir »).
+- **Affichage** : fiche de l'aéroport (sous la météo) et, dans le dossier de vol, un résumé « NOTAM 2 critiques · 3 importants » sous le départ et l'arrivée, qui ouvre l'aéroport.
+- **Simulateur local** : `/notam` renvoie 7 NOTAM fictifs couvrant les trois niveaux (dont un à venir) ; `ZZZZ` n'en a aucun, `XXXX` provoque une erreur 502.
+
 ## Mise en page grand écran
 
 À partir de 1 360 px de large, les infos et les pistes de l'aéroport s'affichent dans un **deuxième panneau latéral**, à droite du premier : le dossier de vol et sa liste d'aéroports restent sous les yeux pendant qu'on clique d'un aéroport à l'autre. Sur écran plus étroit ou téléphone, tout reste dans le panneau unique (onglet « Détails & Pistes »).

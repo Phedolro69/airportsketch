@@ -625,6 +625,44 @@
     :root[data-theme="light"] .wx-taf-row.is-eta { background: rgba(124, 58, 237, 0.10); box-shadow: inset 2px 0 0 #7c3aed; }
     .wx-tag { font-size: 9px; font-weight: 700; letter-spacing: 0.4px; color: var(--p-fde68a); }
     .wx-card { margin-top: 2px; padding-top: 12px; border-top: 1px solid var(--border-subtle); }
+    /* NOTAM : barre de couleur selon l'importance (critique rouge, important orange, information gris) */
+    .notam { --nc-critical: #f87171; --nc-important: #fbbf24; --nc-info: var(--n-64748b, #64748b); font-size: 11.5px; color: var(--n-cbd5e1); line-height: 1.45; }
+    :root[data-theme="light"] .notam { --nc-critical: #dc2626; --nc-important: #c2410c; --nc-info: #94a3b8; }
+    .notam-counts { display: flex; flex-wrap: wrap; gap: 4px; }
+    .notam-count { padding: 0 7px; border-radius: 9999px; font-size: 10.5px; font-weight: 700; white-space: nowrap; }
+    .notam-count.critical { background: color-mix(in srgb, var(--nc-critical) 18%, transparent); color: var(--nc-critical); }
+    .notam-count.important { background: color-mix(in srgb, var(--nc-important) 18%, transparent); color: var(--nc-important); }
+    .notam-count.info { background: rgb(var(--ov) / 0.07); color: var(--text-muted); }
+    .notam-row { padding: 5px 0 5px 9px; margin: 4px 0; border-left: 3px solid var(--nc-info); }
+    .notam-row.critical { border-left-color: var(--nc-critical); background: color-mix(in srgb, var(--nc-critical) 7%, transparent); }
+    .notam-row.important { border-left-color: var(--nc-important); }
+    .notam-meta { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 8px; }
+    .notam-cat { font-size: 10px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; color: var(--text-muted); }
+    .notam-row.critical .notam-cat { color: var(--nc-critical); }
+    .notam-row.important .notam-cat { color: var(--nc-important); }
+    .notam-soon { font-size: 9.5px; font-weight: 700; padding: 0 5px; border-radius: 3px; background: rgba(167, 139, 250, 0.18); color: var(--p-c4b5fd, #c4b5fd); }
+    :root[data-theme="light"] .notam-soon { color: #6d28d9; }
+    .notam-when { font-size: 10.5px; color: var(--text-dim); }
+    .notam-text { margin-top: 1px; color: var(--n-e2e8f0); font-weight: 500; word-break: break-word; }
+    .notam-rawbox summary, .notam-more > summary { cursor: pointer; font-size: 10.5px; color: var(--text-dim); }
+    .notam-rawbox .wx-raw { margin-top: 3px; white-space: pre-wrap; }
+    .notam-more { margin-top: 6px; }
+    .notam-more > summary { font-weight: 600; color: var(--text-muted); }
+    .notam-foot { margin-top: 8px; font-size: 10px; color: var(--text-dim); font-style: italic; }
+    /* Dossier de vol : résumé sous le départ et l'arrivée */
+    .flight-ap-notam { margin-top: 4px; }
+    .flight-ap-notam[hidden] { display: none; }
+    .flight-ap-notam-btn {
+        display: inline-flex; flex-wrap: wrap; align-items: center; gap: 4px;
+        background: none; border: none; padding: 0; cursor: pointer;
+        font: inherit; font-size: 10px; font-weight: 700; letter-spacing: 0.5px; color: var(--text-dim);
+    }
+    .flight-ap-notam-btn .notam-count { letter-spacing: 0; }
+    .flight-ap-notam-btn:hover .notam-count, .flight-ap-notam-btn:focus-visible .notam-count { text-decoration: underline; }
+    .flight-ap-notam .notam-count.critical { background: color-mix(in srgb, #f87171 18%, transparent); color: #f87171; }
+    .flight-ap-notam .notam-count.important { background: color-mix(in srgb, #fbbf24 18%, transparent); color: #fbbf24; }
+    :root[data-theme="light"] .flight-ap-notam .notam-count.critical { color: #dc2626; background: rgba(220, 38, 38, 0.1); }
+    :root[data-theme="light"] .flight-ap-notam .notam-count.important { color: #c2410c; background: rgba(194, 65, 12, 0.1); }
     .diagram-title-wx { margin-top: 5px; display: flex; justify-content: center; align-items: center; gap: 8px; font-size: 11.5px; color: var(--text-muted); }
     .diagram-title-wx:empty { display: none; }
     .map-legend .wx-legend { display: flex; flex-wrap: wrap; gap: 2px 10px; margin-top: 4px; }

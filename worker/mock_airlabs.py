@@ -562,6 +562,39 @@ def weather_response(query):
     return 200, out
 
 
+# NOTAM fictifs (format compact de worker/notam.js) : un de chaque niveau d'importance du site, plus un à venir.
+# ZZZZ : aucun NOTAM ; XXXX : service en panne.
+MOCK_NOTAMS = [
+    # (code Q, champ E, début en heures depuis maintenant, durée en heures ou None = permanent)
+    ("QMRLC", "RWY {rwy} CLSD DUE TO WIP", -20, 30 * 24),
+    ("QICAS", "ILS RWY {rwy} U/S", -3, 48),
+    ("QMXLC", "TWY B CLSD BTN TWY B2 AND B4", -72, 10 * 24),
+    ("QOBCE", "CRANE ERECTED 1.2NM SW OF ARP, HGT 85M AGL, LGTD", -400, 60 * 24),
+    ("QNVAS", "VOR {ident_short} OUT OF SERVICE", 20, 6),
+    ("QFAXX", "BIRD CONCENTRATION IN THE VICINITY OF THE AERODROME", -900, None),
+    ("QSTAH", "TWR HOURS OF SERVICE CHANGED: 0500-2200", -200, 20 * 24),
+]
+
+
+def mock_notams(ident):
+    if ident == "XXXX":
+        return 502, {"error": {"message": "Service NOTAM indisponible"}}
+    now = int(time.time())
+    if ident == "ZZZZ":
+        return 200, {"t": now, "notams": []}
+    fmt = lambda ts: time.strftime("%y%m%d%H%M", time.gmtime(ts))
+    out = []
+    for i, (q, e, start_h, dur_h) in enumerate(MOCK_NOTAMS):
+        text = e.format(rwy="09/27", ident_short=ident[1:])
+        start = now + start_h * 3600
+        end = start + dur_h * 3600 if dur_h else None
+        nid = f"A{i + 1:04d}/26"
+        raw = "\n".join([f"{nid} NOTAMN", f"Q) {ident[:2]}XX/{q}/IV/NBO/A/000/999", f"A) {ident} B) {fmt(start)} C) {fmt(end) if end else 'PERM'}", f"E) {text}"])
+        out.append({"id": nid, "raw": raw, "text": text, "from": start, "to": end, "q": q, "scope": "AERODROME", "schedule": None})
+    out.sort(key=lambda n: -(n["from"] or 0))
+    return 200, {"t": now, "notams": out}
+
+
 LIVE_FIELDS = ["flight_iata", "flight_icao", "flight_number", "airline_iata", "airline_icao",
                "dep_iata", "dep_icao", "arr_iata", "arr_icao", "status"]
 
@@ -611,13 +644,7 @@ class Handler(BaseHTTPRequestHandler):
             ident = (parse_qs(url.query).get("id") or [""])[0].upper()
             if not re.match(r"^[A-Z0-9]{4}$", ident):
                 return self._send(400, {"error": {"message": "Paramètre id invalide (un code OACI de 4 caractères)"}})
-            now = int(time.time())
-            nl = chr(10)
-            raw1 = nl.join([f"A0001/26 NOTAMN", f"Q) {ident}/QMRLC/IV/NBO/A/000/999", f"A) {ident} B) 2610010600 C) 2610302000", "E) RWY 09/27 CLSD DUE WIP"])
-            raw2 = nl.join([f"A0002/26 NOTAMN", f"Q) {ident}/QNVAS/IV/BO/A/000/999", f"A) {ident} B) 2609150000 C) PERM", "E) VOR OUT OF SERVICE"])
-            return self._send(200, {"t": now, "notams": [
-                {"id": "A0001/26", "raw": raw1, "text": "RWY 09/27 CLSD DUE WIP", "from": now - 86400, "to": now + 28 * 86400, "q": "QMRLC", "subject": "Runway", "condition": "Closed"},
-                {"id": "A0002/26", "raw": raw2, "text": "VOR OUT OF SERVICE", "from": now - 17 * 86400, "to": None, "q": "QNVAS", "subject": "VOR", "condition": "Unserviceable"}]})
+            return self._send(*mock_notams(ident))
         params = ROUTES.get(url.path)
         if params is None:
             return self._send(404, {"error": {"message": "Route inconnue"}})

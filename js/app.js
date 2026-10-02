@@ -724,6 +724,7 @@ function renderFlightAirportBlock(f, side) {
             <div class="flight-ap-name" title="${escapeHtml(ap ? ap.name : '')}">${escapeHtml(ap ? (ap.municipality || ap.name) : 'Aéroport inconnu')}</div>
             <div class="flight-ap-time">${timeHtml}</div>
             ${extras ? `<div class="flight-ap-extra">${escapeHtml(extras)}</div>` : ''}
+            ${ap ? `<div class="flight-ap-notam" data-notam="${escapeHtml(ap.ident)}" hidden></div>` : ''}
         </div>
     `;
 }
@@ -788,6 +789,8 @@ function renderFlightCard(f) {
     updateFlightCardActive();
     startFlightProgress();
     refreshOverflown();
+    renderFlightNotams(f);
+    loadFlightNotams(f);
 }
 
 // --- Grands aéroports survolés -------------------------------------------
@@ -1213,6 +1216,7 @@ function displayAirportInfo(data) {
 
     card.style.display = 'flex';
     loadAirportWeather(data.ident);
+    loadAirportNotams(data.ident);
 }
 
 function processRunwayCoordinates(runways) {
@@ -3425,6 +3429,191 @@ function loadWeatherForMap() {
         updateMapOverlay();
         if (currentFlight === f) renderOverflownList(f, flightMap.overflown, true);
     });
+}
+
+// ========================================================
+// NOTAM (route /notam du worker, mode réel seulement : quota du fournisseur limité)
+// Classement par importance, d'après le code Q OACI (lettres 2-3 : sujet, 4-5 : état), à défaut d'après le texte :
+//   critique  : aérodrome ou piste fermés, piste raccourcie, ILS / approche aux instruments hors service ;
+//   important : voie de circulation fermée, radionavigation, balisage, obstacles, espace aérien, carburant, procédures ;
+//   info      : tout le reste (services, horaires, oiseaux, aires de stationnement…), replié par défaut.
+// ========================================================
+const NOTAM_LEVELS = {
+    critical:  { label: 'Critique',    plural: 'critiques' },
+    important: { label: 'Important',   plural: 'importants' },
+    info:      { label: 'Information', plural: 'informations' }
+};
+const NOTAM_ORDER = { critical: 0, important: 1, info: 2 };
+const NOTAM_MAX_AGE_MS = 30 * 60 * 1000;
+const NOTAM_SOON_S = 24 * 3600;   // NOTAM pas encore en vigueur : montrés s'ils commencent dans les 24 h
+const notamStore = new Map();     // OACI -> { list, t, error } (error : code du worker, ou 'network')
+
+// Sujets (lettres 2-3 du code Q) : [catégorie, niveau si hors service / fermé, niveau sinon]
+const NOTAM_SUBJECTS = [
+    [/^FA/, 'Aérodrome', 'critical', 'info'],
+    [/^M[RTDS]/, 'Piste', 'critical', 'important'],
+    [/^I[CLGDIMOSUWXY]/, 'ILS', 'critical', 'important'],
+    [/^PI/, 'Approche', 'critical', 'important'],
+    [/^P[ADS]/, 'Procédure', 'important', 'important'],
+    [/^MX/, 'Voie de circulation', 'important', 'info'],
+    [/^M[NPKA]/, 'Aire de trafic', 'info', 'info'],
+    [/^N[VDBMTLCF]|^G/, 'Radionavigation', 'important', 'info'],
+    [/^L/, 'Balisage', 'important', 'info'],
+    [/^O/, 'Obstacle', 'important', 'important'],
+    [/^R/, 'Espace aérien', 'important', 'important'],
+    [/^FU/, 'Carburant', 'important', 'info'],
+    [/^W/, 'Avertissement', 'info', 'info'],
+    [/^S/, 'Services ATS', 'info', 'info'],
+    [/^C/, 'Communications', 'info', 'info']
+];
+// États (lettres 4-5) qui rendent l'équipement indisponible ou l'installation fermée
+const NOTAM_OUT = /^(LC|AS|AU|AL|LT|CC|CT|LP|HX|AW|AH)$/;
+
+// Repli quand le code Q manque ou est générique (QXXXX)
+function notamFromText(text) {
+    const t = ` ${text.toUpperCase().replace(/\s+/g, ' ')} `;
+    const out = /\b(CLSD|CLOSED|U\/S|UNSERVICEABLE|OUT OF SERVICE|NOT AVBL|UNAVBL|NOT AVAILABLE)\b/.test(t);
+    if (/\b(AD|AERODROME|AIRPORT) (IS )?(CLSD|CLOSED)\b/.test(t)) return ['Aérodrome', 'critical'];
+    if (/\bRWY\b/.test(t) && out) return ['Piste', 'critical'];
+    if (/\b(ILS|LOC|LLZ|GP|GS|GLIDE ?PATH)\b/.test(t) && out) return ['ILS', 'critical'];
+    if (/\bTWY\b/.test(t) && out) return ['Voie de circulation', 'important'];
+    if (/\b(VOR|DME|NDB|TACAN)\b/.test(t) && out) return ['Radionavigation', 'important'];
+    if (/\b(CRANE|OBST|OBSTACLE)\b/.test(t)) return ['Obstacle', 'important'];
+    if (/\b(FUEL|AVGAS|JET A1?)\b/.test(t)) return ['Carburant', 'important'];
+    if (/\b(LGT|LIGHTS?|PAPI|ALS)\b/.test(t) && out) return ['Balisage', 'important'];
+    return ['NOTAM', 'info'];
+}
+
+function classifyNotam(n) {
+    const q = String(n.q || '').toUpperCase();
+    const subject = q.slice(1, 3), condition = q.slice(3, 5);
+    if (/^Q[A-Z]{4}$/.test(q) && subject !== 'XX') {
+        const rule = NOTAM_SUBJECTS.find(([re]) => re.test(subject));
+        if (rule) {
+            let level = NOTAM_OUT.test(condition) ? rule[2] : rule[3];
+            // Code Q d'une piste « modifiée » mais texte de fermeture : on suit le texte
+            if (level !== 'critical' && rule[2] === 'critical' && notamFromText(n.text || n.raw)[1] === 'critical') level = 'critical';
+            return { cat: rule[1], level };
+        }
+    }
+    const [cat, level] = notamFromText(n.text || n.raw || '');
+    return { cat, level };
+}
+
+// NOTAM utiles maintenant : en vigueur, ou qui commencent bientôt ; classés par importance puis date
+function notamsFor(icao) {
+    const e = notamStore.get(icao);
+    if (!e || !e.list) return null;
+    const now = Date.now() / 1000;
+    return e.list
+        .filter(n => (n.to === null || n.to > now) && (!n.from || n.from < now + NOTAM_SOON_S))
+        .map(n => ({ ...n, ...classifyNotam(n), soon: !!n.from && n.from > now }))
+        .sort((a, b) => NOTAM_ORDER[a.level] - NOTAM_ORDER[b.level] || (b.from || 0) - (a.from || 0));
+}
+
+// Charge les NOTAM d'un aéroport (cache 30 min dans la page, 6 h dans le worker) ; jamais d'erreur levée
+async function loadNotams(icao) {
+    if (!FLIGHT_API_BASE || flightDataMode === 'demo' || !/^[A-Z0-9]{4}$/.test(icao || '')) return;
+    const e = notamStore.get(icao);
+    if (e && Date.now() - e.t < NOTAM_MAX_AGE_MS) return e.pending;
+    const entry = { list: e && e.list, t: Date.now(), error: null };
+    entry.pending = (async () => {
+        try {
+            const res = await fetch(`${FLIGHT_API_BASE}/notam?id=${icao}`, { headers: accessCode ? { 'X-Access-Code': accessCode } : {} });
+            const body = await res.json().catch(() => null);
+            if (!res.ok || !body || body.error) {
+                entry.error = (body && body.error && body.error.code) || 'network';
+                // Pas de nouvel essai avant 5 min sur une erreur passagère
+                entry.t = Date.now() - NOTAM_MAX_AGE_MS + 5 * 60 * 1000;
+            } else {
+                entry.list = Array.isArray(body.notams) ? body.notams : [];
+                entry.fetched = body.t || null;
+            }
+        } catch (err) {
+            entry.error = 'network';
+            entry.t = Date.now() - NOTAM_MAX_AGE_MS + 5 * 60 * 1000;
+        }
+    })();
+    notamStore.set(icao, entry);
+    return entry.pending;
+}
+
+// NOTAM indisponibles par choix (démo, serveur sans fournisseur) : rien à afficher du tout
+const notamHidden = icao => {
+    const e = notamStore.get(icao);
+    return !FLIGHT_API_BASE || flightDataMode === 'demo' || (e && !e.list && ['notam_live_only', 'notam_unconfigured'].includes(e.error));
+};
+
+function notamValidity(n) {
+    const d = ts => `${wxPad(new Date(ts * 1000).getUTCDate())}/${wxPad(new Date(ts * 1000).getUTCMonth() + 1)} ${wxPad(new Date(ts * 1000).getUTCHours())}:${wxPad(new Date(ts * 1000).getUTCMinutes())}Z`;
+    if (n.soon) return `à partir du ${d(n.from)}${n.to ? ` jusqu'au ${d(n.to)}` : ''}`;
+    return n.to ? `jusqu'au ${d(n.to)}` : 'permanent';
+}
+
+function notamRow(n) {
+    return `<div class="notam-row ${n.level}">
+        <div class="notam-meta"><span class="notam-cat">${escapeHtml(n.cat)}</span>${n.soon ? '<span class="notam-soon">À venir</span>' : ''}<span class="notam-when">${escapeHtml(notamValidity(n))}</span></div>
+        <div class="notam-text">${escapeHtml(n.text || n.raw)}</div>
+        ${n.schedule ? `<div class="notam-when">Horaires : ${escapeHtml(n.schedule)}</div>` : ''}
+        <details class="notam-rawbox"><summary>${escapeHtml(n.id || 'Texte complet')}</summary><div class="wx-raw">${escapeHtml(n.raw)}</div></details>
+    </div>`;
+}
+
+// Compteurs « 1 critique · 2 importants » (pastilles colorées)
+function notamCounts(list, { withInfo = true } = {}) {
+    const by = { critical: 0, important: 0, info: 0 };
+    list.forEach(n => by[n.level]++);
+    return Object.keys(by).filter(k => by[k] && (withInfo || k !== 'info'))
+        .map(k => `<span class="notam-count ${k}">${by[k]} ${by[k] > 1 ? NOTAM_LEVELS[k].plural : NOTAM_LEVELS[k].label.toLowerCase()}</span>`).join('');
+}
+
+// Bloc NOTAM complet d'un aéroport (panneau latéral) : critiques et importants visibles, informations repliées
+function notamBlock(icao) {
+    const e = notamStore.get(icao);
+    const head = extra => `<div class="wx-head"><span class="wx-label">NOTAM</span>${extra || ''}</div>`;
+    if (!e || (!e.list && !e.error)) return `<div class="notam">${head()}<div class="wx-none">Chargement…</div></div>`;
+    if (!e.list) {
+        const msg = e.error === 'notam_budget' ? 'Limite quotidienne atteinte : réessayez demain'
+            : e.error === 'notam_quota' ? 'Quota du service NOTAM épuisé' : 'NOTAM indisponibles';
+        return `<div class="notam">${head()}<div class="wx-none">${msg}</div></div>`;
+    }
+    const list = notamsFor(icao);
+    if (!list.length) return `<div class="notam">${head()}<div class="wx-none">Aucun NOTAM en vigueur</div></div>`;
+    const main = list.filter(n => n.level !== 'info'), info = list.filter(n => n.level === 'info');
+    return `<div class="notam">
+        ${head(`<span class="notam-counts">${notamCounts(list)}</span>`)}
+        ${main.map(notamRow).join('')}
+        ${info.length ? `<details class="notam-more"${main.length ? '' : ' open'}><summary>${info.length} NOTAM d'information</summary>${info.map(notamRow).join('')}</details>` : ''}
+        <div class="notam-foot">Indicatif, ne pas utiliser pour la navigation${e.fetched ? ` · relevés à ${wxPad(new Date(e.fetched * 1000).getUTCHours())}:${wxPad(new Date(e.fetched * 1000).getUTCMinutes())}Z` : ''}</div>
+    </div>`;
+}
+
+function renderAirportNotams() {
+    const box = document.getElementById('apNotam');
+    const icao = currentAirportCode;
+    box.hidden = !icao || notamHidden(icao);
+    if (!box.hidden) box.innerHTML = notamBlock(icao);
+}
+
+async function loadAirportNotams(icao) {
+    renderAirportNotams();
+    await loadNotams(icao);
+    if (currentAirportCode === icao) renderAirportNotams();
+}
+
+// Dossier de vol : résumé des NOTAM critiques et importants du départ et de l'arrivée
+function renderFlightNotams(f) {
+    document.querySelectorAll('#flightCard [data-notam]').forEach(el => {
+        const icao = el.dataset.notam;
+        const list = notamHidden(icao) ? null : notamsFor(icao);
+        const counts = list ? notamCounts(list, { withInfo: false }) : '';
+        el.hidden = !counts;
+        el.innerHTML = counts ? `<button type="button" class="flight-ap-notam-btn" onclick="openFlightAirport('${escapeHtml(icao)}')" title="Voir les NOTAM de l'aéroport">NOTAM ${counts}</button>` : '';
+    });
+}
+
+function loadFlightNotams(f) {
+    [...document.querySelectorAll('#flightCard [data-notam]')].map(el => el.dataset.notam).forEach(icao => loadNotams(icao).then(() => { if (currentFlight === f) renderFlightNotams(f); }));
 }
 
 // Grand écran : infos et pistes de l'aéroport dans un deuxième panneau, à droite du premier

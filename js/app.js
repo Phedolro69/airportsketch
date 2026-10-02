@@ -3331,19 +3331,26 @@ function wxObsTime(ts) {
 
 // Heure estimée de passage de l'avion à un aéroport : position actuelle, vitesse sol et distance orthodromique
 // (ts = secondes Unix ; passed = l'aéroport est derrière l'avion). null hors vol en cours ou sans vitesse fiable.
+// Destination : on prend l'heure d'arrivée estimée par AirLabs (sinon l'heure prévue + retard connu), plutôt qu'un calcul.
 function flightPassage(icao) {
     const f = flightMap.flight, n = flightMap.track && flightMap.track.now;
-    if (!f || f.status !== 'en-route' || !n || typeof n.lat !== 'number' || typeof n.lon !== 'number' || !(n.gs > 50)) return null;
+    if (!f || f.status !== 'en-route') return null;
+    if (icao === f.arr_icao) {
+        let arrMs = utcMs(f.arr_estimated_utc);
+        if (!arrMs && utcMs(f.arr_time_utc)) arrMs = utcMs(f.arr_time_utc) + (f.arr_delayed || 0) * 60000;
+        if (arrMs) return { passed: false, arrival: true, ts: Math.max(arrMs / 1000, Date.now() / 1000), source: 'airlabs' };
+    }
+    if (!n || typeof n.lat !== 'number' || typeof n.lon !== 'number' || !(n.gs > 50)) return null;
     const ap = searchIndexMap.get(icao);
     if (!ap || !Number.isFinite(ap.lat) || !Number.isFinite(ap.lon)) return null;
     const from = { lat: n.lat, lon: n.lon }, to = { lat: ap.lat, lon: ap.lon };
     const distNm = gcDist(from, to) * EARTH_NM;
-    if (typeof n.track === 'number' && distNm > 5) {
+    if (icao !== f.arr_icao && typeof n.track === 'number' && distNm > 5) {
         const bearing = (gcBearing(from, to) * 180 / Math.PI + 360) % 360;
         const off = Math.abs(((bearing - n.track + 540) % 360) - 180);   // écart entre le cap et la direction de l'aéroport
         if (off > 100) return { passed: true, distNm };
     }
-    return { passed: false, distNm, ts: (n.ts || Date.now() / 1000) + distNm / n.gs * 3600 };
+    return { passed: false, arrival: icao === f.arr_icao, distNm, ts: (n.ts || Date.now() / 1000) + distNm / n.gs * 3600 };
 }
 
 // Lignes du TAF valables à l'heure ts : le groupe de base en vigueur (début, FM, BECMG), plus les TEMPO / PROB qui la couvrent
@@ -3368,18 +3375,19 @@ function wxTafHtml(taf, pass) {
     const now = Date.now() / 1000;
     const eta = pass && !pass.passed ? pass.ts : null;
     const active = eta ? wxTafActive(taf, eta) : new Set();
+    const etaTitle = `Valable à l'heure estimée ${pass && pass.arrival ? "d'atterrissage" : 'de passage'}`;
     const rows = taf.fc.map((f, i) => ({ f, i })).filter(({ f, i }) => f.t > now || active.has(i)).map(({ f, i }) => {
         const tag = [f.p ? `PROB${f.p}` : '', f.ch || ''].filter(Boolean).join(' ');
         const when = (!f.ch || f.ch === 'FM' || f.ch === 'BECMG') && !f.p ? wxDayHour(f.f) : `${wxHour(f.f)}–${wxHour(f.t)}`;
         const parts = [wxFmtWind(f.wdir, f.wspd, f.wgst), wxFmtVis(f.vis), f.clouds.length || !f.ch ? wxFmtClouds(f.clouds) : null, wxFmtWeather(f.wx)]
             .filter(Boolean).join(' · ');
         const cat = wxCategory(f.vis, f.clouds);
-        return `<div class="wx-taf-row${active.has(i) ? ' is-eta' : ''}"${active.has(i) ? ' title="Valable à l\'heure estimée de passage"' : ''}><span class="wx-taf-when">${when}</span>
+        return `<div class="wx-taf-row${active.has(i) ? ' is-eta' : ''}"${active.has(i) ? ` title="${etaTitle}"` : ''}><span class="wx-taf-when">${when}</span>
             <span class="wx-taf-what"><i class="wx-dot ${cat || ''}"></i>${tag ? `<span class="wx-tag">${tag}</span>` : ''}${escapeHtml(parts)}</span></div>`;
     }).join('');
     return `<div class="wx-taf">
         <div class="wx-head wx-taf-title"><span class="wx-label">TAF · prévision</span><span class="wx-age">émis ${taf.issue ? wxDayHour(taf.issue) : ''}</span></div>
-        ${eta ? `<div class="wx-eta">✈ Passage estimé <b>${wxFmtEta(eta)}</b>${eta >= taf.to ? ' · au-delà de la validité du TAF' : ''}</div>` : ''}
+        ${eta ? `<div class="wx-eta">✈ ${pass.arrival ? 'Atterrissage' : 'Passage'} estimé <b>${wxFmtEta(eta)}</b>${eta >= taf.to ? ' · au-delà de la validité du TAF' : ''}</div>` : ''}
         ${pass && pass.passed ? '<div class="wx-eta wx-eta-past">✈ Aéroport déjà survolé</div>' : ''}
         ${rows || '<div class="wx-none">Prévision expirée</div>'}
     </div>`;

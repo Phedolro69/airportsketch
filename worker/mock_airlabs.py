@@ -37,6 +37,7 @@ import os
 import sys
 import random
 import re
+import subprocess
 import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs, urlparse
@@ -301,6 +302,57 @@ def generate_track(airline, number: int, now):
     }
 
 
+# --- Météo : vraie météo NOAA (gratuite, sans clé), même format compact que worker/weather.js -------------
+_WX_CACHE = {}
+
+
+def _noaa(kind, ids):
+    out = subprocess.run(["curl", "-sS", "-m", "20", f"https://aviationweather.gov/api/data/{kind}?ids={','.join(ids)}&format=json"],
+                         capture_output=True, check=True).stdout
+    return json.loads(out) if out.strip() else []
+
+
+def _compact_metar(m):
+    return {"raw": m.get("rawOb", ""), "cat": m.get("fltCat"), "t": m.get("obsTime"), "temp": m.get("temp"), "dewp": m.get("dewp"),
+            "wdir": m.get("wdir"), "wspd": m.get("wspd"), "wgst": m.get("wgst"), "vis": m.get("visib"), "alt": m.get("altim"),
+            "clouds": [[c.get("cover"), c.get("base")] for c in m.get("clouds") or []], "wx": m.get("wxString")}
+
+
+def _compact_taf(t):
+    issue = t.get("issueTime")
+    return {"raw": t.get("rawTAF", ""),
+            "issue": int(datetime.datetime.fromisoformat(issue.replace("Z", "+00:00")).timestamp()) if issue else None,
+            "from": t.get("validTimeFrom"), "to": t.get("validTimeTo"),
+            "fc": [{"f": f.get("timeFrom"), "t": f.get("timeTo"), "ch": f.get("fcstChange"), "p": f.get("probability"),
+                    "wdir": f.get("wdir"), "wspd": f.get("wspd"), "wgst": f.get("wgst"), "vis": f.get("visib"), "wx": f.get("wxString"),
+                    "clouds": [[c.get("cover"), c.get("base")] for c in f.get("clouds") or []]} for f in t.get("fcsts") or []]}
+
+
+def weather_response(query):
+    ids = sorted({i.strip().upper() for i in (query.get("ids") or [""])[0].split(",") if i.strip()})
+    if not ids or len(ids) > 150 or not all(re.fullmatch(r"[A-Z0-9]{3,4}", i) for i in ids):
+        return 400, {"error": {"message": "Paramètre ids invalide (1 à 150 codes OACI)"}}
+    want_taf = (query.get("taf") or [""])[0] == "1"
+    out = {}
+    try:
+        for kind, compact, ttl in (("metar", _compact_metar, 300), ("taf", _compact_taf, 900)):
+            if kind == "taf" and not want_taf:
+                continue
+            now = time.time()
+            missing = [i for i in ids if not (_WX_CACHE.get((kind, i)) and _WX_CACHE[(kind, i)][0] > now)]
+            for k in range(0, len(missing), 100):
+                batch = missing[k:k + 100]
+                found = {}
+                for r in _noaa(kind, batch):
+                    found.setdefault(r.get("icaoId"), compact(r))
+                for i in batch:
+                    _WX_CACHE[(kind, i)] = (now + ttl, found.get(i))
+            out[kind] = {i: _WX_CACHE[(kind, i)][1] for i in ids}
+    except Exception:
+        return 502, {"error": {"message": "Service météo indisponible"}}
+    return 200, out
+
+
 LIVE_FIELDS = ["flight_iata", "flight_icao", "flight_number", "airline_iata", "airline_icao",
                "dep_iata", "dep_icao", "arr_iata", "arr_icao", "status"]
 
@@ -344,6 +396,8 @@ class Handler(BaseHTTPRequestHandler):
 
     def do_GET(self):
         url = urlparse(self.path)
+        if url.path == "/wx":
+            return self._send(*weather_response(parse_qs(url.query)))
         params = ROUTES.get(url.path)
         if params is None:
             return self._send(404, {"error": {"message": "Route inconnue"}})

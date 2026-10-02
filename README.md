@@ -123,6 +123,25 @@ Toutes les routes estimées (tracé, avancée de l'avion toutes les 20 s, liste 
 - **Code** : `scripts/airspace.py` construit les zones (Natural Earth, simplifiées à 0,15°) et la matrice de visibilité, écrites dans `world.json` (clé `avoid`, relu par `make_world.py`) et `worker/avoid.json`. Le routeur JavaScript du site (bloc `airspace-router` de `index.html`) est recopié dans `worker/airspace.js` par `python scripts/sync_airspace.py` (`--check` vérifie qu'il est à jour).
 - **Test** : `python scripts/airspace.py` calcule 24 routes (CDG↔NRT, FRA→PVG, HEL→PEK…) et vérifie, sur les contours **complets** et non simplifiés, qu'aucun point à moins de 5 nm n'est dans une zone.
 
+## Météo (METAR / TAF)
+
+- **Source** : API Data de NOAA Aviation Weather Center (`aviationweather.gov/api`), gratuite et sans clé, couverture mondiale (environ 97 % des grands aéroports et 80 % des moyens ont un METAR). Elle n'envoie pas d'en-têtes CORS : le site passe par la route `GET /wx?ids=LFPG,KJFK[&taf=1]` du worker (`worker/weather.js`), qui renvoie un format compact (METAR, et TAF si `taf=1`). Aucun lien avec le quota AirLabs ; cache en mémoire du worker (METAR 5 min, TAF 15 min), aucune écriture KV ; 150 codes OACI au plus par requête.
+- **Carte du vol** : le départ, l'arrivée et les aéroports affichés le long de la route sont colorés selon la catégorie de vol de leur METAR — **VFR** vert, **MVFR** bleu, **IFR** rouge, **LIFR** magenta ; la taille du point indique le type d'aéroport (grand / moyen). Sans METAR, l'aéroport garde sa couleur neutre. La légende et la liste du dossier de vol (pastille devant chaque code) reprennent ces couleurs.
+- **Infobulle au survol** (PC) et **fiche de l'aéroport** (panneau latéral) : catégorie, vent, visibilité, nuages, phénomènes, température / point de rosée, QNH, METAR brut, puis TAF décodé période par période. Une pastille de catégorie figure aussi sous le titre du diagramme.
+- **Simulateur local** (`worker/mock_airlabs.py`) : la route `/wx` interroge NOAA pour de vrai (la météo n'a pas besoin d'être simulée).
+
+## Mise en page grand écran
+
+À partir de 1 360 px de large, les infos et les pistes de l'aéroport s'affichent dans un **deuxième panneau latéral**, à droite du premier : le dossier de vol et sa liste d'aéroports restent sous les yeux pendant qu'on clique d'un aéroport à l'autre. Sur écran plus étroit ou téléphone, tout reste dans le panneau unique (onglet « Détails & Pistes »).
+
+## Thème clair / sombre
+
+Le site est sombre par défaut. Le bouton ☀ / ☾ de l'en-tête (et la ligne « Thème » des réglages de la carte, avec les codes et le couloir) bascule en **mode clair** pour toute l'application : panneaux, carte (fond Natural Earth clair), schéma des pistes, infobulles, aide. Le choix est mémorisé dans le navigateur (`pleinaxe.theme`) et appliqué avant le premier affichage, sans clignotement.
+
+- **CSS** : toutes les couleurs neutres et pastel passent par des variables (`--n-…` pour la palette neutre, nommée d'après sa valeur sombre, `--p-…` pour les pastels, `--ov` / `--ps` / `--pp` / `--pd` pour les voiles translucides). Le thème clair (`:root[data-theme="light"]`) les redéfinit ; pour un nouvel élément, utiliser ces variables plutôt qu'une couleur en dur.
+- **Canvas** : les couleurs de la carte (`MAP_THEMES`) et du schéma de pistes (`DIAGRAM_THEMES`) ont une version par thème, appliquées par `applyTheme()`.
+- **Barres de défilement** : fines et violettes, dans les deux thèmes.
+
 ## Service de vols (Cloudflare Worker)
 
 1. Créez un compte sur [airlabs.co](https://airlabs.co) et récupérez votre clé d'API.

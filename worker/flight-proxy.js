@@ -10,6 +10,7 @@
  *   GET /track?callsign=AFR173                                 -> position actuelle du vol en cours (AirLabs /flights)
  *   GET /usage                                                 -> appels AirLabs du jour et budget quotidien
  *   GET /config                                                -> mode (« demo » ou « live ») et, en démo, la liste des vols
+ *   GET /wx?ids=LFPG,KJFK[&taf=1]                              -> METAR (et TAF) des aéroports, relayés depuis NOAA (weather.js)
  *
  * Mode démo (par défaut) : 20 vols fictifs générés par demo.js, sans aucun appel à AirLabs. Les vraies données
  * ne sont servies qu'avec l'en-tête X-Access-Code égal au secret LIVE_ACCESS_CODE, ou si DATA_MODE = "live".
@@ -21,6 +22,7 @@
 import { fetchPosition } from './position.js';
 import { checkBudget, isAirLabsQuotaError, budgetUsage, QUOTA_MESSAGES } from './budget.js';
 import { demoList, demoLive, demoFlight, demoTrack } from './demo.js';
+import { parseIds, weather, MAX_IDS } from './weather.js';
 
 const AIRLABS_BASE = 'https://airlabs.co/api/v9';
 
@@ -159,6 +161,17 @@ export default {
                 return json({ response: demoTrack(callsign) }, 200, { ...cors, ...DEMO_HEADERS });
             }
             return handleTrack(request, url, env, ctx, cors);
+        }
+        if (url.pathname === '/wx') {
+            // Météo : données publiques NOAA, identiques en démo et en réel, hors quota AirLabs
+            const ids = parseIds(url.searchParams.get('ids'));
+            if (!ids) return json({ error: { message: `Paramètre ids invalide (1 à ${MAX_IDS} codes OACI)` } }, 400, cors);
+            try {
+                const data = await weather(ids, url.searchParams.get('taf') === '1');
+                return json(data, 200, { ...cors, 'Cache-Control': 'public, max-age=120' });
+            } catch (err) {
+                return json({ error: { message: 'Service météo indisponible' } }, 502, cors);
+            }
         }
         if (url.pathname === '/usage') {
             return json(await budgetUsage(env), 200, { ...cors, 'Cache-Control': 'no-store' });

@@ -694,7 +694,7 @@
             border-radius: 9999px;
             background: rgba(250, 204, 21, 0.15);
             border: 1px solid rgba(250, 204, 21, 0.5);
-            color: var(--p-fde68a);
+            color: #fde68a;
             font-size: 10px;
             font-weight: 700;
             letter-spacing: 0.3px;
@@ -2000,6 +2000,10 @@
             transition: color 0.15s ease, border-color 0.15s ease;
         }
         .btn-theme:hover, .btn-theme:focus-visible { color: var(--text-main); border-color: #a78bfa; outline: none; }
+        .btn-share .ico-check { display: none; }
+        .btn-share.copied { color: #22c55e; border-color: #22c55e; }
+        .btn-share.copied .ico-link { display: none; }
+        .btn-share.copied .ico-check { display: block; }
         .btn-theme .ico-sun { display: none; }
         :root[data-theme="light"] .btn-theme .ico-sun { display: block; }
         :root[data-theme="light"] .btn-theme .ico-moon { display: none; }
@@ -2014,8 +2018,7 @@
         :root[data-theme="light"] .overflown-filter input:focus-visible + .overflown-switch { outline-color: #7c3aed; }
         :root[data-theme="light"] .demo-notice { background: rgba(124, 58, 237, 0.08); border-color: rgba(124, 58, 237, 0.3); }
         :root[data-theme="light"] .demo-notice b { color: #6d28d9; }
-        :root[data-theme="light"] .demo-tag,
-        :root[data-theme="light"] .demo-pill { background: rgba(124, 58, 237, 0.1); border-color: rgba(124, 58, 237, 0.4); }
+        :root[data-theme="light"] .demo-tag { background: rgba(124, 58, 237, 0.1); border-color: rgba(124, 58, 237, 0.4); }
         :root[data-theme="light"] .appr-vor,
         :root[data-theme="light"] .appr-ndb { background: rgba(79, 70, 229, 0.12); border-color: #6366f1; color: #3730a3; }
         :root[data-theme="light"] .help-card[style*="facc15"] { --c: #7c3aed !important; }
@@ -2045,6 +2048,10 @@
             <button class="btn-theme" id="themeBtn" onclick="toggleTheme()" title="Basculer thème clair / sombre" aria-label="Basculer thème clair / sombre">
                 <svg class="ico-moon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
                 <svg class="ico-sun" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+            </button>
+            <button class="btn-theme btn-share" id="shareBtn" onclick="shareLink()" title="Copier le lien de cette vue" aria-label="Copier le lien de cette vue">
+                <svg class="ico-link" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></svg>
+                <svg class="ico-check" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
             </button>
             <button class="btn-help" onclick="openHelp()" title="Que faire avec cette app ?" aria-haspopup="dialog">
                 <span class="btn-help-icon" aria-hidden="true">?</span>
@@ -2333,6 +2340,14 @@
                     <div class="map-seg" role="radiogroup" aria-label="Thème de l'application">
                         <button type="button" data-themebtn="dark" role="radio" onclick="setTheme('dark')">Sombre</button>
                         <button type="button" data-themebtn="light" role="radio" onclick="setTheme('light')">Clair</button>
+                    </div>
+                </div>
+                <div class="map-settings-row">
+                    <span>Style</span>
+                    <div class="map-seg" role="radiogroup" aria-label="Style de la carte">
+                        <button type="button" data-mapstyle="standard" role="radio" onclick="setMapStyle('standard')">Standard</button>
+                        <button type="button" data-mapstyle="inverted" role="radio" onclick="setMapStyle('inverted')">Inversé</button>
+                        <button type="button" data-mapstyle="contrast" role="radio" onclick="setMapStyle('contrast')">Contrasté</button>
                     </div>
                 </div>
                 <label class="map-settings-row" for="mapBand">
@@ -3175,9 +3190,10 @@
         const EARTH_NM = 3440.065;
         // Réglages de la carte du vol, mémorisés dans le navigateur (simple confort, facultatif)
         const MAP_PREFS_KEY = 'airportsketch.mapPrefs';
-        const mapPrefs = { code: 'icao', band: 100, largeOnly: false };   // code : 'icao' (KJFK, par défaut) | 'iata' (JFK) ; couloir en nm
+        const mapPrefs = { code: 'icao', band: 100, largeOnly: false, style: 'standard' };   // code : 'icao' (KJFK, par défaut) | 'iata' (JFK) ; couloir en nm ; style : 'standard' | 'inverted' | 'contrast'
         try {
             const saved = JSON.parse(localStorage.getItem(MAP_PREFS_KEY) || '{}');
+            if (['standard', 'inverted', 'contrast'].includes(saved.style)) mapPrefs.style = saved.style;
             if (saved.code === 'iata' || saved.code === 'icao') mapPrefs.code = saved.code;
             if (typeof saved.largeOnly === 'boolean') mapPrefs.largeOnly = saved.largeOnly;
             if (Number.isFinite(saved.band)) mapPrefs.band = Math.min(300, Math.max(100, Math.round(saved.band / 10) * 10));
@@ -4178,8 +4194,8 @@
         const MAP_GAP_S = 1200;         // au-delà de 20 min sans position, le tracé est interpolé (pointillé)
         const MAP_THEMES = {
             dark: {
-                sea: '#2b3649', land: '#0f1521', coast: '#5a6d8a', border: 'rgba(148, 163, 184, 0.30)',
-                grid: 'rgba(255, 255, 255, 0.05)', halo: '#0f1521', edge: '#0b1220', route: '#a78bfa', routeSoft: 'rgba(167, 139, 250, 0.75)',
+                sea: '#0f1521', land: '#2b3649', coast: '#5a6d8a', border: 'rgba(148, 163, 184, 0.30)',
+                grid: 'rgba(255, 255, 255, 0.05)', halo: '#2b3649', edge: '#0b1220', route: '#a78bfa', routeSoft: 'rgba(167, 139, 250, 0.75)',
                 direct: '#64748b', casing: 'rgba(13, 19, 34, 0.85)', plane: '#c4b5fd',
                 capitalText: 'rgba(226, 232, 240, 0.72)', capitalDot: 'rgba(226, 232, 240, 0.55)',
                 apLarge: '#facc15', apLargeText: '#fde68a', apMedium: 'rgba(250, 204, 21, 0.45)', apMediumText: 'rgba(254, 243, 199, 0.62)',
@@ -4196,7 +4212,27 @@
                 legendDot: '#334155', legendDotMedium: 'rgba(51, 65, 85, 0.5)'
             }
         };
-        const MAP_COLORS = { ...MAP_THEMES[theme] };
+        // Styles de carte : « standard » = palette du thème ; « inversé » échange mer et continents ; « contrasté » accentue l'écart
+        // mer / terres et renforce côtes et frontières. Le halo et le liseré des points suivent la couleur qu'ils avaient (mer ou terres).
+        const MAP_STYLE_OVERRIDES = {
+            contrast: {
+                dark:  { sea: '#070b12', land: '#34425c', coast: '#9fb3d1', border: 'rgba(203, 213, 225, 0.45)' },
+                light: { sea: '#bcd3e8', land: '#ffffff', coast: '#5f83a8', border: 'rgba(51, 65, 85, 0.5)' }
+            }
+        };
+        function mapPalette(t = theme) {
+            const base = MAP_THEMES[t];
+            const style = mapPrefs.style;
+            if (style === 'standard') return { ...base };
+            const p = { ...base };
+            if (style === 'inverted') { p.sea = base.land; p.land = base.sea; }
+            else Object.assign(p, MAP_STYLE_OVERRIDES.contrast[t]);
+            for (const k of ['halo', 'edge']) {
+                if (base[k] === base.sea) p[k] = p.sea; else if (base[k] === base.land) p[k] = p.land;
+            }
+            return p;
+        }
+        const MAP_COLORS = mapPalette(theme);
         const PLANE_PATH = new Path2D('M12 1.5 L13.6 8.5 L22 13.5 L22 15.5 L13.6 12.8 L13.2 19 L16 21 L16 22.5 L12 21.5 L8 22.5 L8 21 L10.8 19 L10.4 12.8 L2 15.5 L2 13.5 L10.4 8.5 Z');
 
         let viewMode = 'diagram';        // 'diagram' (schéma de pistes) | 'map' (carte du vol)
@@ -5346,6 +5382,11 @@
                 b.classList.toggle('active', on);
                 b.setAttribute('aria-checked', String(on));
             });
+            document.querySelectorAll('#mapSettings [data-mapstyle]').forEach(b => {
+                const on = b.dataset.mapstyle === mapPrefs.style;
+                b.classList.toggle('active', on);
+                b.setAttribute('aria-checked', String(on));
+            });
             document.getElementById('mapBand').value = mapPrefs.band;
             document.getElementById('mapBandValue').textContent = `± ${mapPrefs.band} nm`;
             document.getElementById('mapLargeOnly').checked = mapPrefs.largeOnly;
@@ -5357,7 +5398,7 @@
         function applyTheme(next, { save = true } = {}) {
             theme = next === 'light' ? 'light' : 'dark';
             document.documentElement.dataset.theme = theme;
-            Object.assign(MAP_COLORS, MAP_THEMES[theme]);
+            Object.assign(MAP_COLORS, mapPalette(theme));
             Object.assign(DC, DIAGRAM_THEMES[theme]);
             if (save) { try { localStorage.setItem('pleinaxe.theme', theme); } catch (err) { /* stockage indisponible */ } }
             document.querySelectorAll('[data-themebtn]').forEach(b => {
@@ -5369,8 +5410,41 @@
             if (typeof flightMap !== 'undefined' && flightMap.flight) updateMapOverlay();   // légende (couleurs inline)
             if (typeof viewMode !== 'undefined' && viewMode === 'map') scheduleMapDraw(); else if (currentRunways.length) draw();
         }
+        // Lien de partage : l'URL courante (?icao= / ?flight=), sans code d'accès ; feuille de partage native sur téléphone
+        let shareTimer = null;
+        async function shareLink() {
+            const url = new URL(location.href);
+            url.searchParams.delete('code');
+            const btn = document.getElementById('shareBtn');
+            const done = () => {
+                btn.classList.add('copied');
+                btn.title = 'Lien copié !';
+                clearTimeout(shareTimer);
+                shareTimer = setTimeout(() => { btn.classList.remove('copied'); btn.title = 'Copier le lien de cette vue'; }, 2000);
+            };
+            try {
+                if (navigator.share && window.matchMedia('(pointer: coarse)').matches) {
+                    await navigator.share({ title: document.title, url: url.href });
+                    return;
+                }
+                await navigator.clipboard.writeText(url.href);
+                done();
+            } catch (err) {
+                if (err && err.name === 'AbortError') return;   // partage annulé
+                window.prompt('Copiez ce lien :', url.href);     // presse-papiers indisponible
+            }
+        }
         function setTheme(next) { applyTheme(next); }
         function toggleTheme() { applyTheme(theme === 'light' ? 'dark' : 'light'); }
+
+        function setMapStyle(style) {
+            mapPrefs.style = style;
+            saveMapPrefs();
+            syncMapSettings();
+            Object.assign(MAP_COLORS, mapPalette(theme));
+            if (flightMap.flight) updateMapOverlay();   // légende (couleurs inline)
+            scheduleMapDraw();
+        }
 
         function setMapCode(code) {
             mapPrefs.code = code;

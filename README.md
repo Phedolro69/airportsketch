@@ -231,3 +231,12 @@ npx serve .
 Puis accédez à `http://localhost:8000` (ex. `http://localhost:8000/?icao=KJFK`).
 
 Pour la recherche de vols en local, lancez aussi le simulateur : `python worker/mock_airlabs.py` (voir [Service de vols](#service-de-vols-cloudflare-worker)).
+
+## Couches de la carte du vol
+
+Deux couches facultatives, activables dans les réglages de la carte :
+
+- **Zones de conflit** : `scripts/build_conflict_zones.py` lit chaque nuit les bulletins CZIB actifs de l'EASA (page publique, texte parsé : FIR concernées, recommandation, validité) et dessine les FIR correspondantes (contours du [VATSpy Data Project](https://github.com/vatsimnetwork/vatspy-data-project), CC-BY-SA 4.0). Rouge = « ne pas opérer », orange = prudence. Résultat : `data/conflict_zones.json`. Si l'EASA change sa mise en page, le script échoue et le site est déployé sans la couche.
+- **Espaces aériens** : `scripts/build_airspaces.py` télécharge depuis [OpenAIP](https://www.openaip.net) les zones P, R, D, CTR, TMA et ADIZ, découpées en tuiles de 5° (`data/airspaces/`), chargées à la demande à partir d'un certain zoom. Il faut une clé d'API gratuite (openaip.net > profil), à ajouter comme secret GitHub `OPENAIP_API_KEY` ; sans elle, la couche reste désactivée. **Licence CC BY-NC 4.0 : attribution obligatoire (affichée dans la légende) et usage non commercial uniquement.**
+
+Données indicatives : ne pas utiliser pour la navigation.

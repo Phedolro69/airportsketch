@@ -60,6 +60,20 @@ jobs:
       - name: Build static data and website
         run: python scripts/build_data.py --output dist --faa-cache .cache/faa
 
+      # Zones de conflit (bulletins EASA) : si l'EASA est injoignable ou change sa mise en page, le site est
+      # quand même déployé, simplement sans cette couche
+      - name: Build conflict zones layer
+        continue-on-error: true
+        run: python scripts/build_conflict_zones.py --output dist
+
+      # Espaces aériens OpenAIP (CC BY-NC 4.0, usage non commercial). Secret OPENAIP_API_KEY à créer dans
+      # Settings > Secrets and variables > Actions ; sans lui, la couche reste simplement désactivée
+      - name: Build airspaces layer
+        continue-on-error: true
+        env:
+          OPENAIP_API_KEY: ${{ secrets.OPENAIP_API_KEY }}
+        run: python scripts/build_airspaces.py --output dist
+
       # Clé = cycle réellement obtenu (peut être l'ancien si la FAA était en panne)
       - name: Read FAA cycle used
         id: faa-used

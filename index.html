@@ -327,6 +327,16 @@
                         <button type="button" data-mapstyle="contrast" role="radio" onclick="setMapStyle('contrast')">Contrasté</button>
                     </div>
                 </div>
+                <label class="map-settings-row overflown-filter" title="Zones de conflit publiées par l'EASA (bulletins CZIB)">
+                    <input type="checkbox" id="mapConflict" onchange="setMapLayer('conflict', this.checked)">
+                    <span class="overflown-switch"></span>
+                    Zones de conflit (EASA)
+                </label>
+                <label class="map-settings-row overflown-filter" id="mapAirspacesRow" hidden title="Espaces aériens contrôlés, réglementés, dangereux ou interdits (OpenAIP)">
+                    <input type="checkbox" id="mapAirspaces" onchange="setMapLayer('airspaces', this.checked)">
+                    <span class="overflown-switch"></span>
+                    Espaces aériens (OpenAIP)
+                </label>
                 <label class="map-settings-row" for="mapBand">
                     <span>Couloir</span>
                     <input type="range" id="mapBand" min="100" max="300" step="10" oninput="setMapBand(this.value)" title="Distance maximale de part et d'autre de la route">

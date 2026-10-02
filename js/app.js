@@ -794,10 +794,12 @@ function renderFlightCard(f) {
 const EARTH_NM = 3440.065;
 // Réglages de la carte du vol, mémorisés dans le navigateur (simple confort, facultatif)
 const MAP_PREFS_KEY = 'airportsketch.mapPrefs';
-const mapPrefs = { code: 'icao', band: 100, largeOnly: false, style: 'standard' };   // code : 'icao' (KJFK, par défaut) | 'iata' (JFK) ; couloir en nm ; style : 'standard' | 'inverted' | 'contrast'
+const mapPrefs = { code: 'icao', band: 100, largeOnly: false, style: 'standard', conflict: true, airspaces: false };   // code : 'icao' (KJFK, par défaut) | 'iata' (JFK) ; couloir en nm ; style : 'standard' | 'inverted' | 'contrast'
 try {
     const saved = JSON.parse(localStorage.getItem(MAP_PREFS_KEY) || '{}');
     if (['standard', 'inverted', 'contrast'].includes(saved.style)) mapPrefs.style = saved.style;
+    if (typeof saved.conflict === 'boolean') mapPrefs.conflict = saved.conflict;
+    if (typeof saved.airspaces === 'boolean') mapPrefs.airspaces = saved.airspaces;
     if (saved.code === 'iata' || saved.code === 'icao') mapPrefs.code = saved.code;
     if (typeof saved.largeOnly === 'boolean') mapPrefs.largeOnly = saved.largeOnly;
     if (Number.isFinite(saved.band)) mapPrefs.band = Math.min(300, Math.max(100, Math.round(saved.band / 10) * 10));
@@ -1904,10 +1906,147 @@ function loadWorld() {
                 w.borders.forEach(b => add(borders, b, false));
                 flightMap.world = { land, borders, capitals: w.capitals || [] };
                 if (w.avoid && w.avoid.vis) { flightMap.avoid = new AirspaceRouter(w.avoid); planCache.clear(); }
+                loadConflictZones();   // couches facultatives : leur absence ne bloque pas la carte
+                loadAirspaceIndex().then(scheduleMapDraw);
             })
             .catch(err => { flightMap.worldPromise = null; throw err; });
     }
     return flightMap.worldPromise;
+}
+
+// --- Zones de conflit : bulletins EASA (CZIB), FIR concernées -------------------------------
+// data/conflict_zones.json est produit chaque nuit par scripts/build_conflict_zones.py (parsing des bulletins).
+const CONFLICT_STYLES = {
+    high:    { fill: 'rgba(239, 68, 68, 0.22)',  stroke: 'rgba(239, 68, 68, 0.9)',  label: 'Zone de conflit : ne pas opérer (EASA)' },
+    caution: { fill: 'rgba(245, 158, 11, 0.20)', stroke: 'rgba(245, 158, 11, 0.9)', label: 'Zone de conflit : prudence (EASA)' }
+};
+let conflictPromise = null;
+function loadConflictZones() {
+    if (!conflictPromise) {
+        conflictPromise = fetch('./data/conflict_zones.json')
+            .then(res => { if (!res.ok) throw new Error('Zones de conflit indisponibles'); return res.json(); })
+            .then(d => {
+                const u = d.unit || 0.01;
+                const decode = a => {
+                    const pts = [];
+                    let x = a[0], y = a[1];
+                    pts.push([x * u, y * u]);
+                    for (let i = 2; i < a.length; i += 2) { x += a[i]; y += a[i + 1]; pts.push([x * u, y * u]); }
+                    return pts;
+                };
+                const paths = { high: new Path2D(), caution: new Path2D() };
+                const zones = d.zones.filter(z => z.firs.length && paths[z.level]).map(z => {
+                    const rings = z.firs.flatMap(c => (d.firs[c] || []).map(decode));
+                    rings.forEach(pts => {
+                        pts.forEach(([lon, lat], i) => paths[z.level][i ? 'lineTo' : 'moveTo'](lon, mapY(lat)));
+                        paths[z.level].closePath();
+                    });
+                    return { ...z, rings };
+                });
+                flightMap.conflict = { zones, paths, updated: d.updated };
+                scheduleMapDraw();
+                if (flightMap.flight) updateMapOverlay();
+            })
+            .catch(() => { /* couche absente : la carte reste utilisable */ });
+    }
+    return conflictPromise;
+}
+
+// --- Espaces aériens OpenAIP (tuiles 5° x 5° produites par scripts/build_airspaces.py) -----------
+// Couche facultative : sans data/airspaces/index.json (pas de clé OpenAIP au dernier build), elle reste muette.
+const AIRSPACE_MIN_SCALE = 30;   // pixels par degré : en dessous, trop d'espaces aériens pour être lisibles
+const AIRSPACE_STYLES = {
+    3:  { fill: 'rgba(244, 63, 94, 0.22)',  stroke: 'rgba(244, 63, 94, 0.95)',  label: 'Zone interdite (P)' },
+    1:  { fill: 'rgba(251, 146, 60, 0.20)', stroke: 'rgba(251, 146, 60, 0.95)', label: 'Zone réglementée (R)' },
+    2:  { fill: 'rgba(250, 204, 21, 0.16)', stroke: 'rgba(250, 204, 21, 0.95)', label: 'Zone dangereuse (D)' },
+    4:  { fill: 'rgba(34, 211, 238, 0.14)', stroke: 'rgba(34, 211, 238, 0.9)',  label: 'CTR' },
+    7:  { fill: 'rgba(99, 102, 241, 0.12)', stroke: 'rgba(129, 140, 248, 0.85)', label: 'TMA' },
+    12: { fill: 'rgba(148, 163, 184, 0.08)', stroke: 'rgba(148, 163, 184, 0.8)', label: 'ADIZ' }
+};
+const airspaces = { index: undefined, tiles: new Map(), loading: new Set(), fetching: null };
+
+function loadAirspaceIndex() {
+    if (!airspaces.fetching) {
+        airspaces.fetching = fetch('./data/airspaces/index.json')
+            .then(res => res.ok ? res.json() : null)
+            .then(idx => { airspaces.index = idx; document.getElementById('mapAirspacesRow').hidden = !idx; })
+            .catch(() => { airspaces.index = null; });
+    }
+    return airspaces.fetching;
+}
+
+function loadAirspaceTile(key) {
+    if (airspaces.tiles.has(key) || airspaces.loading.has(key)) return;
+    airspaces.loading.add(key);
+    fetch(`./data/airspaces/${key}.json`)
+        .then(res => res.ok ? res.json() : [])
+        .catch(() => [])
+        .then(list => {
+            const u = airspaces.index.unit || 0.01;
+            const paths = {};
+            const items = list.map(a => {
+                const pts = [];
+                let x = a.g[0], y = a.g[1];
+                pts.push([x * u, y * u]);
+                for (let i = 2; i < a.g.length; i += 2) { x += a.g[i]; y += a.g[i + 1]; pts.push([x * u, y * u]); }
+                const path = paths[a.t] || (paths[a.t] = new Path2D());
+                pts.forEach(([lon, lat], i) => path[i ? 'lineTo' : 'moveTo'](lon, mapY(lat)));
+                path.closePath();
+                return { ...a, pts };
+            });
+            airspaces.loading.delete(key);
+            airspaces.tiles.set(key, { paths, items });
+            scheduleMapDraw();
+        });
+}
+
+// Clés des tuiles non vides qui touchent [lonMin, lonMax] x [latMin, latMax] (longitudes dans [-180, 180])
+function airspaceTileKeys(lonMin, lonMax, latMin, latMax) {
+    const idx = airspaces.index;
+    if (!idx) return [];
+    const T = idx.tile, keys = [];
+    for (let x = Math.floor(Math.max(-180, lonMin) / T) * T; x <= Math.min(179.99, lonMax); x += T) {
+        for (let y = Math.floor(Math.max(-90, latMin) / T) * T; y <= Math.min(89.99, latMax); y += T) {
+            const k = `${x}_${y}`;
+            if (idx.tiles[k]) keys.push(k);
+        }
+    }
+    return keys;
+}
+
+const latOfWorldY = wy => Math.atan(Math.sinh(-wy * Math.PI / 180)) * 180 / Math.PI;
+
+// Espaces aériens chargés contenant le point (lon, lat)
+function airspacesAt(lon, lat) {
+    const out = [];
+    const lo = ((lon + 180) % 360 + 360) % 360 - 180;
+    for (const t of airspaces.tiles.values()) {
+        for (const a of t.items) {
+            let inside = false;
+            const pts = a.pts;
+            for (let i = 0, j = pts.length - 1; i < pts.length; j = i++) {
+                const [xi, yi] = pts[i], [xj, yj] = pts[j];
+                if ((yi > lat) !== (yj > lat) && lo < (xj - xi) * (lat - yi) / (yj - yi) + xi) inside = !inside;
+            }
+            if (inside) out.push(a);
+        }
+    }
+    return out;
+}
+
+// Zones contenant le point (lon, lat) ; longitude ramenée près de chaque copie du contour
+function conflictZonesAt(lon, lat) {
+    const c = flightMap.conflict;
+    if (!c) return [];
+    return c.zones.filter(z => z.rings.some(pts => {
+        const x0 = pts[0][0], lo = lon + 360 * Math.round((x0 - lon) / 360);
+        let inside = false;
+        for (let i = 0, j = pts.length - 1; i < pts.length; j = i++) {
+            const [xi, yi] = pts[i], [xj, yj] = pts[j];
+            if ((yi > lat) !== (yj > lat) && lo < (xj - xi) * (lat - yi) / (yj - yi) + xi) inside = !inside;
+        }
+        return inside;
+    }));
 }
 
 async function getAirportData(icao) {
@@ -2467,6 +2606,37 @@ function drawFlightMap() {
             mctx.stroke(world.land);
         }
 
+        if (mapPrefs.conflict && flightMap.conflict) {
+            for (const [level, st] of Object.entries(CONFLICT_STYLES)) {
+                mctx.fillStyle = st.fill;
+                mctx.fill(flightMap.conflict.paths[level], 'nonzero');
+                mctx.strokeStyle = st.stroke;
+                mctx.lineWidth = 1.2 / s;
+                mctx.setLineDash([6 / s, 4 / s]);
+                mctx.stroke(flightMap.conflict.paths[level]);
+                mctx.setLineDash([]);
+            }
+        }
+
+        if (mapPrefs.airspaces && airspaces.index && s >= AIRSPACE_MIN_SCALE) {
+            // Fenêtre visible, exprimée dans le repère de cette copie du monde
+            const lonMin = flightMap.cx - w / 2 / s - k * 360, lonMax = flightMap.cx + w / 2 / s - k * 360;
+            const latA = latOfWorldY(flightMap.cy + h / 2 / s), latB = latOfWorldY(flightMap.cy - h / 2 / s);
+            mctx.lineWidth = 1 / s;
+            for (const key of airspaceTileKeys(lonMin, lonMax, latA, latB)) {
+                const tile = airspaces.tiles.get(key);
+                if (!tile) { loadAirspaceTile(key); continue; }
+                for (const [type, path] of Object.entries(tile.paths)) {
+                    const st = AIRSPACE_STYLES[type];
+                    if (!st) continue;
+                    mctx.fillStyle = st.fill;
+                    mctx.fill(path, 'nonzero');
+                    mctx.strokeStyle = st.stroke;
+                    mctx.stroke(path);
+                }
+            }
+        }
+
         mctx.restore();
     }
 
@@ -2706,12 +2876,23 @@ function updateMapOverlay() {
         if (hasMedium) items.push(`<div><svg width="30" height="10"><circle cx="15" cy="5" r="2.7" fill="${colM}" stroke="${MAP_COLORS.edge}" stroke-width="1.5"/></svg>Aéroport moyen (piste ≥ 2 500 m)</div>`);
         if (wxOn) items.push(`<div class="wx-legend">${Object.entries(WX_CATS).map(([k, c]) => `<span title="${c.help}"><i class="wx-dot" style="background:${c.color}"></i>${k}</span>`).join('')}</div>`);
     }
+    if (mapPrefs.conflict && flightMap.conflict) {
+        const levels = new Set(flightMap.conflict.zones.map(z => z.level));
+        for (const [level, st] of Object.entries(CONFLICT_STYLES)) {
+            if (levels.has(level)) items.push(`<div><svg width="30" height="10"><rect x="2" y="1" width="26" height="8" rx="2" fill="${st.fill}" stroke="${st.stroke}" stroke-dasharray="4 3"/></svg>${st.label}</div>`);
+        }
+    }
+    if (mapPrefs.airspaces && airspaces.index) {
+        const chips = Object.entries(AIRSPACE_STYLES).map(([, st]) => `<span><i class="wx-dot" style="background:${st.stroke}"></i>${st.label.replace(/^Zone /, '')}</span>`).join('');
+        items.push(`<div class="wx-legend">${chips}</div>`);
+        if (flightMap.scale < AIRSPACE_MIN_SCALE) items.push('<div style="color:var(--text-dim)">Espaces aériens : zoomez pour les afficher</div>');
+    }
     const isDemo = (t && t.source === 'demo') || (flightMap.flight && flightMap.flight.demo);
     const credit = isDemo
         ? 'Vol de démonstration : données fictives · fond Natural Earth'
         : t && t.source === 'airlabs' ? 'Position : AirLabs · fond Natural Earth' : 'Fond de carte : Natural Earth';
     legend.innerHTML = items.length
-        ? `${items.join('')}<small>${credit}<br>Plan de vol non public · indicatif, ne pas utiliser pour la navigation</small>`
+        ? `${items.join('')}<small>${credit}${mapPrefs.conflict && flightMap.conflict ? ' · zones de conflit : EASA, FIR : VATSpy (CC-BY-SA)' : ''}${mapPrefs.airspaces && airspaces.index ? ' · espaces aériens : OpenAIP (CC BY-NC)' : ''}<br>Plan de vol non public · indicatif, ne pas utiliser pour la navigation</small>`
         : '';
     legend.hidden = !items.length;
     // Le contenu (donc la taille) de ces boîtes vient de changer : la trajectoire doit rester dégagée
@@ -2880,6 +3061,8 @@ function syncMapSettings() {
     document.getElementById('mapBand').value = mapPrefs.band;
     document.getElementById('mapBandValue').textContent = `± ${mapPrefs.band} nm`;
     document.getElementById('mapLargeOnly').checked = mapPrefs.largeOnly;
+    document.getElementById('mapConflict').checked = mapPrefs.conflict;
+    document.getElementById('mapAirspaces').checked = mapPrefs.airspaces;
     document.getElementById('mapLargeOnlyPhone').checked = mapPrefs.largeOnly;
 }
 
@@ -2926,6 +3109,15 @@ async function shareLink() {
 }
 function setTheme(next) { applyTheme(next); }
 function toggleTheme() { applyTheme(theme === 'light' ? 'dark' : 'light'); }
+
+// Couches de la carte (zones de conflit EASA, espaces aériens OpenAIP)
+function setMapLayer(name, on) {
+    mapPrefs[name] = !!on;
+    saveMapPrefs();
+    syncMapSettings();
+    if (flightMap.flight) updateMapOverlay();   // légende
+    scheduleMapDraw();
+}
 
 function setMapStyle(style) {
     mapPrefs.style = style;
@@ -3325,6 +3517,37 @@ async function showMapTip(icao, clientX, clientY) {
     positionMapTip(clientX, clientY);
 }
 
+// Infobulle des couches (zones de conflit EASA, espaces aériens OpenAIP) sous le curseur ; true si elle s'affiche
+function showLayerTip(clientX, clientY) {
+    const conflictOn = mapPrefs.conflict && flightMap.conflict;
+    const airspacesOn = mapPrefs.airspaces && airspaces.index && flightMap.scale >= AIRSPACE_MIN_SCALE;
+    if (!conflictOn && !airspacesOn) return false;
+    const rect = mapCanvas.getBoundingClientRect();
+    const s = flightMap.scale;
+    const lon = flightMap.cx + (clientX - rect.left - rect.width / 2) / s;
+    const lat = latOfWorldY(flightMap.cy + (clientY - rect.top - rect.height / 2) / s);
+    const zones = conflictOn ? conflictZonesAt(lon, lat) : [];
+    const asp = airspacesOn ? airspacesAt(lon, lat).filter(a => AIRSPACE_STYLES[a.t]).slice(0, 6) : [];
+    if (!zones.length && !asp.length) return false;
+    const key = '#layers:' + zones.map(z => z.id).join(',') + '|' + asp.map(a => a.n + a.t).join(',');
+    if (mapTipIcao !== key) {
+        mapTipIcao = key;
+        const conflictHtml = zones.map(z => `
+            <div class="map-tooltip-name">${escapeHtml(z.title)}</div>
+            <div class="map-tooltip-row" style="color:${CONFLICT_STYLES[z.level].stroke}">${escapeHtml(CONFLICT_STYLES[z.level].label)}</div>
+            <div class="map-tooltip-row">${escapeHtml(z.scope.replace(/\s+/g, ' '))}</div>
+            <div class="map-tooltip-row" style="color:var(--text-dim)">${escapeHtml(z.id)} · valable jusqu'au ${escapeHtml(z.valid_until)}</div>`).join('');
+        const aspHtml = asp.map(a => `
+            <div class="map-tooltip-row"><b style="color:${AIRSPACE_STYLES[a.t].stroke}">${escapeHtml(AIRSPACE_STYLES[a.t].label)}${a.c ? ' · classe ' + escapeHtml(a.c) : ''}</b> ${escapeHtml(a.n)}
+            <span style="color:var(--text-dim)"><br>${escapeHtml(a.lo || '?')} → ${escapeHtml(a.hi || '?')}</span></div>`).join('');
+        mapTip.innerHTML = conflictHtml + aspHtml +
+            `<div class="map-tooltip-hint">${zones.length ? 'Bulletins EASA (CZIB)' : ''}${zones.length && asp.length ? ' · ' : ''}${asp.length ? 'OpenAIP' : ''} : indicatif, ne pas utiliser pour la navigation</div>`;
+    }
+    mapTip.hidden = false;
+    positionMapTip(clientX, clientY);
+    return true;
+}
+
 function hideMapTip() {
     mapTipIcao = null;
     mapTip.hidden = true;
@@ -3352,6 +3575,7 @@ mapCanvas.addEventListener('pointermove', (e) => {
         mapCanvas.style.cursor = hit ? 'pointer' : '';
         // Survol à la souris uniquement (pas de survol au doigt)
         if (hit && e.pointerType === 'mouse') showMapTip(hit.icao, e.clientX, e.clientY);
+        else if (!hit && e.pointerType === 'mouse' && showLayerTip(e.clientX, e.clientY)) { /* infobulle de zone */ }
         else hideMapTip();
         return;
     }

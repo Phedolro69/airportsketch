@@ -486,16 +486,16 @@ function renderDemoFlights(raw) {
     const q = raw.replace(/\s+/g, '').toUpperCase();
     const matches = demoFlights
         .filter(f => !q || [f.flight_iata, f.flight_icao, f.dep_iata, f.arr_iata].some(v => (v || '').startsWith(q)))
-        .sort((a, b) => (a.flight_iata || '').localeCompare(b.flight_iata || '', 'fr', { numeric: true }));
+        .sort((a, b) => (a.flight_iata || '').localeCompare(b.flight_iata || '', LANG, { numeric: true }));
     renderFlightResults({ q, flightParam: 'flight_iata', complete: false }, matches, null);
-    if (!matches.length) showFlightMessage(`Aucun vol de démonstration ne correspond à <b>${escapeHtml(q)}</b>.`);
+    if (!matches.length) showFlightMessage(t('Aucun vol de démonstration ne correspond à <b>{q}</b>.', { q: escapeHtml(q) }));
 }
 
 async function callFlightApi(path) {
     const res = await fetch(`${FLIGHT_API_BASE}${path}`, { headers: accessCode ? { 'X-Access-Code': accessCode } : {} });
     const body = await res.json().catch(() => null);
     if (!body || body.error) {
-        throw new Error(body && body.error ? body.error.message : `Erreur du service de vols (${res.status})`);
+        throw new Error(body && body.error ? t(body.error.message) : t('Erreur du service de vols ({status})', { status: res.status }));
     }
     return body.response;
 }
@@ -529,7 +529,7 @@ function handleFlightInput(val) {
     const box = document.getElementById('flightResults');
 
     if (!FLIGHT_API_BASE) {
-        showFlightMessage("Service de vols non configuré (URL du Worker manquante).");
+        showFlightMessage(t('Service de vols non configuré (URL du Worker manquante).'));
         return;
     }
     // Mode démo : filtrage local des 20 vols, aucun appel au service
@@ -543,11 +543,11 @@ function handleFlightInput(val) {
     }
     const p = parseFlightQuery(val);
     if (!p) {
-        showFlightMessage('Saisissez un code compagnie puis un numéro (ex : AF173, AFR173).');
+        showFlightMessage(t('Saisissez un code compagnie puis un numéro (ex : AF173, AFR173).'));
         return;
     }
 
-    showFlightMessage('Recherche des vols en direct…');
+    showFlightMessage(t('Recherche des vols en direct…'));
     flightInputTimer = setTimeout(async () => {
         let flights = [];
         let liveError = null;
@@ -566,9 +566,8 @@ function handleFlightInput(val) {
     }, /\d/.test(p.q) ? 300 : 900); // sans chiffre, "AF" peut encore devenir "AFR" : on attend plus longtemps
 }
 
-// Logo de la compagnie (icônes Kiwi.com, par code IATA ; avion gris générique pour une compagnie inconnue).
-// Simple confort visuel : l'image disparaît si elle ne se charge pas.
-// Logos fournis par nos soins (img/airlines/), prioritaires sur Kiwi.com
+// Logo de la compagnie : fichier maison (img/airlines/) s'il existe, sinon icône Kiwi.com par code IATA (avion gris
+// générique pour une compagnie inconnue). Simple confort visuel : l'image disparaît si elle ne se charge pas.
 const AIRLINE_LOGOS = { AF: 'img/airlines/AF.png' };
 function airlineLogo(f, cls = 'airline-logo') {
     const iata = (f && (f.airline_iata || (f.flight_iata || '').slice(0, 2)) || '').toUpperCase();
@@ -586,8 +585,8 @@ function renderFlightResults(p, matches, liveError) {
         const el = document.createElement('div');
         el.className = 'autocomplete-item';
         el.innerHTML = `
-            <div><b>${escapeHtml(p.q)}</b> <span style="color:var(--n-9ca3af); font-size:11px; margin-left:4px;">pas en vol actuellement</span></div>
-            <div style="color:var(--mode-accent); font-size:11px;">Afficher le dernier vol connu ➔</div>
+            <div><b>${escapeHtml(p.q)}</b> <span style="color:var(--n-9ca3af); font-size:11px; margin-left:4px;">${t('pas en vol actuellement')}</span></div>
+            <div style="color:var(--mode-accent); font-size:11px;">${t('Afficher le dernier vol connu ➔')}</div>
         `;
         el.onclick = () => selectFlight(p.q, p.flightParam);
         box.appendChild(el);
@@ -621,8 +620,8 @@ function renderFlightResults(p, matches, liveError) {
 
     if (!box.children.length) {
         showFlightMessage(liveError
-            ? `Vols en direct indisponibles : ${escapeHtml(liveError)}`
-            : `Aucun vol en direct commençant par <b>${escapeHtml(p.q)}</b>. Tapez le numéro complet pour voir le dernier vol connu.`);
+            ? t('Vols en direct indisponibles : {error}', { error: escapeHtml(liveError) })
+            : t('Aucun vol en direct commençant par <b>{q}</b>. Tapez le numéro complet pour voir le dernier vol connu.', { q: escapeHtml(p.q) }));
         return;
     }
     box.style.display = 'block';
@@ -673,18 +672,18 @@ async function selectFlight(code, param) {
     clearTimeout(flightInputTimer);
     const seq = ++flightQuerySeq;
     document.getElementById('flightInput').value = code;
-    showFlightMessage(`Chargement du vol ${escapeHtml(code)}…`);
+    showFlightMessage(t('Chargement du vol {code}…', { code: escapeHtml(code) }));
 
     let flight;
     try {
         flight = await callFlightApi(`/flight?${param}=${encodeURIComponent(code)}`);
     } catch (err) {
-        if (seq === flightQuerySeq) showFlightMessage(`Impossible de charger le vol : ${escapeHtml(err.message)}`);
+        if (seq === flightQuerySeq) showFlightMessage(t('Impossible de charger le vol : {error}', { error: escapeHtml(err.message) }));
         return;
     }
     if (seq !== flightQuerySeq) return;
     if (!flight || Array.isArray(flight) || !(flight.dep_iata || flight.dep_icao)) {
-        showFlightMessage(`Aucun vol connu pour <b>${escapeHtml(code)}</b>.`);
+        showFlightMessage(t('Aucun vol connu pour <b>{code}</b>.', { code: escapeHtml(code) }));
         return;
     }
 
@@ -718,8 +717,8 @@ function renderFlightAirportBlock(f, side) {
     const delay = f[`${side}_delayed`];
     const extras = [
         f[`${side}_terminal`] ? `Terminal ${f[`${side}_terminal`]}` : '',
-        f[`${side}_gate`] ? `Porte ${f[`${side}_gate`]}` : '',
-        side === 'arr' && f.arr_baggage ? `Tapis ${f.arr_baggage}` : ''
+        f[`${side}_gate`] ? t('Porte {gate}', { gate: f[`${side}_gate`] }) : '',
+        side === 'arr' && f.arr_baggage ? t('Tapis {belt}', { belt: f.arr_baggage }) : ''
     ].filter(Boolean).join(' · ');
 
     let timeHtml = scheduled ? `${flightTime(scheduled)} <span style="color:var(--text-dim); font-size:11px;">${flightDate(scheduled)}</span>` : '--:--';
@@ -730,9 +729,9 @@ function renderFlightAirportBlock(f, side) {
 
     return `
         <div class="flight-ap ${side}">
-            <div class="flight-ap-label">${side === 'dep' ? 'Départ' : 'Arrivée'}</div>
+            <div class="flight-ap-label">${side === 'dep' ? t('Départ') : t('Arrivée')}</div>
             <div class="flight-ap-code">${escapeHtml(iata || icao || '?')}${iata && icao ? `<small>${escapeHtml(icao)}</small>` : ''}</div>
-            <div class="flight-ap-name" title="${escapeHtml(ap ? ap.name : '')}">${escapeHtml(ap ? (ap.municipality || ap.name) : 'Aéroport inconnu')}</div>
+            <div class="flight-ap-name" title="${escapeHtml(ap ? ap.name : '')}">${escapeHtml(ap ? (ap.municipality || ap.name) : t('Aéroport inconnu'))}</div>
             <div class="flight-ap-time">${timeHtml}</div>
             ${extras ? `<div class="flight-ap-extra">${escapeHtml(extras)}</div>` : ''}
             ${ap ? `<div class="flight-ap-notam" data-notam="${escapeHtml(ap.ident)}" hidden></div>` : ''}
@@ -742,22 +741,21 @@ function renderFlightAirportBlock(f, side) {
 
 function renderFlightDiagramButton(f, side) {
     const ap = findAirport(f[`${side}_icao`], f[`${side}_iata`]);
-    const label = side === 'dep' ? 'Départ' : 'Arrivée';
     if (!ap) {
-        return `<button class="btn-ap-diagram" disabled>${label} : diagramme indisponible</button>`;
+        return `<button class="btn-ap-diagram" disabled>${side === 'dep' ? t('Départ : diagramme indisponible') : t('Arrivée : diagramme indisponible')}</button>`;
     }
-    return `<button class="btn-ap-diagram" data-icao="${escapeHtml(ap.ident)}" onclick="openFlightAirport('${escapeHtml(ap.ident)}')">Diagramme ${label.toLowerCase()} · ${escapeHtml(ap.ident)}</button>`;
+    return `<button class="btn-ap-diagram" data-icao="${escapeHtml(ap.ident)}" onclick="openFlightAirport('${escapeHtml(ap.ident)}')">${side === 'dep' ? t('Diagramme départ') : t('Diagramme arrivée')} · ${escapeHtml(ap.ident)}</button>`;
 }
 
 function renderFlightCard(f) {
     const card = document.getElementById('flightCard');
-    const status = FLIGHT_STATUS[f.status] || { label: f.status || 'Inconnu', color: 'var(--text-muted)' };
+    const status = FLIGHT_STATUS[f.status] || { label: f.status || t('Inconnu'), color: 'var(--text-muted)' };
     const isLive = f.status === 'en-route';
     const code = f.flight_iata || f.flight_icao;
     const meta = [
         f.airline_name || '',
         f.flight_iata && f.flight_icao ? f.flight_icao : '',
-        f.aircraft_icao ? `Appareil ${f.aircraft_icao}` : '',
+        f.aircraft_icao ? t('Appareil {type}', { type: f.aircraft_icao }) : '',
         f.reg_number ? f.reg_number : '',
         f.duration ? `${Math.floor(f.duration / 60)}h${String(f.duration % 60).padStart(2, '0')}` : ''
     ].filter(Boolean).join(' · ');
@@ -765,19 +763,19 @@ function renderFlightCard(f) {
     card.innerHTML = `
         <div class="info-card-header">
             <div>
-                <h2>Dossier de vol</h2>
+                <h2>${t('Dossier de vol')}</h2>
                 <div class="flight-meta">
                     <span class="flight-status" style="color:${status.color};">${escapeHtml(status.label)}</span>${escapeHtml(meta)}
                 </div>
             </div>
             <div style="display:flex; align-items:center; gap:6px;">
                 ${airlineLogo(f, 'airline-logo airline-logo-lg')}<span class="ident-badge">${escapeHtml(code)}</span>
-                <button class="btn-close-card" onclick="closeFlightCard()" title="Fermer le dossier de vol">×</button>
+                <button class="btn-close-card" onclick="closeFlightCard()" title="${t('Fermer le dossier de vol')}">×</button>
             </div>
         </div>
         <div class="flight-note ${isLive ? 'live' : ''}">
-            ${isLive ? (f.demo ? 'Vol en cours.' : '● Vol en cours : données en direct.') : 'Pas en vol actuellement : affichage du vol connu le plus proche.'}
-            Heures locales.
+            ${isLive ? (f.demo ? t('Vol en cours.') : t('● Vol en cours : données en direct.')) : t('Pas en vol actuellement : affichage du vol connu le plus proche.')}
+            ${t('Heures locales.')}
         </div>
         <div class="flight-route">
             ${renderFlightAirportBlock(f, 'dep')}
@@ -789,7 +787,7 @@ function renderFlightCard(f) {
         <div class="flight-diagram-btns">
             <button class="btn-flight-map" onclick="showFlightMap(true)">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3.5 3 14.5 0 18M12 3c-3 3.5-3 14.5 0 18"/></svg>
-                Voir la route sur la carte
+                ${t('Voir la route sur la carte')}
             </button>
             ${renderFlightDiagramButton(f, 'dep')}
             ${renderFlightDiagramButton(f, 'arr')}
@@ -3123,11 +3121,6 @@ function applyTheme(next, { save = true } = {}) {
     Object.assign(MAP_COLORS, mapPalette(theme));
     Object.assign(DC, DIAGRAM_THEMES[theme]);
     if (save) { try { localStorage.setItem('pleinaxe.theme', theme); } catch (err) { /* stockage indisponible */ } }
-    document.querySelectorAll('[data-themebtn]').forEach(b => {
-        const on = b.dataset.themebtn === theme;
-        b.classList.toggle('active', on);
-        b.setAttribute('aria-checked', String(on));
-    });
     if (typeof hideMapTip === 'function') hideMapTip();
     if (typeof flightMap !== 'undefined' && flightMap.flight) updateMapOverlay();   // légende (couleurs inline)
     if (typeof viewMode !== 'undefined' && viewMode === 'map') scheduleMapDraw(); else if (currentRunways.length) draw();

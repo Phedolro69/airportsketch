@@ -3329,19 +3329,58 @@ function wxObsTime(ts) {
     return min >= 0 && min < 90 ? `${hm} · il y a ${min} min` : hm;
 }
 
-function wxTafHtml(taf) {
+// Heure estimée de passage de l'avion à un aéroport : position actuelle, vitesse sol et distance orthodromique
+// (ts = secondes Unix ; passed = l'aéroport est derrière l'avion). null hors vol en cours ou sans vitesse fiable.
+function flightPassage(icao) {
+    const f = flightMap.flight, n = flightMap.track && flightMap.track.now;
+    if (!f || f.status !== 'en-route' || !n || typeof n.lat !== 'number' || typeof n.lon !== 'number' || !(n.gs > 50)) return null;
+    const ap = searchIndexMap.get(icao);
+    if (!ap || !Number.isFinite(ap.lat) || !Number.isFinite(ap.lon)) return null;
+    const from = { lat: n.lat, lon: n.lon }, to = { lat: ap.lat, lon: ap.lon };
+    const distNm = gcDist(from, to) * EARTH_NM;
+    if (typeof n.track === 'number' && distNm > 5) {
+        const bearing = (gcBearing(from, to) * 180 / Math.PI + 360) % 360;
+        const off = Math.abs(((bearing - n.track + 540) % 360) - 180);   // écart entre le cap et la direction de l'aéroport
+        if (off > 100) return { passed: true, distNm };
+    }
+    return { passed: false, distNm, ts: (n.ts || Date.now() / 1000) + distNm / n.gs * 3600 };
+}
+
+// Lignes du TAF valables à l'heure ts : le groupe de base en vigueur (début, FM, BECMG), plus les TEMPO / PROB qui la couvrent
+function wxTafActive(taf, ts) {
+    const active = new Set();
+    if (!taf.fc.length || ts >= taf.to) return active;
+    let base = -1;
+    taf.fc.forEach((f, i) => { if ((!f.ch || f.ch === 'FM' || f.ch === 'BECMG') && !f.p && f.f <= ts) base = i; });
+    if (base < 0) base = taf.fc.findIndex(f => (!f.ch || f.ch === 'FM' || f.ch === 'BECMG') && !f.p);
+    if (base >= 0) active.add(base);
+    taf.fc.forEach((f, i) => { if ((f.ch === 'TEMPO' || f.p) && f.f <= ts && ts < f.t) active.add(i); });
+    return active;
+}
+
+function wxFmtEta(ts) {
+    const min = Math.round((ts - Date.now() / 1000) / 60);
+    const rel = min < 1 ? 'imminent' : min < 60 ? `dans ${min} min` : `dans ${Math.floor(min / 60)} h ${wxPad(min % 60)}`;
+    return `${wxDayHour(ts)} · ${rel}`;
+}
+
+function wxTafHtml(taf, pass) {
     const now = Date.now() / 1000;
-    const rows = taf.fc.filter(f => f.t > now).map(f => {
+    const eta = pass && !pass.passed ? pass.ts : null;
+    const active = eta ? wxTafActive(taf, eta) : new Set();
+    const rows = taf.fc.map((f, i) => ({ f, i })).filter(({ f, i }) => f.t > now || active.has(i)).map(({ f, i }) => {
         const tag = [f.p ? `PROB${f.p}` : '', f.ch || ''].filter(Boolean).join(' ');
         const when = (!f.ch || f.ch === 'FM' || f.ch === 'BECMG') && !f.p ? wxDayHour(f.f) : `${wxHour(f.f)}–${wxHour(f.t)}`;
         const parts = [wxFmtWind(f.wdir, f.wspd, f.wgst), wxFmtVis(f.vis), f.clouds.length || !f.ch ? wxFmtClouds(f.clouds) : null, wxFmtWeather(f.wx)]
             .filter(Boolean).join(' · ');
         const cat = wxCategory(f.vis, f.clouds);
-        return `<div class="wx-taf-row"><span class="wx-taf-when">${when}</span>
+        return `<div class="wx-taf-row${active.has(i) ? ' is-eta' : ''}"${active.has(i) ? ' title="Valable à l\'heure estimée de passage"' : ''}><span class="wx-taf-when">${when}</span>
             <span class="wx-taf-what"><i class="wx-dot ${cat || ''}"></i>${tag ? `<span class="wx-tag">${tag}</span>` : ''}${escapeHtml(parts)}</span></div>`;
     }).join('');
     return `<div class="wx-taf">
         <div class="wx-head wx-taf-title"><span class="wx-label">TAF · prévision</span><span class="wx-age">émis ${taf.issue ? wxDayHour(taf.issue) : ''}</span></div>
+        ${eta ? `<div class="wx-eta">✈ Passage estimé <b>${wxFmtEta(eta)}</b>${eta >= taf.to ? ' · au-delà de la validité du TAF' : ''}</div>` : ''}
+        ${pass && pass.passed ? '<div class="wx-eta wx-eta-past">✈ Aéroport déjà survolé</div>' : ''}
         ${rows || '<div class="wx-none">Prévision expirée</div>'}
     </div>`;
 }
@@ -3368,7 +3407,7 @@ function wxBlock(icao, { taf = true } = {}) {
         <div class="wx-head">${label}<span class="wx-pill ${cat}" title="${WX_CATS[cat].help}">${cat}</span><span class="wx-age">METAR ${wxObsTime(m.t)}</span></div>
         <dl class="wx-grid">${rows}</dl>
         <div class="wx-raw">${escapeHtml(m.raw)}</div>
-        ${taf ? (e.taf ? wxTafHtml(e.taf) : (e.taf === null ? '<div class="wx-taf"><div class="wx-none">Pas de TAF pour cet aéroport</div></div>' : '')) : ''}
+        ${taf ? (e.taf ? wxTafHtml(e.taf, flightPassage(icao)) : (e.taf === null ? '<div class="wx-taf"><div class="wx-none">Pas de TAF pour cet aéroport</div></div>' : '')) : ''}
     </div>`;
 }
 

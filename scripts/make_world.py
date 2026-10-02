@@ -21,11 +21,14 @@ Format de sortie (coordonnées en centièmes de degré, codées en deltas) :
 L'Antarctique est omis (aucun vol, et la projection Mercator l'étire à l'infini).
 """
 
+import base64
 import json
 import math
 import os
 import subprocess
 import sys
+
+import airspace
 
 SOURCE = "https://cdn.jsdelivr.net/npm/world-atlas@2/countries-50m.json"
 # Capitales des pays (Natural Earth 1:110m populated places, domaine public), noms en français
@@ -158,9 +161,22 @@ def main():
         capitals.append([p.get("NAME_FR") or p.get("NAME"), round(lat, 3), round(lon, 3), int(p.get("POP_MAX") or 0)])
     capitals.sort(key=lambda c: -c[3])
 
+    # Espaces aériens à éviter (Russie, Ukraine, Bélarus) : zones simplifiées, points de contournement et matrice
+    # de visibilité entre ces points (précalculée une fois ; voir airspace.py)
+    print("Zones à éviter et matrice de visibilité (quelques minutes)...")
+    zones = airspace.build_zones(topo)
+    nodes = airspace.contour_nodes(zones)
+    router = airspace.Router(zones, nodes)
+    vis = base64.b64encode(router.compute_vis()).decode("ascii")
+    print(f"  {len(zones)} zones, {sum(len(z) for z in zones)} sommets, {len(nodes)} nœuds, matrice {len(vis):,} octets")
+    avoid = {"zones": zones, "nodes": nodes, "vis": vis}
+    with open(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "worker", "avoid.json"), "w") as f:
+        json.dump(avoid, f, separators=(",", ":"))   # même contenu pour le worker (positions des vols de démo)
+
     os.makedirs(os.path.dirname(OUT), exist_ok=True)
     with open(OUT, "w", encoding="utf-8") as f:
-        json.dump({"unit": UNIT, "land": land, "borders": borders, "capitals": capitals}, f,
+        json.dump({"unit": UNIT, "land": land, "borders": borders, "capitals": capitals,
+                   "avoid": avoid}, f,
                   separators=(",", ":"), ensure_ascii=False)
     size = os.path.getsize(OUT)
     print(f"{OUT}: {size:,} octets ({len(land)} anneaux de terre, {len(borders)} frontières, {len(capitals)} capitales)")

@@ -93,9 +93,9 @@ Quand un vol est sélectionné, des boutons en haut de la zone principale bascul
 Pour un vol en cours, le dossier de vol affiche une **barre de progression** et le **temps de vol restant**, calculés à partir du décollage réel et de l'arrivée estimée (actualisés toutes les 30 s), ainsi que la liste repliable des **aéroports le long de la route**.
 
 **Ce que la carte montre**
-- **l'avion à sa position réelle**, orienté selon son cap, avec altitude, vitesse sol et cap en haut à gauche (position reçue à l'ouverture de la carte, puis **estimée toutes les 20 s** par navigation à l'estime : l'avion avance le long du grand cercle vers l'arrivée à sa vitesse sol, déduite de l'heure d'arrivée si besoin, sans aucun appel au service ; le résumé indique « position estimée à hh:mm:ss » et l'heure de la dernière position reçue) ;
-- **Parcouru** (trait plein discret) : grand cercle du départ jusqu'à l'avion, **estimation** ;
-- **Reste à parcourir** (pointillés) : grand cercle de l'avion jusqu'à l'arrivée, **estimation** ;
+- **l'avion à sa position réelle**, orienté selon son cap, avec altitude, vitesse sol et cap en haut à gauche (position reçue à l'ouverture de la carte, puis **estimée toutes les 20 s** par navigation à l'estime : l'avion avance le long de la route estimée vers l'arrivée à sa vitesse sol, déduite de l'heure d'arrivée si besoin, sans aucun appel au service ; le résumé indique « position estimée à hh:mm:ss » et l'heure de la dernière position reçue) ;
+- **Parcouru** (trait plein discret) : route estimée du départ jusqu'à l'avion, **estimation** ;
+- **Reste à parcourir** (pointillés) : route estimée de l'avion jusqu'à l'arrivée, **estimation** ;
 - départ et arrivée : un clic ouvre le diagramme de pistes de l'aéroport ;
 - **zoom sémantique** : zoomer fort (au-delà de 600 px par degré) près d'un aéroport de la carte ouvre son diagramme (molette ignorée 600 ms après la bascule, pour ne pas zoomer aussitôt le diagramme) ; dézoomer nettement ce diagramme (sous la moitié de son cadrage) ramène à la carte, centrée sur l'aéroport. Un diagramme ouvert autrement (bouton, recherche) ne renvoie pas à la carte. Zoom maximal de la carte : 1 500 px par degré (~75 m par pixel) ;
 - **aéroports le long de la route** (étiquettes « Ville - CODE », aussi listés dans le dossier de vol dans l'ordre de passage, avec la distance latérale à gauche ou à droite ; un clic ouvre leur diagramme) : la route (départ → avion → arrivée si la position est connue) est échantillonnée tous les 50 nm, et en chaque point on retient les aéroports éligibles situés dans le **couloir** réglable de ± 100 à 300 nm, plus toujours les 2 plus proches (dégagements océaniques : Shannon, Keflavik, Gander…). Un `large_airport` dont la plus longue piste fait moins de 2 800 m est traité ici comme un `medium_airport` (champ `route_type` de l'index ; la recherche et la fiche de l'aéroport gardent le type OurAirports). Éligibles : grands aéroports, et aéroports moyens dont la plus longue piste fait au moins 2 500 m (coordonnées ajoutées à `search_index.json` pour ces ~1 800 aéroports). Grands aéroports en jaune vif, moyens en jaune pâle ;
@@ -109,9 +109,19 @@ Pour un vol en cours, le dossier de vol affiche une **barre de progression** et 
 
 **Fond de carte** : dessiné par le site, sans tuiles, clé ni bibliothèque. Source [Natural Earth](https://www.naturalearthdata.com) 1:50m (domaine public, via le paquet `world-atlas`), converti par `scripts/make_world.py` en `scripts/assets/world.json` (255 Ko, ~90 Ko gzippé, versionné), copié dans `data/world.json` par `build_data.py` et chargé seulement à l'ouverture de la carte. Projection Mercator, répétée en longitude (les vols transpacifiques traversent la ligne de changement de date sans coupure). Pour régénérer le fond (changer la résolution) : `python scripts/make_world.py`.
 
-**Limites** : seuls les vols en cours ont une position ; le trajet tracé est une estimation (grand cercle) et non la route réelle ; pas de noms d'airways.
+**Limites** : seuls les vols en cours ont une position ; le trajet tracé est une estimation (grand cercle, ou route contournant la Russie, l'Ukraine et le Bélarus) et non la route réelle ; pas de noms d'airways.
 
 ---
+
+### Routes estimées : jamais au-dessus de la Russie, de l'Ukraine ni du Bélarus
+
+Toutes les routes estimées (tracé, avancée de l'avion toutes les 20 s, liste des aéroports le long de la route, vols de démo, simulateur local) évitent ces trois espaces aériens :
+
+- **Plus court chemin** : si le grand cercle traverse une zone, le site calcule le plus court trajet qui la contourne (graphe de visibilité sur la sphère entre les coins des contours, algorithme A*). Ce trajet devient la route estimée.
+- **Couloirs imposés** (réalité opérationnelle, plus long que le plus court chemin) : Europe → Japon/Corée par la Turquie, Erevan et Urumqi ; Japon/Corée → Europe par le Pacifique nord, le détroit de Béring et le Groenland. Chaque tronçon est lui aussi contourné si besoin.
+- **Position de l'avion** : si la position reçue est à moins de 60 nm de la route estimée, l'avion est calé dessus ; sinon la route passe par sa position réelle.
+- **Code** : `scripts/airspace.py` construit les zones (Natural Earth, simplifiées à 0,15°) et la matrice de visibilité, écrites dans `world.json` (clé `avoid`, relu par `make_world.py`) et `worker/avoid.json`. Le routeur JavaScript du site (bloc `airspace-router` de `index.html`) est recopié dans `worker/airspace.js` par `python scripts/sync_airspace.py` (`--check` vérifie qu'il est à jour).
+- **Test** : `python scripts/airspace.py` calcule 24 routes (CDG↔NRT, FRA→PVG, HEL→PEK…) et vérifie, sur les contours **complets** et non simplifiés, qu'aucun point à moins de 5 nm n'est dans une zone.
 
 ## Service de vols (Cloudflare Worker)
 

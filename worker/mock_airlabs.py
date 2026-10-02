@@ -33,6 +33,8 @@ import datetime
 import hashlib
 import json
 import math
+import os
+import sys
 import random
 import re
 import time
@@ -211,6 +213,20 @@ def generate_flight(airline, number: int, now: datetime.datetime):
     return flight
 
 
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "scripts"))
+import airspace  # noqa: E402  (plus court chemin autour de la Russie, de l'Ukraine et du Bélarus)
+
+_AVOID = airspace.load_avoid(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "scripts", "assets", "world.json"))
+_ROUTES = {}
+
+
+def flight_route(dep, arr):
+    """Route estimée dep -> arr : couloir éventuel puis contournement des zones interdites (mise en cache)."""
+    if (dep, arr) not in _ROUTES:
+        _ROUTES[(dep, arr)] = airspace.plan_path(_AVOID, dep, arr)
+    return _ROUTES[(dep, arr)]
+
+
 def great_circle(a, b, f):
     """Point à la fraction f (0..1) du grand cercle a -> b, avec (lat, lon) en degrés."""
     r = math.pi / 180
@@ -243,9 +259,13 @@ def generate_track(airline, number: int, now):
     duration = f["duration"]
     progress = max(0.02, min(0.98, f["percent"] / 100))
     started = datetime.datetime.strptime(f["dep_actual_utc"], "%Y-%m-%d %H:%M")
-    amp = r.uniform(-1, 1) * 1.6 * min(1, duration / 400)  # écart latéral max en degrés
+    route = flight_route(dep, arr)
+    detour = len(route) > 2   # route contournée : on la suit exactement (pas d'écart latéral simulé)
+    amp = 0 if detour else r.uniform(-1, 1) * 1.6 * min(1, duration / 400)  # écart latéral max en degrés
 
     def pos(frac):
+        if detour:
+            return airspace.point_along(route, frac)[:2]
         lat, lon = great_circle(dep, arr, frac)
         # écart perpendiculaire approximatif, nul au départ et à l'arrivée
         dlat = amp * math.sin(math.pi * frac) * math.cos(math.radians(bearing(dep, arr) + 90))

@@ -2821,7 +2821,7 @@
                     </div>
                 </div>
                 <div class="flight-note ${isLive ? 'live' : ''}">
-                    ${f.demo ? '<span class="demo-tag">DÉMO</span>Vol de démonstration : données fictives mais réalistes. ' : ''}${isLive ? (f.demo ? 'Vol en cours.' : '● Vol en cours : données en direct.') : 'Pas en vol actuellement : affichage du vol connu le plus proche.'}
+                    ${isLive ? (f.demo ? 'Vol en cours.' : '● Vol en cours : données en direct.') : 'Pas en vol actuellement : affichage du vol connu le plus proche.'}
                     Heures locales.
                 </div>
                 <div class="flight-route">
@@ -2973,15 +2973,15 @@
             const f = currentFlight;
             const seq = ++flightMap.overflownSeq;
             if (!f) return;
-            const [dep, arr] = await Promise.all([getAirportData(f.dep_icao), getAirportData(f.arr_icao)]);
+            const [dep, arr] = await Promise.all([getAirportData(f.dep_icao), getAirportData(f.arr_icao), loadWorld().catch(() => null)]);
             if (seq !== flightMap.overflownSeq || f !== currentFlight) return;
             let list = [];
             if (dep && arr) {
-                const pts = [{ lat: dep.lat, lon: dep.lon }];
-                const now = flightMap.flight === f && flightMap.track && flightMap.track.now;
-                if (now && typeof now.lat === 'number') pts.push({ lat: now.lat, lon: now.lon });
-                pts.push({ lat: arr.lat, lon: arr.lon });
-                list = computeOverflown(pts, new Set([dep.ident, arr.ident]));
+                // Même route que celle tracée sur la carte (contournement des espaces interdits compris)
+                const path = flightMap.flight === f && flightMap.plan
+                    ? flightMap.plan.path
+                    : planFlightPath([dep.lat, dep.lon], [arr.lat, arr.lon]);
+                list = computeOverflown(path.map(asLL), new Set([dep.ident, arr.ident]));
             }
             flightMap.overflown = list;
             renderOverflownList(f, list, !!(dep && arr));
@@ -3905,7 +3905,7 @@
         function loadWorld() {
             if (!flightMap.worldPromise) {
                 // Version dans l'URL : à changer à chaque régénération de world.json (évite l'ancien fichier en cache)
-                flightMap.worldPromise = fetch('./data/world.json?v=2-capitales')
+                flightMap.worldPromise = fetch('./data/world.json?v=3-evitement')
                     .then(res => { if (!res.ok) throw new Error('Fond de carte indisponible'); return res.json(); })
                     .then(w => {
                         const u = w.unit, land = new Path2D(), borders = new Path2D();
@@ -3921,6 +3921,7 @@
                         w.land.forEach(r => add(land, r, true));
                         w.borders.forEach(b => add(borders, b, false));
                         flightMap.world = { land, borders, capitals: w.capitals || [] };
+                        if (w.avoid && w.avoid.vis) { flightMap.avoid = new AirspaceRouter(w.avoid); planCache.clear(); }
                     })
                     .catch(err => { flightMap.worldPromise = null; throw err; });
             }
@@ -3947,11 +3948,11 @@
         // Trajectoire du vol en cours via le worker (ADS-B). Ne lève jamais d'exception.
         async function loadFlightTrack(f) {
             const notices = {
-                scheduled: 'Vol pas encore parti : route directe estimée',
-                landed: 'Vol atterri : route directe estimée',
-                cancelled: 'Vol annulé : route directe estimée'
+                scheduled: 'Vol pas encore parti : route estimée',
+                landed: 'Vol atterri : route estimée',
+                cancelled: 'Vol annulé : route estimée'
             };
-            if (f.status !== 'en-route') return { data: null, notice: notices[f.status] || 'Vol non suivi : route directe estimée' };
+            if (f.status !== 'en-route') return { data: null, notice: notices[f.status] || 'Vol non suivi : route estimée' };
             // La fiche AirLabs (/flight) d'un vol en cours contient déjà sa position : aucun appel de plus
             if (typeof f.lat === 'number' && typeof f.lng === 'number') {
                 const num = v => (typeof v === 'number' && Number.isFinite(v) ? v : null);
@@ -3972,12 +3973,12 @@
                 };
             }
             const callsign = (f.flight_icao || `${f.airline_icao || ''}${f.flight_number || ''}`).toUpperCase();
-            if (!/^[A-Z0-9]{3,8}$/.test(callsign)) return { data: null, notice: 'Vol non suivi : route directe estimée' };
+            if (!/^[A-Z0-9]{3,8}$/.test(callsign)) return { data: null, notice: 'Vol non suivi : route estimée' };
             try {
                 const data = await callFlightApi(`/track?callsign=${encodeURIComponent(callsign)}`);
-                return data ? { data, notice: '' } : { data: null, notice: 'Position actuelle indisponible : route directe estimée' };
+                return data ? { data, notice: '' } : { data: null, notice: 'Position actuelle indisponible : route estimée' };
             } catch (err) {
-                return { data: null, notice: `${err.message} : route directe estimée` };
+                return { data: null, notice: `${err.message} : route estimée` };
             }
         }
 
@@ -3987,6 +3988,239 @@
             const code = airportCode(ap) || fallbackCode;
             const place = ap.municipality && ap.municipality !== 'N/A' ? ap.municipality : ap.name;
             return place ? `${place.split(/[,(]/)[0].trim()} - ${code}` : code;
+        }
+
+        // ========================================================
+        // ESPACES AÉRIENS À ÉVITER : Russie, Ukraine, Bélarus (zones dans world.json, clé « avoid »)
+        // Plus court chemin autour de ces zones sur la sphère (graphe de visibilité entre les coins des zones ;
+        // la matrice de visibilité des coins est précalculée par scripts/airspace.py). Même algorithme que
+        // le simulateur local (scripts/airspace.py), qui sert aussi à le tester contre les contours complets.
+        // ========================================================
+        // >>> airspace-router (copié tel quel dans worker/airspace.js par scripts/sync_airspace.py)
+        const AV = {
+            v(lat, lon) {
+                const la = lat * Math.PI / 180, lo = lon * Math.PI / 180;
+                return [Math.cos(la) * Math.cos(lo), Math.cos(la) * Math.sin(lo), Math.sin(la)];
+            },
+            ll: v => [Math.atan2(v[2], Math.hypot(v[0], v[1])) * 180 / Math.PI, Math.atan2(v[1], v[0]) * 180 / Math.PI],
+            dot: (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2],
+            cross: (a, b) => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]],
+            norm(a) { const n = Math.hypot(a[0], a[1], a[2]) || 1; return [a[0] / n, a[1] / n, a[2] / n]; },
+            ang(a, b) { const c = AV.cross(a, b); return Math.atan2(Math.hypot(c[0], c[1], c[2]), AV.dot(a, b)); }
+        };
+        const AV_SOUTH_POLE = AV.v(-89.9, 0);
+
+        // Les arcs de grand cercle AB et CD (moins de 180°) se coupent-ils ?
+        function arcsCross(a, b, c, d) {
+            const n1 = AV.cross(a, b), n2 = AV.cross(c, d);
+            let t = AV.cross(n1, n2);
+            if (AV.dot(t, t) < 1e-24) return false;
+            t = AV.norm(t);
+            for (const sg of [1, -1]) {
+                const p = [t[0] * sg, t[1] * sg, t[2] * sg];
+                if (AV.dot(AV.cross(a, p), n1) >= 0 && AV.dot(AV.cross(p, b), n1) >= 0
+                    && AV.dot(AV.cross(c, p), n2) >= 0 && AV.dot(AV.cross(p, d), n2) >= 0) return true;
+            }
+            return false;
+        }
+
+        class AirspaceRouter {
+            constructor(avoid) {
+                this.edges = [];
+                avoid.zones.forEach(ring => {
+                    const pts = ring.map(([lon, lat]) => AV.v(lat, lon));
+                    pts.forEach((a, i) => {
+                        const b = pts[(i + 1) % pts.length];
+                        this.edges.push({ a, b, m: AV.norm([a[0] + b[0], a[1] + b[1], a[2] + b[2]]), h: AV.ang(a, b) / 2 });
+                    });
+                });
+                this.nodes = avoid.nodes.map(([lat, lon]) => AV.v(lat, lon));
+                this.vis = Uint8Array.from(atob(avoid.vis || ''), ch => ch.charCodeAt(0));
+            }
+
+            blocked(a, b) {
+                const mid = AV.norm([a[0] + b[0], a[1] + b[1], a[2] + b[2]]), half = AV.ang(a, b) / 2;
+                for (const e of this.edges) {
+                    const lim = half + e.h;
+                    if (lim < Math.PI && AV.dot(mid, e.m) < Math.cos(lim) - 1e-12) continue;
+                    if (arcsCross(a, b, e.a, e.b)) return true;
+                }
+                return false;
+            }
+
+            inside(p) {
+                let n = 0;
+                for (const e of this.edges) if (arcsCross(p, AV_SOUTH_POLE, e.a, e.b)) n++;
+                return n % 2 === 1;
+            }
+
+            bit(i, j) {
+                if (i > j) [i, j] = [j, i];
+                const k = i * this.nodes.length - (i * (i + 1)) / 2 + (j - i - 1);
+                return (this.vis[k >> 3] >> (k & 7)) & 1;
+            }
+
+            // Points [lat, lon] de A à B en contournant les zones ; tracé direct si rien ne gêne
+            route(aLL, bLL) {
+                const a = AV.v(aLL[0], aLL[1]), b = AV.v(bLL[0], bLL[1]);
+                if (!this.blocked(a, b) || this.inside(a) || this.inside(b)) return [aLL, bLL];
+                const n = this.nodes.length;
+                const visA = new Float64Array(n).fill(-1), visB = new Float64Array(n).fill(-1);
+                for (let i = 0; i < n; i++) {
+                    if (!this.blocked(a, this.nodes[i])) visA[i] = AV.ang(a, this.nodes[i]);
+                    if (!this.blocked(this.nodes[i], b)) visB[i] = AV.ang(this.nodes[i], b);
+                }
+                const dist = new Float64Array(n).fill(Infinity), prev = new Int32Array(n).fill(-1), done = new Uint8Array(n);
+                for (let i = 0; i < n; i++) if (visA[i] >= 0) dist[i] = visA[i];
+                let best = Infinity, bestI = -1;
+                for (;;) {
+                    let u = -1, f = Infinity;
+                    for (let i = 0; i < n; i++) {
+                        if (done[i] || dist[i] === Infinity) continue;
+                        const fi = dist[i] + AV.ang(this.nodes[i], b);
+                        if (fi < f) { f = fi; u = i; }
+                    }
+                    if (u < 0 || f >= best) break;
+                    done[u] = 1;
+                    if (visB[u] >= 0 && dist[u] + visB[u] < best) { best = dist[u] + visB[u]; bestI = u; }
+                    for (let j = 0; j < n; j++) {
+                        if (done[j] || j === u || !this.bit(u, j)) continue;
+                        const c = dist[u] + AV.ang(this.nodes[u], this.nodes[j]);
+                        if (c < dist[j]) { dist[j] = c; prev[j] = u; }
+                    }
+                }
+                if (bestI < 0) return [aLL, bLL];
+                const chain = [];
+                for (let i = bestI; i >= 0; i = prev[i]) chain.push(AV.ll(this.nodes[i]));
+                return [aLL, ...chain.reverse(), bLL];
+            }
+        }
+
+        // Couloirs imposés (réalité opérationnelle) : Europe -> Japon/Corée par le sud (Turquie, Erevan, Urumqi),
+        // Japon/Corée -> Europe par le Pacifique nord, le détroit de Béring et le Groenland.
+        const EUROPE_BOX = [35, 72, -25, 45], EAST_ASIA_BOX = [24, 46, 124, 146];   // [lat min, lat max, lon min, lon max]
+        const CORRIDOR_EAST = [[39.9, 32.9], [40.18, 44.51], [43.83, 87.62]];
+        const CORRIDOR_WEST = [[40.0, 150.0], [55.0, -172.0], [65.6, -167.5], [71.0, -42.0]];
+        const inBox = (p, b) => p[0] >= b[0] && p[0] <= b[1] && p[1] >= b[2] && p[1] <= b[3];
+
+        function corridorWaypoints(dep, arr) {
+            if (inBox(dep, EUROPE_BOX) && inBox(arr, EAST_ASIA_BOX)) return CORRIDOR_EAST;
+            if (inBox(dep, EAST_ASIA_BOX) && inBox(arr, EUROPE_BOX)) return CORRIDOR_WEST;
+            return [];
+        }
+
+        // <<< airspace-router
+
+        // Route estimée dep -> arr ([lat, lon]) : couloir éventuel, puis contournement des zones tronçon par tronçon
+        const planCache = new Map();
+        function planFlightPath(dep, arr, corridors = true) {
+            const key = `${dep}|${arr}|${corridors}|${flightMap.avoid ? 1 : 0}`;
+            if (planCache.has(key)) return planCache.get(key);
+            const pts = [dep, ...(corridors ? corridorWaypoints(dep, arr) : []), arr];
+            const out = [pts[0]];
+            for (let i = 1; i < pts.length; i++) {
+                const leg = flightMap.avoid ? flightMap.avoid.route(pts[i - 1], pts[i]) : [pts[i - 1], pts[i]];
+                out.push(...leg.slice(1));
+            }
+            planCache.set(key, out);
+            return out;
+        }
+
+        // --- Géométrie d'une route (suite de points [lat, lon] reliés par des arcs de grand cercle) ---
+        const asLL = p => ({ lat: p[0], lon: p[1] });
+        const pathLens = path => path.slice(1).map((p, i) => gcDist(asLL(path[i]), asLL(p)));
+        const pathTotal = path => pathLens(path).reduce((a, b) => a + b, 0);
+
+        function pointAtFraction(a, b, len, f) {
+            if (!len) return [a[0], a[1]];
+            const p = gcInterpolate(asLL(a), asLL(b), len, f);
+            return [p.lat, p.lon];
+        }
+
+        // Point à la distance s (radians) le long de la route, avec le cap
+        function pointOnPath(path, s) {
+            const lens = pathLens(path);
+            let acc = 0;
+            for (let i = 0; i < lens.length; i++) {
+                if (s <= acc + lens[i] || i === lens.length - 1) {
+                    const f = lens[i] ? Math.min(1, Math.max(0, (s - acc) / lens[i])) : 0;
+                    const p = pointAtFraction(path[i], path[i + 1], lens[i], f);
+                    const q = f < 0.995 ? pointAtFraction(path[i], path[i + 1], lens[i], Math.min(1, f + 0.005)) : path[i + 1];
+                    const from = f < 0.995 ? p : pointAtFraction(path[i], path[i + 1], lens[i], Math.max(0, f - 0.005));
+                    return { lat: p[0], lon: p[1], heading: bearingDeg(from[0], from[1], q[0], q[1]) };
+                }
+                acc += lens[i];
+            }
+            return { lat: path[0][0], lon: path[0][1], heading: 0 };
+        }
+
+        // Projection d'un point sur la route : abscisse s (radians) et écart (radians) à la route
+        function projectOnPath(path, p) {
+            const lens = pathLens(path);
+            let acc = 0, best = { s: 0, dist: Infinity };
+            for (let i = 0; i < lens.length; i++) {
+                const a = asLL(path[i]), b = asLL(path[i + 1]), d13 = gcDist(a, p);
+                let dist, at;
+                if (!lens[i]) { dist = d13; at = 0; } else {
+                    const dt = gcBearing(a, p) - gcBearing(a, b);
+                    const xt = Math.asin(Math.max(-1, Math.min(1, Math.sin(d13) * Math.sin(dt))));
+                    at = Math.acos(Math.max(-1, Math.min(1, Math.cos(d13) / Math.cos(xt))));
+                    if (Math.cos(dt) < 0) at = -at;
+                    dist = at >= 0 && at <= lens[i] ? Math.abs(xt) : Math.min(d13, gcDist(b, p));
+                    at = Math.max(0, Math.min(lens[i], at));
+                }
+                if (dist < best.dist) best = { s: acc + at, dist };
+                acc += lens[i];
+            }
+            return best;
+        }
+
+        // Morceau de la route entre les abscisses s0 et s1 (radians), extrémités interpolées
+        function pathSlice(path, s0, s1) {
+            const lens = pathLens(path), out = [];
+            const push = p => { const l = out[out.length - 1]; if (!l || l[0] !== p[0] || l[1] !== p[1]) out.push(p); };
+            let acc = 0;
+            for (let i = 0; i < lens.length; i++) {
+                const L = lens[i];
+                if (acc + L >= s0 && acc <= s1) {
+                    push(pointAtFraction(path[i], path[i + 1], L, L ? Math.max(0, (s0 - acc) / L) : 0));
+                    push(pointAtFraction(path[i], path[i + 1], L, L ? Math.min(1, (s1 - acc) / L) : 1));
+                }
+                acc += L;
+            }
+            if (out.length < 2) { const q = pointOnPath(path, s0); return [[q.lat, q.lon], [q.lat, q.lon]]; }
+            return out;
+        }
+
+        // Points denses (arcs de grand cercle) d'une route, longitudes continues
+        function denseArcs(pts) {
+            const out = [[pts[0][0], pts[0][1]]];
+            let lon = pts[0][1];
+            for (let i = 1; i < pts.length; i++) {
+                const arc = greatCircle(pts[i - 1][0], lon, pts[i][0], pts[i][1]);
+                arc.slice(1).forEach(q => out.push(q));
+                lon = arc[arc.length - 1][1];
+            }
+            return out;
+        }
+
+        // Plan d'un vol : route estimée dep -> arr et position de l'avion (abscisse s) sur cette route.
+        // Position proche de la route (< 60 nm) : calée dessus ; sinon la route passe par la position réelle.
+        const ROUTE_SNAP_NM = 60;
+        function planForFlight(dep, arr, fix) {
+            const D = [dep.lat, dep.lon], A = [arr.lat, arr.lon];
+            let path = planFlightPath(D, A), s = 0;
+            if (fix) {
+                const pr = projectOnPath(path, fix);
+                if (pr.dist * EARTH_NM <= ROUTE_SNAP_NM) {
+                    s = pr.s;
+                } else {
+                    const first = planFlightPath(D, [fix.lat, fix.lon], false);
+                    path = first.concat(planFlightPath([fix.lat, fix.lon], A, false).slice(1));
+                    s = pathTotal(first);
+                }
+            }
+            return { path, s, total: pathTotal(path) };
         }
 
         // Géométrie de la route (chemins en coordonnées du monde) à partir de la trajectoire et des aéroports
@@ -4043,8 +4277,26 @@
                     route.hasRemaining = true;
                     route.arr = { lat: arr.lat, lon: arc[arc.length - 1][1], label: arrLabel, icao: arr.ident };
                 }
+            } else if (t && t.now && typeof t.now.lat === 'number' && dep && arr) {
+                // Position de l'avion sans historique : parcouru et reste estimés sur la route qui contourne
+                // les espaces aériens interdits (couloir ou plus court chemin)
+                route.hasPosition = true;
+                if (!flightMap.plan) {
+                    flightMap.plan = planForFlight(dep, arr, { lat: t.now.lat, lon: t.now.lon });
+                    flightMap.planS = flightMap.plan.s;
+                }
+                const plan = flightMap.plan, sNow = Math.min(plan.total, flightMap.planS ?? plan.s);
+                draw(route.flownEst, denseArcs(pathSlice(plan.path, 0, sNow)));
+                const rest = denseArcs(pathSlice(plan.path, sNow, plan.total));
+                draw(route.remaining, rest);
+                route.hasRemaining = true;
+                const at = pointOnPath(plan.path, sNow);
+                route.plane = { lat: at.lat, lon: at.lon, heading: at.heading };
+                route.dep = { lat: dep.lat, lon: dep.lon, label: depLabel, icao: dep.ident };
+                route.arr = { lat: arr.lat, lon: rest[rest.length - 1][1], label: arrLabel, icao: arr.ident };
+                route.path = plan.path;
             } else if (t && t.now && typeof t.now.lat === 'number' && dep) {
-                // Position réelle de l'avion sans historique : parcouru et reste estimés en grand cercle
+                // Position réelle sans aéroport d'arrivée connu : parcouru en grand cercle
                 route.hasPosition = true;
                 const flown = greatCircle(dep.lat, dep.lon, t.now.lat, t.now.lon);
                 draw(route.flownEst, flown);
@@ -4055,18 +4307,14 @@
                     heading: t.now.track ?? bearingDeg(before[0], before[1], plane[0], plane[1])
                 };
                 route.dep = { lat: dep.lat, lon: dep.lon, label: depLabel, icao: dep.ident };
-                if (arr) {
-                    const arc = greatCircle(plane[0], plane[1], arr.lat, arr.lon);
-                    draw(route.remaining, arc);
-                    route.hasRemaining = true;
-                    route.arr = { lat: arr.lat, lon: arc[arc.length - 1][1], label: arrLabel, icao: arr.ident };
-                }
             } else if (dep && arr) {
-                // Pas de trajectoire : route directe estimée
-                const arc = greatCircle(dep.lat, dep.lon, arr.lat, arr.lon);
+                // Pas de position : route estimée (couloir ou plus court chemin autour des espaces interdits)
+                const path = planFlightPath([dep.lat, dep.lon], [arr.lat, arr.lon]);
+                const arc = denseArcs(path);
                 draw(route.direct, arc);
                 route.dep = { lat: dep.lat, lon: dep.lon, label: depLabel, icao: dep.ident };
                 route.arr = { lat: arr.lat, lon: arc[arc.length - 1][1], label: arrLabel, icao: arr.ident };
+                route.path = path;
             }
             return route;
         }
@@ -4629,11 +4877,9 @@
         const ESTIMATE_PERIOD_MS = 20000;
 
         function estimatedNow(base, nowSec) {
-            const fix = base && base.now;
-            const arr = flightMap.arr, f = flightMap.flight;
-            if (!fix || typeof fix.lat !== 'number' || !arr || !fix.ts || f.status !== 'en-route') return null;
-            const from = { lat: fix.lat, lon: fix.lon }, to = { lat: arr.lat, lon: arr.lon };
-            const remaining = gcDist(from, to);                    // radians
+            const fix = base && base.now, plan = flightMap.plan, f = flightMap.flight;
+            if (!fix || typeof fix.lat !== 'number' || !plan || !fix.ts || f.status !== 'en-route') return null;
+            const remaining = plan.total - plan.s;                    // radians restant à parcourir sur la route
             if (remaining <= 0) return null;
             // Vitesse sol connue, sinon déduite de la distance restante et de l'heure d'arrivée estimée
             let gsKt = typeof fix.gs === 'number' && fix.gs > 50 ? fix.gs : null;
@@ -4643,19 +4889,19 @@
                 if (hours > 0.05) gsKt = (remaining * EARTH_NM) / hours;
             }
             if (!gsKt) return null;
-            const elapsedH = Math.max(0, nowSec - fix.ts) / 3600;
-            const frac = Math.min(1, (gsKt * elapsedH / EARTH_NM) / remaining);
-            const pos = gcInterpolate(from, to, remaining, frac);
-            const ahead = frac < 1 ? gcInterpolate(from, to, remaining, Math.min(1, frac + 0.002)) : to;
+            const advance = Math.min(remaining, (gsKt * Math.max(0, nowSec - fix.ts) / 3600) / EARTH_NM);
+            const sNow = plan.s + advance;
+            const pos = pointOnPath(plan.path, sNow);
             return {
                 ...fix,
                 lat: pos.lat,
                 lon: pos.lon,
-                track: frac < 1 ? Math.round(bearingDeg(pos.lat, pos.lon, ahead.lat, ahead.lon)) : fix.track,
+                track: Math.round(pos.heading),
                 gs: fix.gs ?? Math.round(gsKt),
                 ts: nowSec,
                 fixTs: fix.ts,
-                estimated: frac > 0
+                pathS: sNow,
+                estimated: advance > 0
             };
         }
 
@@ -4664,6 +4910,7 @@
             const est = estimatedNow(flightMap.trackBase, Math.round(Date.now() / 1000));
             if (!est) return;
             flightMap.track = { ...flightMap.trackBase, now: est };
+            flightMap.planS = est.pathS;
             flightMap.route = buildFlightRoute();
             updateMapOverlay();
             scheduleMapDraw();
@@ -4695,7 +4942,7 @@
 
             const seq = ++flightMap.seq;
             stopMapRefresh();
-            Object.assign(flightMap, { flight: f, dep: null, arr: null, track: null, trackBase: null, route: null, notice: 'Chargement de la carte…' });
+            Object.assign(flightMap, { flight: f, dep: null, arr: null, track: null, trackBase: null, route: null, plan: null, planS: 0, notice: 'Chargement de la carte…' });
             syncFullscreenHeader();
             updateMapOverlay();
             scheduleMapDraw();
@@ -4709,6 +4956,7 @@
             flightMap.arr = arr.value || null;
             flightMap.track = tracked.value ? tracked.value.data : null;
             flightMap.trackBase = flightMap.track;   // dernière position reçue, base de l'estime
+            flightMap.plan = null;                    // recalculé par buildFlightRoute à partir de cette position
             flightMap.route = buildFlightRoute();
             refreshOverflown();
             flightMap.loadedAt = Date.now();

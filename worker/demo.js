@@ -4,10 +4,23 @@
  *
  * Les horaires sont recalculés par rapport à l'heure actuelle (arrondie à 5 min) : chaque vol garde son
  * « stade » (en vol à 45 %, prévu dans 2 h…), ce qui rend la démo toujours vivante. Les positions des vols
- * en cours sont calculées sur le grand cercle départ -> arrivée.
+ * en cours sont calculées sur la route estimée départ -> arrivée : plus court chemin qui ne survole jamais
+ * la Russie, l'Ukraine ni le Bélarus (couloirs Europe <-> Japon/Corée imposés), comme sur le site.
  *
  * Format identique à AirLabs (/flight, /flights) pour que le site n'ait rien de particulier à faire.
  */
+
+import { AirspaceRouter, planPath, pointAlong } from './airspace.js';
+import avoid from './avoid.json';
+
+const router = new AirspaceRouter(avoid);
+const routeCache = new Map();
+/** Route estimée entre deux aéroports de la démo (calculée une fois par instance du worker). */
+function routeBetween(dep, arr) {
+    const key = `${dep}>${arr}`;
+    if (!routeCache.has(key)) routeCache.set(key, planPath(router, [AIRPORTS[dep][1], AIRPORTS[dep][2]], [AIRPORTS[arr][1], AIRPORTS[arr][2]]));
+    return routeCache.get(key);
+}
 
 // IATA -> [OACI, latitude, longitude, ville, décalage UTC en heures (approximation, sans changement d'heure)]
 const AIRPORTS = {
@@ -70,23 +83,6 @@ const R = Math.PI / 180;
 const fmt = d => d.toISOString().slice(0, 16).replace('T', ' ');
 const local = (d, code) => new Date(d.getTime() + AIRPORTS[code][4] * 3600000);
 
-function interpolate(a, b, f) {
-    const [la1, lo1, la2, lo2] = [a[1] * R, a[2] * R, b[1] * R, b[2] * R];
-    const d = 2 * Math.asin(Math.sqrt(Math.sin((la2 - la1) / 2) ** 2 + Math.cos(la1) * Math.cos(la2) * Math.sin((lo2 - lo1) / 2) ** 2));
-    const A = Math.sin((1 - f) * d) / Math.sin(d), B = Math.sin(f * d) / Math.sin(d);
-    const x = A * Math.cos(la1) * Math.cos(lo1) + B * Math.cos(la2) * Math.cos(lo2);
-    const y = A * Math.cos(la1) * Math.sin(lo1) + B * Math.cos(la2) * Math.sin(lo2);
-    const z = A * Math.sin(la1) + B * Math.sin(la2);
-    return [Math.atan2(z, Math.hypot(x, y)) / R, Math.atan2(y, x) / R];
-}
-
-function bearing(p, q) {
-    const dl = (q[1] - p[1]) * R;
-    const y = Math.sin(dl) * Math.cos(q[0] * R);
-    const x = Math.cos(p[0] * R) * Math.sin(q[0] * R) - Math.sin(p[0] * R) * Math.cos(q[0] * R) * Math.cos(dl);
-    return Math.round((Math.atan2(y, x) / R + 360) % 360);
-}
-
 function buildFlight(def, nowMs) {
     const [iata, number, dep, arr, duration, aircraft, reg, stage, delay] = def;
     const [icao, name, flag] = AIRLINES[iata];
@@ -145,14 +141,12 @@ function buildFlight(def, nowMs) {
     };
 
     if (status === 'en-route') {
-        const a = AIRPORTS[dep], b = AIRPORTS[arr];
-        const pos = interpolate(a, b, stage);
-        const ahead = interpolate(a, b, Math.min(1, stage + 0.01));
+        const pos = pointAlong(routeBetween(dep, arr), stage);
         const climb = Math.min(1, stage / 0.08), descent = Math.min(1, (1 - stage) / 0.08);
         flight.lat = Math.round(pos[0] * 10000) / 10000;
         flight.lng = Math.round(pos[1] * 10000) / 10000;
         flight.alt = Math.round(11000 * Math.min(climb, descent) / 10) * 10 || 600;   // mètres, comme AirLabs
-        flight.dir = bearing(pos, ahead);
+        flight.dir = pos[2];
         flight.speed = Math.round(880 * Math.max(0.45, Math.min(climb, descent)));  // km/h
         flight.v_speed = 0;
         flight.percent = Math.round(stage * 100);

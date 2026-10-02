@@ -3329,28 +3329,49 @@ function wxObsTime(ts) {
     return min >= 0 && min < 90 ? `${hm} · il y a ${min} min` : hm;
 }
 
-// Heure estimée de passage de l'avion à un aéroport : position actuelle, vitesse sol et distance orthodromique
-// (ts = secondes Unix ; passed = l'aéroport est derrière l'avion). null hors vol en cours ou sans vitesse fiable.
-// Destination : on prend l'heure d'arrivée estimée par AirLabs (sinon l'heure prévue + retard connu), plutôt qu'un calcul.
+// Heure estimée de passage de l'avion à un aéroport, cohérente avec l'heure d'atterrissage.
+// 1. Heure d'arrivée : celle d'AirLabs (estimée, sinon prévue + retard), à défaut position / vitesse sol / distance restante.
+// 2. Les aéroports de la route sont répartis entre maintenant et cette heure, au prorata de leur distance le long de la
+//    route restante : la destination est donc toujours la dernière, et aucun passage ne tombe après l'atterrissage.
+// Renvoie { ts (s Unix), arrival, passed } ; null hors vol en cours, ou sans position ni route exploitables.
+const PASSAGE_MAX_OFFROUTE_NM = 300;   // au-delà, l'aéroport n'est pas « sur » la route
 function flightPassage(icao) {
-    const f = flightMap.flight, n = flightMap.track && flightMap.track.now;
-    if (!f || f.status !== 'en-route') return null;
-    if (icao === f.arr_icao) {
-        let arrMs = utcMs(f.arr_estimated_utc);
-        if (!arrMs && utcMs(f.arr_time_utc)) arrMs = utcMs(f.arr_time_utc) + (f.arr_delayed || 0) * 60000;
-        if (arrMs) return { passed: false, arrival: true, ts: Math.max(arrMs / 1000, Date.now() / 1000), source: 'airlabs' };
+    const f = flightMap.flight, n = flightMap.track && flightMap.track.now, arr = flightMap.arr;
+    if (!f || f.status !== 'en-route' || !n || typeof n.lat !== 'number' || typeof n.lon !== 'number') return null;
+    const nowS = Date.now() / 1000;
+
+    // Route restante et position de l'avion sur cette route
+    let path, sNow;
+    if (flightMap.plan) {
+        path = flightMap.plan.path;
+        sNow = Math.min(flightMap.plan.total, flightMap.planS ?? flightMap.plan.s);
+    } else if (arr) {
+        path = planFlightPath([n.lat, n.lon], [arr.lat, arr.lon], false);
+        sNow = 0;
+    } else {
+        return null;
     }
-    if (!n || typeof n.lat !== 'number' || typeof n.lon !== 'number' || !(n.gs > 50)) return null;
+    const remNm = (pathTotal(path) - sNow) * EARTH_NM;
+    const t0 = Math.min(n.ts || nowS, nowS);   // instant auquel l'avion était à sNow
+
+    // Heure d'atterrissage
+    let arrTs = null, source = 'calcul';
+    const arrMs = utcMs(f.arr_estimated_utc) || (utcMs(f.arr_time_utc) ? utcMs(f.arr_time_utc) + (f.arr_delayed || 0) * 60000 : null);
+    if (arrMs) { arrTs = arrMs / 1000; source = 'airlabs'; }
+    else if (n.gs > 50) arrTs = t0 + remNm / n.gs * 3600;
+    if (arrTs === null) return null;
+    arrTs = Math.max(arrTs, nowS + 60, t0 + 60);
+
+    if (icao === f.arr_icao) return { passed: false, arrival: true, ts: arrTs, source };
+
     const ap = searchIndexMap.get(icao);
-    if (!ap || !Number.isFinite(ap.lat) || !Number.isFinite(ap.lon)) return null;
-    const from = { lat: n.lat, lon: n.lon }, to = { lat: ap.lat, lon: ap.lon };
-    const distNm = gcDist(from, to) * EARTH_NM;
-    if (icao !== f.arr_icao && typeof n.track === 'number' && distNm > 5) {
-        const bearing = (gcBearing(from, to) * 180 / Math.PI + 360) % 360;
-        const off = Math.abs(((bearing - n.track + 540) % 360) - 180);   // écart entre le cap et la direction de l'aéroport
-        if (off > 100) return { passed: true, distNm };
-    }
-    return { passed: false, arrival: icao === f.arr_icao, distNm, ts: (n.ts || Date.now() / 1000) + distNm / n.gs * 3600 };
+    if (!ap || !Number.isFinite(ap.lat) || !Number.isFinite(ap.lon) || remNm < 1) return null;
+    const pr = projectOnPath(path, { lat: ap.lat, lon: ap.lon });
+    if (pr.dist * EARTH_NM > PASSAGE_MAX_OFFROUTE_NM) return null;
+    const alongNm = (pr.s - sNow) * EARTH_NM;
+    if (alongNm < 0) return { passed: true, distNm: -alongNm };
+    const ts = Math.max(nowS, t0 + Math.min(1, alongNm / remNm) * (arrTs - t0));
+    return { passed: false, arrival: false, distNm: alongNm, ts, source: 'route' };
 }
 
 // Lignes du TAF valables à l'heure ts : le groupe de base en vigueur (début, FM, BECMG), plus les TEMPO / PROB qui la couvrent

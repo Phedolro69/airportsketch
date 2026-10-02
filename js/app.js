@@ -1203,11 +1203,12 @@ function displayAirportInfo(data) {
     const freqSummary = document.getElementById('freqSummary');
     const freqList = document.getElementById('freqList');
     
-    freqSummary.innerText = `Fréquences radio (${freqs.length})`;
+    freqSummary.innerText = freqs.length;
+    document.getElementById('apFreqs').open = false;   // replié à chaque nouvel aéroport
     freqList.innerHTML = '';
 
     if (freqs.length === 0) {
-        freqList.innerHTML = `<div style="font-size:11px; color:var(--n-6b7280); font-style:italic;">Aucune fréquence répertoriée</div>`;
+        freqList.innerHTML = `<div class="panel-box-status">Aucune fréquence répertoriée</div>`;
     } else {
         freqs.forEach(f => {
             const item = document.createElement('div');

@@ -539,33 +539,9 @@
     .info-label { color: var(--text-muted); font-weight: 500; }
     .info-val { color: var(--n-e2e8f0); font-weight: 600; }
 
-    /* Section rétractable des fréquences */
-    .freq-details {
-        margin-top: 4px;
-        border-top: 1px solid var(--border-card);
-        padding-top: 8px;
-    }
-    .freq-details summary {
-        font-size: 12px;
-        font-weight: 600;
-        color: var(--accent-blue);
-        cursor: pointer;
-        user-select: none;
-        outline: none;
-        display: flex;
-        align-items: center;
-        gap: 4px;
-    }
-    .freq-details summary:hover { color: var(--p-60a5fa); }
-    .freq-list {
-        display: flex;
-        flex-direction: column;
-        gap: 4px;
-        margin-top: 8px;
-        max-height: 150px;
-        overflow-y: auto;
-        -webkit-overflow-scrolling: touch;
-    }
+    /* Fréquences radio : bloc encadré replié (styles communs .panel-box, plus bas) */
+    .freq-count { padding: 0 7px; border-radius: 9999px; background: rgb(var(--ov) / 0.07); color: var(--text-muted); font-size: 11px; font-weight: 700; }
+    .freq-list { display: flex; flex-direction: column; gap: 4px; max-height: 260px; overflow-y: auto; -webkit-overflow-scrolling: touch; }
     .freq-item {
         display: flex;
         justify-content: space-between;

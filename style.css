@@ -1043,7 +1043,6 @@
     .asp-chip[aria-pressed="true"] { background: var(--n-1f2937); border-color: #7c3aed; color: var(--text-main); }
     .asp-chip[aria-pressed="true"] i { opacity: 1; }
     .asp-chip:focus-visible { outline: 2px solid #a78bfa; outline-offset: 1px; }
-    .asp-filters small { color: var(--text-dim); font-size: 10px; line-height: 1.3; }
     .map-settings-row > span { width: 46px; color: var(--text-muted); }
     .map-settings .map-large-only { margin: 0; font-weight: 600; }
     .map-settings .map-large-only > .overflown-switch { width: 26px; }

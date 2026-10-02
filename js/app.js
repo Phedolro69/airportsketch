@@ -3162,8 +3162,7 @@ function buildAirspaceFilters() {
         `<button type="button" class="asp-chip" data-aspclass="${c}" title="Classe ${c}" onclick="toggleAirspaceFilter('class', '${c}')">${c}</button>`).join('');
     document.getElementById('mapAirspaceFilters').innerHTML =
         `<div class="asp-filter-row"><span>Types</span><div class="asp-chips">${types}</div></div>` +
-        `<div class="asp-filter-row"><span>Classes</span><div class="asp-chips">${classes}</div></div>` +
-        "<small>Les zones P, R, D et ADIZ n'ont en général pas de classe : seul leur type compte.</small>";
+        `<div class="asp-filter-row"><span>Classes</span><div class="asp-chips">${classes}</div></div>`;
 }
 
 function setMapStyle(style) {

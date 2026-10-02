@@ -3456,9 +3456,10 @@ function loadWeatherForMap() {
 // ========================================================
 // NOTAM (route /notam du worker, mode réel seulement : quota du fournisseur limité)
 // Classement par importance, d'après le code Q OACI (lettres 2-3 : sujet, 4-5 : état), à défaut d'après le texte :
-//   critique  : aérodrome ou piste fermés, piste raccourcie, ILS / approche aux instruments hors service ;
-//   important : voie de circulation fermée, radionavigation, balisage, obstacles, espace aérien, carburant, procédures ;
-//   info      : tout le reste (services, horaires, oiseaux, aires de stationnement…), replié par défaut.
+//   critique  : aérodrome ou piste fermés, ILS ou approche aux instruments hors service / non autorisés ;
+//   important : restrictions d'aérodrome ou de piste, distances déclarées, voie de circulation fermée, radionavigation
+//               ou balisage hors service, espace aérien, carburant, procédures modifiées ou indisponibles ;
+//   info      : tout le reste (obstacles, oiseaux, services, aires de trafic, avertissements…), replié par défaut.
 // ========================================================
 const NOTAM_LEVELS = {
     critical:  { label: 'Critique',    plural: 'critiques' },
@@ -3470,56 +3471,87 @@ const NOTAM_MAX_AGE_MS = 30 * 60 * 1000;
 const NOTAM_SOON_S = 24 * 3600;   // NOTAM pas encore en vigueur : montrés s'ils commencent dans les 24 h
 const notamStore = new Map();     // OACI -> { list, t, error } (error : code du worker, ou 'network')
 
-// Sujets (lettres 2-3 du code Q) : [catégorie, niveau si hors service / fermé, niveau sinon]
+// Sujets (lettres 2-3 du code Q) : [motif, catégorie, niveau si hors service / fermé, si limité, sinon]
 const NOTAM_SUBJECTS = [
-    [/^FA/, 'Aérodrome', 'critical', 'info'],
-    [/^M[RTDS]/, 'Piste', 'critical', 'important'],
-    [/^I[CLGDIMOSUWXY]/, 'ILS', 'critical', 'important'],
-    [/^PI/, 'Approche', 'critical', 'important'],
-    [/^P[ADS]/, 'Procédure', 'important', 'important'],
-    [/^MX/, 'Voie de circulation', 'important', 'info'],
-    [/^M[NPKA]/, 'Aire de trafic', 'info', 'info'],
-    [/^N[VDBMTLCF]|^G/, 'Radionavigation', 'important', 'info'],
-    [/^L/, 'Balisage', 'important', 'info'],
-    [/^O/, 'Obstacle', 'important', 'important'],
-    [/^R/, 'Espace aérien', 'important', 'important'],
-    [/^FU/, 'Carburant', 'important', 'info'],
-    [/^W/, 'Avertissement', 'info', 'info'],
-    [/^S/, 'Services ATS', 'info', 'info'],
-    [/^C/, 'Communications', 'info', 'info']
+    [/^FA/, 'Aérodrome', 'critical', 'important', 'info'],
+    [/^MR/, 'Piste', 'critical', 'important', 'info'],
+    [/^M[TDS]/, 'Piste', 'important', 'important', 'important'],
+    [/^I[CGLW]/, 'ILS', 'critical', 'important', 'important'],   // ILS, glide, localizer, MLS
+    [/^I/, 'ILS', 'important', 'important', 'important'],        // DME, balises, catégories d'ILS
+    [/^PI/, 'Approche', 'critical', 'important', 'info'],          // amendement de minima ou de notes : info
+    [/^P/, 'Procédure', 'important', 'important', 'info'],
+    [/^MX/, 'Voie de circulation', 'important', 'info', 'info'],
+    [/^M/, 'Aire de trafic', 'info', 'info', 'info'],
+    [/^N|^G/, 'Radionavigation', 'important', 'info', 'info'],
+    [/^L[XYBW]/, 'Balisage', 'info', 'info', 'info'],             // voies de circulation, phare d'aérodrome, hélistation
+    [/^L/, 'Balisage', 'important', 'info', 'info'],              // piste et approche (ALS, PAPI, bords, axe…)
+    [/^O/, 'Obstacle', 'info', 'info', 'info'],
+    [/^R/, 'Espace aérien', 'important', 'important', 'important'],
+    [/^FU/, 'Carburant', 'important', 'info', 'info'],
+    [/^W/, 'Avertissement', 'info', 'info', 'info'],
+    [/^S/, 'Services ATS', 'info', 'info', 'info'],
+    [/^C/, 'Communications', 'info', 'info', 'info']
 ];
-// États (lettres 4-5) qui rendent l'équipement indisponible ou l'installation fermée
-const NOTAM_OUT = /^(LC|AS|AU|AL|LT|CC|CT|LP|HX|AW|AH)$/;
+// États (lettres 4-5) : hors service / fermé / non autorisé, et simplement limité
+const NOTAM_OUT = /^(LC|AS|AU|AW|LP)$/;
+const NOTAM_LIMITED = /^(LT|AL|LL|LW|LH|HW|CT)$/;
 
-// Repli quand le code Q manque ou est générique (QXXXX)
-function notamFromText(text) {
-    const t = ` ${text.toUpperCase().replace(/\s+/g, ' ')} `;
-    const out = /\b(CLSD|CLOSED|U\/S|UNSERVICEABLE|OUT OF SERVICE|NOT AVBL|UNAVBL|NOT AVAILABLE)\b/.test(t);
-    if (/\b(AD|AERODROME|AIRPORT) (IS )?(CLSD|CLOSED)\b/.test(t)) return ['Aérodrome', 'critical'];
-    if (/\bRWY\b/.test(t) && out) return ['Piste', 'critical'];
-    if (/\b(ILS|LOC|LLZ|GP|GS|GLIDE ?PATH)\b/.test(t) && out) return ['ILS', 'critical'];
-    if (/\bTWY\b/.test(t) && out) return ['Voie de circulation', 'important'];
-    if (/\b(VOR|DME|NDB|TACAN)\b/.test(t) && out) return ['Radionavigation', 'important'];
-    if (/\b(CRANE|OBST|OBSTACLE)\b/.test(t)) return ['Obstacle', 'important'];
-    if (/\b(FUEL|AVGAS|JET A1?)\b/.test(t)) return ['Carburant', 'important'];
-    if (/\b(LGT|LIGHTS?|PAPI|ALS)\b/.test(t) && out) return ['Balisage', 'important'];
-    return ['NOTAM', 'info'];
+// Sans code Q exploitable (NOTAM domestiques américains, QXXXX) : sujet et état déduits du texte, qui commence
+// en général par un mot-clé (RWY, TWY, NAV, OBST, SID…) ; renvoie un pseudo-code Q, ex. « MRLC » pour une piste fermée
+function notamQFromText(text) {
+    const t = ` ${String(text).toUpperCase().replace(/\s+/g, ' ')} `;
+    const condition = /\b(CLSD|CLOSED)\b/.test(t) ? 'LC'
+        : /\b(U\/S|UNSERVICEABLE|OUT OF SERVICE|INOPERATIVE|OTS)\b/.test(t) ? 'AS'
+        : /\b(NOT AVBL|UNAVBL|NOT AVAILABLE|NOT AUTH|NA)\b/.test(t) ? 'AU'
+        : /\b(LIMITED|RESTRICTED TO|MAX WINGSPAN|WINGSPAN)\b/.test(t) ? 'LT' : 'XX';
+    const lights = /\b(LGT|LGTS|LIGHTS?|LIGHTING|ALS|ALSF-?\d|MALSR?|SSALR|PAPI|VASI|REIL|RCLL|TDZ ?LGT|EDGE LGT|CL LGT)\b/.test(t);
+    const kw = t.trim().split(' ')[0];
+    if (kw === 'AD' || /\b(AD|AERODROME|AIRPORT) (AP )?(IS )?(CLSD|CLOSED)\b/.test(t)) {
+        if (/\bFUEL\b/.test(t)) return 'FU' + condition;
+        if (lights) return 'LX' + condition;
+        // Fermé « TO … » / « EXC … » : seulement pour une partie du trafic
+        if (condition === 'LC') return /\b(TO|EXC|EXCEPT)\b/.test(t) ? 'FALT' : 'FALC';
+        return 'FA' + (condition === 'LT' ? 'LT' : 'XX');
+    }
+    // Une piste n'est pas « U/S » : un élément hors service sur une piste est un balisage (RTHL, RLLS, REDL…)
+    if (kw === 'RWY') return (lights || condition === 'AS' ? 'LR' : 'MR') + condition;
+    if (kw === 'TWY') return (lights ? 'LX' : 'MX') + condition;
+    if (kw === 'APRON' || kw === 'RAMP') return 'MN' + condition;
+    if (kw === 'NAV') {
+        if (/\b(IM|MM|OM|DME|MARKER|LOM|LMM)\b/.test(t)) return 'ID' + condition;   // élément annexe de l'ILS
+        if (/\b(ILS|LOC|LLZ|GP|GS|GLIDE ?PATH|GLIDESLOPE)\b/.test(t)) return 'IC' + condition;
+        return (/\bNDB\b/.test(t) ? 'NB' : /\bDME\b/.test(t) && !/\bVOR/.test(t) ? 'ND' : 'NV') + condition;
+    }
+    // Procédures : « PROCEDURE NA » = procédure entière indisponible ; sinon simple amendement (minima, notes…)
+    const procNa = /\bPROCEDURE (NA|NOT AVBL|NOT AUTH)\b/.test(t) ? 'AU' : 'CH';
+    if (kw === 'IAP') return 'PI' + procNa;
+    if (['SID', 'STAR', 'ODP', 'DVA', 'VFP', 'SPECIAL'].includes(kw)) return 'PD' + procNa;
+    if (kw === 'OBST') return 'OB' + condition;
+    if (kw === 'AIRSPACE') return 'RT' + condition;
+    if (kw === 'COM') return 'CA' + condition;
+    if (kw === 'SVC') return 'ST' + condition;
+    // Texte libre (QXXXX) : mots-clés n'importe où
+    if (/\bRWY\b/.test(t) && condition === 'LC' && !/\bTWY\b/.test(t)) return 'MRLC';
+    if (/\b(ILS|LOC|LLZ|GP|GLIDE ?PATH)\b/.test(t) && condition !== 'XX') return 'IC' + condition;
+    if (/\bTWY\b/.test(t)) return (lights ? 'LX' : 'MX') + condition;
+    if (/\b(VOR|DME|NDB|TACAN)\b/.test(t) && condition !== 'XX') return 'NV' + condition;
+    if (/\b(CRANE|OBST|OBSTACLE)\b/.test(t)) return 'OB' + condition;
+    if (/\b(FUEL|AVGAS|JET A1?)\b/.test(t)) return 'FU' + condition;
+    if (lights) return 'LX' + condition;
+    return null;
 }
 
 function classifyNotam(n) {
     const q = String(n.q || '').toUpperCase();
-    const subject = q.slice(1, 3), condition = q.slice(3, 5);
-    if (/^Q[A-Z]{4}$/.test(q) && subject !== 'XX') {
-        const rule = NOTAM_SUBJECTS.find(([re]) => re.test(subject));
-        if (rule) {
-            let level = NOTAM_OUT.test(condition) ? rule[2] : rule[3];
-            // Code Q d'une piste « modifiée » mais texte de fermeture : on suit le texte
-            if (level !== 'critical' && rule[2] === 'critical' && notamFromText(n.text || n.raw)[1] === 'critical') level = 'critical';
-            return { cat: rule[1], level };
-        }
-    }
-    const [cat, level] = notamFromText(n.text || n.raw || '');
-    return { cat, level };
+    let code = /^Q[A-Z]{4}$/.test(q) && q.slice(1, 3) !== 'XX' ? q.slice(1) : notamQFromText(n.text || n.raw || '');
+    if (!code) return { cat: 'NOTAM', level: 'info' };
+    const subject = code.slice(0, 2), condition = code.slice(2, 4);
+    const rule = NOTAM_SUBJECTS.find(([re]) => re.test(subject));
+    if (!rule) return { cat: 'NOTAM', level: 'info' };
+    // Piste : seule la fermeture est critique (« AW » y signifie par exemple un rainurage effacé)
+    const out = NOTAM_OUT.test(condition) && (subject !== 'MR' || condition === 'LC');
+    const level = out ? rule[2] : NOTAM_OUT.test(condition) || NOTAM_LIMITED.test(condition) ? rule[3] : rule[4];
+    return { cat: rule[1], level };
 }
 
 // NOTAM utiles maintenant : en vigueur, ou qui commencent bientôt ; classés par importance puis date

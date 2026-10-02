@@ -576,12 +576,24 @@ MOCK_NOTAMS = [
 ]
 
 
+NOTAM_MOCK_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "notam_mock")
+
+
 def mock_notams(ident):
     if ident == "XXXX":
         return 502, {"error": {"message": "Service NOTAM indisponible"}}
     now = int(time.time())
     if ident == "ZZZZ":
         return 200, {"t": now, "notams": []}
+    # Vrais NOTAM exportés de la FAA (scripts/parse_notam_pdf.py) : dates décalées pour que la situation soit
+    # celle du moment de l'export (mêmes NOTAM en vigueur, mêmes durées restantes)
+    path = os.path.join(NOTAM_MOCK_DIR, f"{ident}.json")
+    if os.path.exists(path):
+        with open(path, encoding="utf-8") as f:
+            data = json.load(f)
+        shift = now - (data.get("queried") or now)
+        moved = lambda ts: ts + shift if ts is not None else None
+        return 200, {"t": now, "notams": [{**n, "from": moved(n["from"]), "to": moved(n["to"])} for n in data["notams"]]}
     fmt = lambda ts: time.strftime("%y%m%d%H%M", time.gmtime(ts))
     out = []
     for i, (q, e, start_h, dur_h) in enumerate(MOCK_NOTAMS):

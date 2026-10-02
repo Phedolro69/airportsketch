@@ -1,0 +1,1446 @@
+{
+ "source": "FAA NOTAM Search (export PDF)",
+ "queried": 1790974920,
+ "notams": [
+  {
+   "id": "JFK 10/021",
+   "raw": "!JFK 10/021 JFK AIRSPACE FLTCK ACFT OPS WI AN AREA DEFINED AS 404622N0735008W (8.4NM N\nJFK) TO 404722N0735020W (9.4NM N JFK) TO 404809N0734723W (9.8NM N JFK) TO\n405005N0734837W (11.8NM N JFK) TO 405134N0734701W (13.2NM NNE JFK) TO 405321N0734724W\n(15NM N JFK) TO 404618N0732957W (15NM ENE JFK) TO 403849N0732937W (13NM ESE JFK) TO\n403841N0733453W (9NM ESE JFK) TO 404406N0733837W (8.4NM ENE JFK) TO 404656N0734443W\n(8.7NM NNE JFK) TO POINT OF ORIGIN 1000FT-2000FT AGL INCLUDING JFK RWY 22R FINAL AND\n60DEG EITHER SIDE, ACFT CS FLC70 2610060400-2610061000EST",
+   "text": "AIRSPACE FLTCK ACFT OPS WI AN AREA DEFINED AS 404622N0735008W (8.4NM N JFK) TO 404722N0735020W (9.4NM N JFK) TO 404809N0734723W (9.8NM N JFK) TO 405005N0734837W (11.8NM N JFK) TO 405134N0734701W (13.2NM NNE JFK) TO 405321N0734724W (15NM N JFK) TO 404618N0732957W (15NM ENE JFK) TO 403849N0732937W (13NM ESE JFK) TO 403841N0733453W (9NM ESE JFK) TO 404406N0733837W (8.4NM ENE JFK) TO 404656N0734443W (8.7NM NNE JFK) TO POINT OF ORIGIN 1000FT-2000FT AGL INCLUDING JFK RWY 22R FINAL AND 60DEG EITHER SIDE, ACFT CS FLC70",
+   "from": 1791259200,
+   "to": 1791280800,
+   "q": null,
+   "scope": "AERODROME",
+   "schedule": null
+  },
+  {
+   "id": "JFK 10/026",
+   "raw": "!JFK 10/026 JFK RWY 13R/31L CLSD 2610030300-2610031000",
+   "text": "RWY 13R/31L CLSD",
+   "from": 1790996400,
+   "to": 1791021600,
+   "q": null,
+   "scope": "AERODROME",
+   "schedule": null
+  },
+  {
+   "id": "JFK 10/025",
+   "raw": "!JFK 10/025 JFK APRON SOUTH HARDSTAND WIP IRREGULAR SFC ADJ E SIDE LGTD AND BARRICADED\n2610021739-2611302300",
+   "text": "APRON SOUTH HARDSTAND WIP IRREGULAR SFC ADJ E SIDE LGTD AND BARRICADED",
+   "from": 1790962740,
+   "to": 1796079600,
+   "q": null,
+   "scope": "AERODROME",
+   "schedule": null
+  },
+  {
+   "id": "JFK 10/024",
+   "raw": "!JFK 10/024 JFK TWY B BTN TWY MB AND TWY M WIP IRREGULAR SFC ADJ NORTH EDGE LGTD AND\nBARRICADED 2610021731-2612302300",
+   "text": "TWY B BTN TWY MB AND TWY M WIP IRREGULAR SFC ADJ NORTH EDGE LGTD AND BARRICADED",
+   "from": 1790962260,
+   "to": 1798671600,
+   "q": null,
+   "scope": "AERODROME",
+   "schedule": null
+  },
+  {
+   "id": "JFK 10/023",
+   "raw": "!JFK 10/023 JFK TWY MB BTN TWY B AND TWY Q WIP IRREGULAR SFC ADJ EAST EDGE LGTD AND\nBARRICADED 2610021727-2612302300",
+   "text": "TWY MB BTN TWY B AND TWY Q WIP IRREGULAR SFC ADJ EAST EDGE LGTD AND BARRICADED",
+   "from": 1790962020,
+   "to": 1798671600,
+   "q": null,
+   "scope": "AERODROME",
+   "schedule": null
+  },
+  {
+   "id": "JFK 10/022",
+   "raw": "!JFK 10/022 JFK TWY MA BTN TERMINAL 1 RAMP AND TWY A WIP IRREGULAR SFC ADJ WEST SHOULDER\nLGTD AND BARRICADED 2610021722-2612302300",
+   "text": "TWY MA BTN TERMINAL 1 RAMP AND TWY A WIP IRREGULAR SFC ADJ WEST SHOULDER LGTD AND BARRICADED",
+   "from": 1790961720,
+   "to": 1798671600,
+   "q": null,
+   "scope": "AERODROME",
+   "schedule": null
+  },
+  {
+   "id": "JFK 10/019",
+   "raw": "!JFK 10/019 JFK TWY A TWY DIRECTION SIGN FOR TWY Q MISSING 2610021414-2610052300",
+   "text": "TWY A TWY DIRECTION SIGN FOR TWY Q MISSING",
+   "from": 1790950440,
+   "to": 1791241200,
+   "q": null,
+   "scope": "AERODROME",
+   "schedule": null
+  },
+  {
+   "id": "JFK 10/018",
+   "raw": "!JFK 10/018 JFK TWY A TWY DIRECTION SIGN SOUTH SIDE FOR TWY MB LGT U/S\n2610021407-2612312300",
+   "text": "TWY A TWY DIRECTION SIGN SOUTH SIDE FOR TWY MB LGT U/S",
+   "from": 1790950020,
+   "to": 1798758000,
+   "q": null,
+   "scope": "AERODROME",
+   "schedule": null
+  },
+  {
+   "id": "JFK 10/017",
+   "raw": "!JFK 10/017 JFK TWY A TWY DIRECTION SIGN NORTH SIDE FOR TWY MB LGT U/S\n2610021406-2612312300",
+   "text": "TWY A TWY DIRECTION SIGN NORTH SIDE FOR TWY MB LGT U/S",
+   "from": 1790949960,
+   "to": 1798758000,
+   "q": null,
+   "scope": "AERODROME",
+   "schedule": null
+  },
+  {
+   "id": "JFK 10/016",
+   "raw": "!JFK 10/016 JFK TWY M TWY DIRECTION SIGN FOR TWY A MISSING 2610021306-2702262300",
+   "text": "TWY M TWY DIRECTION SIGN FOR TWY A MISSING",
+   "from": 1790946360,
+   "to": 1803682800,
+   "q": null,
+   "scope": "AERODROME",
+   "schedule": null
+  },
+  {
+   "id": "JFK 10/015",
+   "raw": "!JFK 10/015 JFK TWY A EDGE MARKINGS FOR TWY MB SOUTHWEST SIDE NOT STD\n2610021238-2610051000",
+   "text": "TWY A EDGE MARKINGS FOR TWY MB SOUTHWEST SIDE NOT STD",
+   "from": 1790944680,
+   "to": 1791194400,
+   "q": null,
+   "scope": "AERODROME",
+   "schedule": null
+  },
+  {
+   "id": "JFK 10/013",
+   "raw": "!JFK 10/013 JFK RWY 04R RTHL U/S 2610012113-2610162359",
+   "text": "RWY 04R RTHL U/S",
+   "from": 1790889180,
+   "to": 1792195140,
+   "q": null,
+   "scope": "AERODROME",
+   "schedule": null
+  },
+  {
+   "id": "JFK 10/012",
+   "raw": "!JFK 10/012 JFK RWY 31L PAPI U/S 2610012110-2610162359",
+   "text": "RWY 31L PAPI U/S",
+   "from": 1790889000,
+   "to": 1792195140,
+   "q": null,
+   "scope": "AERODROME",
+   "schedule": null
+  },
+  {
+   "id": "JFK 10/011",
+   "raw": "!JFK 10/011 JFK TWY F LOCATION SIGN BTN TWY Y AND RWY 04R/22L MISSING\n2610012104-2611272300",
+   "text": "TWY F LOCATION SIGN BTN TWY Y AND RWY 04R/22L MISSING",
+   "from": 1790888640,
+   "to": 1795820400,
+   "q": null,
+   "scope": "AERODROME",
+   "schedule": null
+  },
+  {
+   "id": "FDC 6/6285",
+   "raw": "!FDC 6/6285 JFK IAP JOHN F KENNEDY INTL, NEW YORK, NY.\nVOR OR GPS RWY 13L/R, AMDT 18D...\nVOR PORTION: ALTERNATE MINIMUMS NA EXCEPT FOR ACFT EQUIPPED WITH SUITABLE RNAV SYSTEM\nWITH GPS,\nCRI VOR/DME UNMONITORED. 2609301204-2610281204EST",
+   "text": "IAP JOHN F KENNEDY INTL, NEW YORK, NY. VOR OR GPS RWY 13L/R, AMDT 18D... VOR PORTION: ALTERNATE MINIMUMS NA EXCEPT FOR ACFT EQUIPPED WITH SUITABLE RNAV SYSTEM WITH GPS, CRI VOR/DME UNMONITORED.",
+   "from": 1790769840,
+   "to": 1793189040,
+   "q": null,
+   "scope": "AERODROME",
+   "schedule": null
+  },
+  {
+   "id": "JFK 09/451",
+   "raw": "!JFK 09/451 JFK TWY A TWY DIRECTION SIGN SOUTH SIDE FOR TWY EA LGT U/S\n2609300932-2703052300",
+   "text": "TWY A TWY DIRECTION SIGN SOUTH SIDE FOR TWY EA LGT U/S",
+   "from": 1790760720,
+   "to": 1804287600,
+   "q": null,
+   "scope": "AERODROME",
+   "schedule": null
+  },
+  {
+   "id": "JFK 09/439",
+   "raw": "!JFK 09/439 JFK TWY B TWY DIRECTION SIGN EAST SIDE FOR TWY J MISSING 2609291809-2611272300",
+   "text": "TWY B TWY DIRECTION SIGN EAST SIDE FOR TWY J MISSING",
+   "from": 1790705340,
+   "to": 1795820400,
+   "q": null,
+   "scope": "AERODROME",
+   "schedule": null
+  },
+  {
+   "id": "JFK 09/438",
+   "raw": "!JFK 09/438 JFK TWY KE HLDG PSN SIGN NORTHEAST SIDE FOR RWY 13R/31L LGT U/S\n2609291808-2611272300",
+   "text": "TWY KE HLDG PSN SIGN NORTHEAST SIDE FOR RWY 13R/31L LGT U/S",
+   "from": 1790705280,
+   "to": 1795820400,
+   "q": null,
+   "scope": "AERODROME",
+   "schedule": null
+  },
+  {
+   "id": "JFK 09/407",
+   "raw": "!JFK 09/407 JFK TWY A TWY DIRECTION SIGN SOUTH SIDE FOR TWY EA LGT U/S\n2609280619-2702192300",
+   "text": "TWY A TWY DIRECTION SIGN SOUTH SIDE FOR TWY EA LGT U/S",
+   "from": 1790576340,
+   "to": 1803078000,
+   "q": null,
+   "scope": "AERODROME",
+   "schedule": null
+  },
+  {
+   "id": "FDC 6/5303",
+   "raw": "!FDC 6/5303 JFK SID JOHN F KENNEDY INTL, NEW YORK, NY.\nKENNEDY FIVE DEPARTURE...\nNOTE: COATE DEPARTURES NA EXCEPT FOR AIRCRAFT EQUIPPED WITH SUITABLE RNAV SYSTEM WITH\nGPS,\nSAX VORTAC OUT OF SERVICE. 2609241510-2705061510EST",
+   "text": "SID JOHN F KENNEDY INTL, NEW YORK, NY. KENNEDY FIVE DEPARTURE... NOTE: COATE DEPARTURES NA EXCEPT FOR AIRCRAFT EQUIPPED WITH SUITABLE RNAV SYSTEM WITH GPS, SAX VORTAC OUT OF SERVICE.",
+   "from": 1790262600,
+   "to": 1809616200,
+   "q": null,
+   "scope": "AERODROME",
+   "schedule": null
+  },
+  {
+   "id": "JFK 09/291",
+   "raw": "!JFK 09/291 JFK TWY Y CL LGT BTN TWY H AND TWY E U/S 2609180921-2701292300",
+   "text": "TWY Y CL LGT BTN TWY H AND TWY E U/S",
+   "from": 1789723260,
+   "to": 1801263600,
+   "q": null,
+   "scope": "AERODROME",
+   "schedule": null
+  },
+  {
+   "id": "FDC 6/3245",
+   "raw": "!FDC 6/3245 JFK IAP JOHN F KENNEDY INTL, NEW YORK, NY.\nRNAV (GPS) RWY 31R, AMDT 2D...\nLPV DA 218/HAT 205 ALL CATS.\nEXCEPT WHEN ADVISED BY ATCT THAT THESE CRANES ARE DOWN.\nTEMPORARY CRANES 261 MSL 4630 FT W OF RWY 31R (2023-AEA-2063 THRU 2068-NRA).\n2609151837-2704271837EST",
+   "text": "IAP JOHN F KENNEDY INTL, NEW YORK, NY. RNAV (GPS) RWY 31R, AMDT 2D... LPV DA 218/HAT 205 ALL CATS. EXCEPT WHEN ADVISED BY ATCT THAT THESE CRANES ARE DOWN. TEMPORARY CRANES 261 MSL 4630 FT W OF RWY 31R (2023-AEA-2063 THRU 2068-NRA).",
+   "from": 1789497420,
+   "to": 1808851020,
+   "q": null,
+   "scope": "AERODROME",
+   "schedule": null
+  },
+  {
+   "id": "FDC 6/3243",
+   "raw": "!FDC 6/3243 JFK IAP JOHN F KENNEDY INTL, NEW YORK, NY.\nILS RWY 13L (CAT II) AMDT 18D ...\nPROCEDURE NA.\nEXCEPT WHEN ADVISED BY ATCT THAT THESE CRANES ARE DOWN.\nTEMPORARY CRANES 261 MSL 3037 FT SE OF RWY 13L (2023-AEA-2063 THRU 2068-NRA).\n2609151836-2704271836EST",
+   "text": "IAP JOHN F KENNEDY INTL, NEW YORK, NY. ILS RWY 13L (CAT II) AMDT 18D ... PROCEDURE NA. EXCEPT WHEN ADVISED BY ATCT THAT THESE CRANES ARE DOWN. TEMPORARY CRANES 261 MSL 3037 FT SE OF RWY 13L (2023-AEA-2063 THRU 2068-NRA).",
+   "from": 1789497360,
+   "to": 1808850960,
+   "q": null,
+   "scope": "AERODROME",
+   "schedule": null
+  },
+  {
+   "id": "FDC 6/3244",
+   "raw": "!FDC 6/3244 JFK IAP JOHN F KENNEDY INTL, NEW YORK, NY.\nILS OR LOC RWY 31R, AMDT 16B...\nS-ILS 31R DA 217/HAT 204 ALL CATS.\nS-LOC 31R MDA 460/HAT 447 ALL CATS. VISIBILITY CATS C/D RVR 4500.\nVDP AT I-RTH 0.87 DME; DISTANCE VDP TO THLD 1.23 NM.\nEXCEPT WHEN ADVISED BY ATCT THAT THESE CRANES ARE DOWN.\nTEMPORARY CRANES 261 MSL 4630 FT W OF RWY 31R (2023-AEA-2063 THRU 2068-NRA)..\n2609151836-2704271836EST",
+   "text": "IAP JOHN F KENNEDY INTL, NEW YORK, NY. ILS OR LOC RWY 31R, AMDT 16B... S-ILS 31R DA 217/HAT 204 ALL CATS. S-LOC 31R MDA 460/HAT 447 ALL CATS. VISIBILITY CATS C/D RVR 4500. VDP AT I-RTH 0.87 DME; DISTANCE VDP TO THLD 1.23 NM. EXCEPT WHEN ADVISED BY ATCT THAT THESE CRANES ARE DOWN. TEMPORARY CRANES 261 MSL 4630 FT W OF RWY 31R (2023-AEA-2063 THRU 2068-NRA)..",
+   "from": 1789497360,
+   "to": 1808850960,
+   "q": null,
+   "scope": "AERODROME",
+   "schedule": null
+  },
+  {
+   "id": "FDC 6/3242",
+   "raw": "!FDC 6/3242 JFK IAP JOHN F KENNEDY INTL, NEW YORK, NY.\nILS OR LOC RWY 13L, AMDT 18D...\nS-ILS 13L DA 278/HAT 265 ALL CATS. VISIBILITY ALL CATS RVR 2000.\nUXHUB FIX MINIMUMS:\nS-LOC 13L MDA 460/HAT 447 ALL CATS. VISIBILITY CATS C/D RVR 4500.\nVDP AT I-TLK 2.86 DME; DISTANCE VDP TO THLD 1.17 NM.\nEXCEPT WHEN ADVISED BY ATCT THAT THESE CRANES ARE DOWN.\nTEMPORARY CRANES 261 MSL 3037 FT SE OF RWY 13L (2023-AEA-2063 THRU 2068-NRA).\n2609151835-2704271835EST",
+   "text": "IAP JOHN F KENNEDY INTL, NEW YORK, NY. ILS OR LOC RWY 13L, AMDT 18D... S-ILS 13L DA 278/HAT 265 ALL CATS. VISIBILITY ALL CATS RVR 2000. UXHUB FIX MINIMUMS: S-LOC 13L MDA 460/HAT 447 ALL CATS. VISIBILITY CATS C/D RVR 4500. VDP AT I-TLK 2.86 DME; DISTANCE VDP TO THLD 1.17 NM. EXCEPT WHEN ADVISED BY ATCT THAT THESE CRANES ARE DOWN. TEMPORARY CRANES 261 MSL 3037 FT SE OF RWY 13L (2023-AEA-2063 THRU 2068-NRA).",
+   "from": 1789497300,
+   "to": 1808850900,
+   "q": null,
+   "scope": "AERODROME",
+   "schedule": null
+  },
+  {
+   "id": "JFK 09/175",
+   "raw": "!JFK 09/175 JFK TWY Q CL LGT BTN TWY B AND TWY N NOT STD 2609111659-2611302300",
+   "text": "TWY Q CL LGT BTN TWY B AND TWY N NOT STD",
+   "from": 1789145940,
+   "to": 1796079600,
+   "q": null,
+   "scope": "AERODROME",
+   "schedule": null
+  },
+  {
+   "id": "JFK 09/138",
+   "raw": "!JFK 09/138 JFK TWY EA CL LGT BTN TWY A AND TWY B NOT STD 2609091825-2703312300",
+   "text": "TWY EA CL LGT BTN TWY A AND TWY B NOT STD",
+   "from": 1788978300,
+   "to": 1806534000,
+   "q": null,
+   "scope": "AERODROME",
+   "schedule": null
+  },
+  {
+   "id": "JFK 09/112",
+   "raw": "!JFK 09/112 JFK TWY Q4 LGT U/S 2609081215-2612312300",
+   "text": "TWY Q4 LGT U/S",
+   "from": 1788869700,
+   "to": 1798758000,
+   "q": null,
+   "scope": "AERODROME",
+   "schedule": null
+  },
+  {
+   "id": "JFK 09/111",
+   "raw": "!JFK 09/111 JFK TWY YA BTN APCH END RWY 31R AND RWY 04L/22R WIP CONST ADJ SOUTHWEST EDGE\nLGTD AND BARRICADED 2609081210-2610092300",
+   "text": "TWY YA BTN APCH END RWY 31R AND RWY 04L/22R WIP CONST ADJ SOUTHWEST EDGE LGTD AND BARRICADED",
+   "from": 1788869400,
+   "to": 1791586800,
+   "q": null,
+   "scope": "AERODROME",
+   "schedule": null
+  },
+  {
+   "id": "JFK 09/109",
+   "raw": "!JFK 09/109 JFK TWY G BTN RWY 04L/22R AND TWY Z WIP CONST ADJ NORTHEAST EDGE LGTD AND\nBARRICADED 2609081203-2610092300",
+   "text": "TWY G BTN RWY 04L/22R AND TWY Z WIP CONST ADJ NORTHEAST EDGE LGTD AND BARRICADED",
+   "from": 1788868980,
+   "to": 1791586800,
+   "q": null,
+   "scope": "AERODROME",
+   "schedule": null
+  },
+  {
+   "id": "JFK 09/108",
+   "raw": "!JFK 09/108 JFK TWY FA, TWY Y BTN TWY YA AND TWY G, TWY F BTN RWY 04L/22R AND RWY\n04R/22L CLSD LGTD AND BARRICADED 2609081155-2610092300",
+   "text": "TWY FA, TWY Y BTN TWY YA AND TWY G, TWY F BTN RWY 04L/22R AND RWY 04R/22L CLSD LGTD AND BARRICADED",
+   "from": 1788868500,
+   "to": 1791586800,
+   "q": null,
+   "scope": "AERODROME",
+   "schedule": null
+  },
+  {
+   "id": "JFK 09/066",
+   "raw": "!JFK 09/066 JFK TWY PB TWY DIRECTION SIGN FOR TWY P LGT U/S 2609050101-2610302300",
+   "text": "TWY PB TWY DIRECTION SIGN FOR TWY P LGT U/S",
+   "from": 1788570060,
+   "to": 1793401200,
+   "q": null,
+   "scope": "AERODROME",
+   "schedule": null
+  },
+  {
+   "id": "JFK 09/056",
+   "raw": "!JFK 09/056 JFK TWY MB CL LGT BTN TWY A AND TWY B U/S 2609041007-2701292300",
+   "text": "TWY MB CL LGT BTN TWY A AND TWY B U/S",
+   "from": 1788516420,
+   "to": 1801263600,
+   "q": null,
+   "scope": "AERODROME",
+   "schedule": null
+  },
+  {
+   "id": "JFK 09/055",
+   "raw": "!JFK 09/055 JFK TWY Q CL LGT BTN TWY A AND TWY B U/S 2609040957-2701292300",
+   "text": "TWY Q CL LGT BTN TWY A AND TWY B U/S",
+   "from": 1788515820,
+   "to": 1801263600,
+   "q": null,
+   "scope": "AERODROME",
+   "schedule": null
+  },
+  {
+   "id": "JFK 09/054",
+   "raw": "!JFK 09/054 JFK TWY F CL LGT BTN RWY 04L/22R AND RWY 04R/22L U/S 2609040936-2701292300",
+   "text": "TWY F CL LGT BTN RWY 04L/22R AND RWY 04R/22L U/S",
+   "from": 1788514560,
+   "to": 1801263600,
+   "q": null,
+   "scope": "AERODROME",
+   "schedule": null
+  },
+  {
+   "id": "JFK 09/053",
+   "raw": "!JFK 09/053 JFK TWY FA LGT BTN TWY FB AND TWY Y U/S 2609040935-2701292300",
+   "text": "TWY FA LGT BTN TWY FB AND TWY Y U/S",
+   "from": 1788514500,
+   "to": 1801263600,
+   "q": null,
+   "scope": "AERODROME",
+   "schedule": null
+  },
+  {
+   "id": "JFK 09/040",
+   "raw": "!JFK 09/040 JFK TWY HB LGT BTN TERMINAL 4 RAMP AND TWY B U/S 2609030945-2612312300",
+   "text": "TWY HB LGT BTN TERMINAL 4 RAMP AND TWY B U/S",
+   "from": 1788428700,
+   "to": 1798758000,
+   "q": null,
+   "scope": "AERODROME",
+   "schedule": null
+  },
+  {
+   "id": "JFK 09/037",
+   "raw": "!JFK 09/037 JFK TWY Y TWY DIRECTION SIGN NORTHWEST SIDE FOR TWY E MISSING\n2609022019-2612312300",
+   "text": "TWY Y TWY DIRECTION SIGN NORTHWEST SIDE FOR TWY E MISSING",
+   "from": 1788380340,
+   "to": 1798758000,
+   "q": null,
+   "scope": "AERODROME",
+   "schedule": null
+  },
+  {
+   "id": "JFK 09/036",
+   "raw": "!JFK 09/036 JFK TWY Y LOCATION SIGN NORTHWEST SIDE BTN TWY E AND TWY FB MISSING\n2609022016-2612312300",
+   "text": "TWY Y LOCATION SIGN NORTHWEST SIDE BTN TWY E AND TWY FB MISSING",
+   "from": 1788380160,
+   "to": 1798758000,
+   "q": null,
+   "scope": "AERODROME",
+   "schedule": null
+  },
+  {
+   "id": "JFK 09/035",
+   "raw": "!JFK 09/035 JFK TWY Y LOCATION SIGN NORTHEAST SIDE BTN TWY E AND TWY FB MISSING\n2609022014-2612312300",
+   "text": "TWY Y LOCATION SIGN NORTHEAST SIDE BTN TWY E AND TWY FB MISSING",
+   "from": 1788380040,
+   "to": 1798758000,
+   "q": null,
+   "scope": "AERODROME",
+   "schedule": null
+  },
+  {
+   "id": "JFK 09/034",
+   "raw": "!JFK 09/034 JFK TWY Y TWY DIRECTION SIGN NORTHEAST SIDE FOR TWY FB MISSING\n2609022013-2612312300",
+   "text": "TWY Y TWY DIRECTION SIGN NORTHEAST SIDE FOR TWY FB MISSING",
+   "from": 1788379980,
+   "to": 1798758000,
+   "q": null,
+   "scope": "AERODROME",
+   "schedule": null
+  },
+  {
+   "id": "JFK 09/033",
+   "raw": "!JFK 09/033 JFK TWY FB LOCATION SIGN SOUTHEAST SIDE BTN RWY 04R/22L AND TWY Y MISSING\n2609022006-2612312300",
+   "text": "TWY FB LOCATION SIGN SOUTHEAST SIDE BTN RWY 04R/22L AND TWY Y MISSING",
+   "from": 1788379560,
+   "to": 1798758000,
+   "q": null,
+   "scope": "AERODROME",
+   "schedule": null
+  },
+  {
+   "id": "JFK 09/032",
+   "raw": "!JFK 09/032 JFK TWY FB TWY DIRECTION SIGN SOUTHEAST SIDE FOR TWY Y MISSING\n2609022003-2612312300",
+   "text": "TWY FB TWY DIRECTION SIGN SOUTHEAST SIDE FOR TWY Y MISSING",
+   "from": 1788379380,
+   "to": 1798758000,
+   "q": null,
+   "scope": "AERODROME",
+   "schedule": null
+  },
+  {
+   "id": "JFK 09/031",
+   "raw": "!JFK 09/031 JFK TWY FB LOCATION SIGN NORTHWEST SIDE BTN RWY 04L/22R AND TWY Y MISSING\n2609022001-2612312300",
+   "text": "TWY FB LOCATION SIGN NORTHWEST SIDE BTN RWY 04L/22R AND TWY Y MISSING",
+   "from": 1788379260,
+   "to": 1798758000,
+   "q": null,
+   "scope": "AERODROME",
+   "schedule": null
+  },
+  {
+   "id": "JFK 09/030",
+   "raw": "!JFK 09/030 JFK TWY FB TWY DIRECTION SIGN NORTHWEST SIDE FOR TWY Y MISSING\n2609022000-2612312300",
+   "text": "TWY FB TWY DIRECTION SIGN NORTHWEST SIDE FOR TWY Y MISSING",
+   "from": 1788379200,
+   "to": 1798758000,
+   "q": null,
+   "scope": "AERODROME",
+   "schedule": null
+  },
+  {
+   "id": "JFK 09/029",
+   "raw": "!JFK 09/029 JFK TWY Y TWY DIRECTION SIGN NORTHWEST SIDE FOR TWY FB MISSING\n2609021953-2612312300",
+   "text": "TWY Y TWY DIRECTION SIGN NORTHWEST SIDE FOR TWY FB MISSING",
+   "from": 1788378780,
+   "to": 1798758000,
+   "q": null,
+   "scope": "AERODROME",
+   "schedule": null
+  },
+  {
+   "id": "JFK 09/028",
+   "raw": "!JFK 09/028 JFK TWY Y HLDG PSN SIGN FOR ILS FOR RWY 13L/31R MISSING 2609021943-2612312300",
+   "text": "TWY Y HLDG PSN SIGN FOR ILS FOR RWY 13L/31R MISSING",
+   "from": 1788378180,
+   "to": 1798758000,
+   "q": null,
+   "scope": "AERODROME",
+   "schedule": null
+  },
+  {
+   "id": "JFK 09/025",
+   "raw": "!JFK 09/025 JFK RWY 31R LEAD OFF LGT U/S 2609021929-2612312300",
+   "text": "RWY 31R LEAD OFF LGT U/S",
+   "from": 1788377340,
+   "to": 1798758000,
+   "q": null,
+   "scope": "AERODROME",
+   "schedule": null
+  },
+  {
+   "id": "JFK 09/018",
+   "raw": "!JFK 09/018 JFK TWY A CL LGT BTN TWY NA AND TWY LA U/S 2609020940-2612312300",
+   "text": "TWY A CL LGT BTN TWY NA AND TWY LA U/S",
+   "from": 1788342000,
+   "to": 1798758000,
+   "q": null,
+   "scope": "AERODROME",
+   "schedule": null
+  },
+  {
+   "id": "JFK 09/017",
+   "raw": "!JFK 09/017 JFK TWY B CL LGT BTN TWY J AND TWY Q U/S 2609020933-2611112359",
+   "text": "TWY B CL LGT BTN TWY J AND TWY Q U/S",
+   "from": 1788341580,
+   "to": 1794441540,
+   "q": null,
+   "scope": "AERODROME",
+   "schedule": null
+  },
+  {
+   "id": "JFK 08/479",
+   "raw": "!JFK 08/479 JFK TWY B EDGE MARKINGS FOR TWY M WEST SIDE NOT STD 2608290215-2611162359",
+   "text": "TWY B EDGE MARKINGS FOR TWY M WEST SIDE NOT STD",
+   "from": 1787969700,
+   "to": 1794873540,
+   "q": null,
+   "scope": "AERODROME",
+   "schedule": null
+  },
+  {
+   "id": "JFK 08/478",
+   "raw": "!JFK 08/478 JFK TWY B EDGE MARKINGS FOR TWY MB EAST SIDE NOT STD 2608290211-2611162359",
+   "text": "TWY B EDGE MARKINGS FOR TWY MB EAST SIDE NOT STD",
+   "from": 1787969460,
+   "to": 1794873540,
+   "q": null,
+   "scope": "AERODROME",
+   "schedule": null
+  },
+  {
+   "id": "JFK 08/477",
+   "raw": "!JFK 08/477 JFK TWY B CL MARKINGS FOR TWY MB NOT STD 2608290157-2611302359",
+   "text": "TWY B CL MARKINGS FOR TWY MB NOT STD",
+   "from": 1787968620,
+   "to": 1796083140,
+   "q": null,
+   "scope": "AERODROME",
+   "schedule": null
+  },
+  {
+   "id": "JFK 08/475",
+   "raw": "!JFK 08/475 JFK TWY MA BTN TWY A AND TWY B CLSD 2608290144-PERM",
+   "text": "TWY MA BTN TWY A AND TWY B CLSD",
+   "from": 1787967840,
+   "to": null,
+   "q": null,
+   "scope": "AERODROME",
+   "schedule": null
+  },
+  {
+   "id": "JFK 08/469",
+   "raw": "!JFK 08/469 JFK TWY K, KE, KD RWY ENTRANCE LGT FOR RWY 31L U/S 2608281715-2610302359",
+   "text": "TWY K, KE, KD RWY ENTRANCE LGT FOR RWY 31L U/S",
+   "from": 1787937300,
+   "to": 1793404740,
+   "q": null,
+   "scope": "AERODROME",
+   "schedule": null
+  },
+  {
+   "id": "JFK 08/461",
+   "raw": "!JFK 08/461 JFK NAV ILS RWY 04R IM U/S 2608281321-2703192359",
+   "text": "NAV ILS RWY 04R IM U/S",
+   "from": 1787923260,
+   "to": 1805500740,
+   "q": null,
+   "scope": "AERODROME",
+   "schedule": null
+  },
+  {
+   "id": "JFK 08/462",
+   "raw": "!JFK 08/462 JFK NAV ILS RWY 22L IM U/S 2608281321-2703192359",
+   "text": "NAV ILS RWY 22L IM U/S",
+   "from": 1787923260,
+   "to": 1805500740,
+   "q": null,
+   "scope": "AERODROME",
+   "schedule": null
+  },
+  {
+   "id": "JFK 08/456",
+   "raw": "!JFK 08/456 JFK TWY M LGT BTN TWY A AND TWY B U/S 2608281033-2701152300",
+   "text": "TWY M LGT BTN TWY A AND TWY B U/S",
+   "from": 1787913180,
+   "to": 1800054000,
+   "q": null,
+   "scope": "AERODROME",
+   "schedule": null
+  },
+  {
+   "id": "JFK 08/444",
+   "raw": "!JFK 08/444 JFK TWY B TWY DIRECTION SIGN SOUTH SIDE FOR TWY EA LGT U/S\n2608271505-2612182300",
+   "text": "TWY B TWY DIRECTION SIGN SOUTH SIDE FOR TWY EA LGT U/S",
+   "from": 1787843100,
+   "to": 1797634800,
+   "q": null,
+   "scope": "AERODROME",
+   "schedule": null
+  },
+  {
+   "id": "JFK 08/443",
+   "raw": "!JFK 08/443 JFK TWY DB TWY DIRECTION SIGN FOR TWY B LGT U/S 2608271502-2612182300",
+   "text": "TWY DB TWY DIRECTION SIGN FOR TWY B LGT U/S",
+   "from": 1787842920,
+   "to": 1797634800,
+   "q": null,
+   "scope": "AERODROME",
+   "schedule": null
+  },
+  {
+   "id": "JFK 08/442",
+   "raw": "!JFK 08/442 JFK TWY G LOCATION SIGN FOR TERMINAL 4 RAMP LGT U/S 2608271452-2612182300",
+   "text": "TWY G LOCATION SIGN FOR TERMINAL 4 RAMP LGT U/S",
+   "from": 1787842320,
+   "to": 1797634800,
+   "q": null,
+   "scope": "AERODROME",
+   "schedule": null
+  },
+  {
+   "id": "JFK 08/441",
+   "raw": "!JFK 08/441 JFK TWY A TWY DIRECTION SIGN SOUTH SIDE FOR TWY DB LGT U/S\n2608271440-2612182300",
+   "text": "TWY A TWY DIRECTION SIGN SOUTH SIDE FOR TWY DB LGT U/S",
+   "from": 1787841600,
+   "to": 1797634800,
+   "q": null,
+   "scope": "AERODROME",
+   "schedule": null
+  },
+  {
+   "id": "JFK 08/440",
+   "raw": "!JFK 08/440 JFK TWY DB TWY DIRECTION SIGN FOR TWY A LGT U/S 2608271438-2612182300",
+   "text": "TWY DB TWY DIRECTION SIGN FOR TWY A LGT U/S",
+   "from": 1787841480,
+   "to": 1797634800,
+   "q": null,
+   "scope": "AERODROME",
+   "schedule": null
+  },
+  {
+   "id": "JFK 08/437",
+   "raw": "!JFK 08/437 JFK TWY A TWY DIRECTION SIGN NORTH SIDE FOR TWY G LGT U/S\n2608271254-2612182359",
+   "text": "TWY A TWY DIRECTION SIGN NORTH SIDE FOR TWY G LGT U/S",
+   "from": 1787835240,
+   "to": 1797638340,
+   "q": null,
+   "scope": "AERODROME",
+   "schedule": null
+  },
+  {
+   "id": "JFK 08/435",
+   "raw": "!JFK 08/435 JFK TWY B TWY DIRECTION SIGN FOR TWY YA LGT U/S 2608271148-2612182300",
+   "text": "TWY B TWY DIRECTION SIGN FOR TWY YA LGT U/S",
+   "from": 1787831280,
+   "to": 1797634800,
+   "q": null,
+   "scope": "AERODROME",
+   "schedule": null
+  },
+  {
+   "id": "JFK 08/416",
+   "raw": "!JFK 08/416 JFK RWY 13L RLLS HOTEL SECTION U/S 2608251236-2611242359",
+   "text": "RWY 13L RLLS HOTEL SECTION U/S",
+   "from": 1787661360,
+   "to": 1795564740,
+   "q": null,
+   "scope": "AERODROME",
+   "schedule": null
+  },
+  {
+   "id": "JFK 08/409",
+   "raw": "!JFK 08/409 JFK TWY A TWY DIRECTION SIGN FOR TWY F LGT U/S 2608250904-2612012300",
+   "text": "TWY A TWY DIRECTION SIGN FOR TWY F LGT U/S",
+   "from": 1787648640,
+   "to": 1796166000,
+   "q": null,
+   "scope": "AERODROME",
+   "schedule": null
+  },
+  {
+   "id": "JFK 08/407",
+   "raw": "!JFK 08/407 JFK TWY B TWY DIRECTION SIGN EAST SIDE FOR TWY KF LGT U/S\n2608250827-2612012359",
+   "text": "TWY B TWY DIRECTION SIGN EAST SIDE FOR TWY KF LGT U/S",
+   "from": 1787646420,
+   "to": 1796169540,
+   "q": null,
+   "scope": "AERODROME",
+   "schedule": null
+  },
+  {
+   "id": "JFK 08/398",
+   "raw": "!JFK 08/398 JFK RWY 31L TKOF HOLD LGT U/S 2608241357-2612292359EST",
+   "text": "RWY 31L TKOF HOLD LGT U/S",
+   "from": 1787579820,
+   "to": 1798588740,
+   "q": null,
+   "scope": "AERODROME",
+   "schedule": null
+  },
+  {
+   "id": "JFK 08/359",
+   "raw": "!JFK 08/359 JFK TWY B TWY DIRECTION SIGN FOR TWY P MISSING 2608201004-2612312300",
+   "text": "TWY B TWY DIRECTION SIGN FOR TWY P MISSING",
+   "from": 1787220240,
+   "to": 1798758000,
+   "q": null,
+   "scope": "AERODROME",
+   "schedule": null
+  },
+  {
+   "id": "JFK 08/354",
+   "raw": "!JFK 08/354 JFK RWY 31L LEAD OFF LGT AT TWY MB U/S 2608192014-2612312359",
+   "text": "RWY 31L LEAD OFF LGT AT TWY MB U/S",
+   "from": 1787170440,
+   "to": 1798761540,
+   "q": null,
+   "scope": "AERODROME",
+   "schedule": null
+  },
+  {
+   "id": "JFK 08/352",
+   "raw": "!JFK 08/352 JFK TWY J LGT BTN RWY 04L/22R AND TWY A U/S 2608192010-2612312300",
+   "text": "TWY J LGT BTN RWY 04L/22R AND TWY A U/S",
+   "from": 1787170200,
+   "to": 1798758000,
+   "q": null,
+   "scope": "AERODROME",
+   "schedule": null
+  },
+  {
+   "id": "JFK 08/348",
+   "raw": "!JFK 08/348 JFK TWY B CL MARKINGS FOR TWY M NOT STD 2608191815-2611302359",
+   "text": "TWY B CL MARKINGS FOR TWY M NOT STD",
+   "from": 1787163300,
+   "to": 1796083140,
+   "q": null,
+   "scope": "AERODROME",
+   "schedule": null
+  },
+  {
+   "id": "JFK 08/323",
+   "raw": "!JFK 08/323 JFK TWY M TWY DIRECTION SIGN FOR TWY B LGT U/S 2608182108-2610302300",
+   "text": "TWY M TWY DIRECTION SIGN FOR TWY B LGT U/S",
+   "from": 1787087280,
+   "to": 1793401200,
+   "q": null,
+   "scope": "AERODROME",
+   "schedule": null
+  },
+  {
+   "id": "JFK 08/322",
+   "raw": "!JFK 08/322 JFK TWY A TWY DIRECTION SIGN EAST SIDE FOR TWY M LGT U/S 2608182106-2610302300",
+   "text": "TWY A TWY DIRECTION SIGN EAST SIDE FOR TWY M LGT U/S",
+   "from": 1787087160,
+   "to": 1793401200,
+   "q": null,
+   "scope": "AERODROME",
+   "schedule": null
+  },
+  {
+   "id": "JFK 08/321",
+   "raw": "!JFK 08/321 JFK TWY A TWY DIRECTION SIGN WEST SIDE FOR TWY M LGT U/S 2608182105-2610302300",
+   "text": "TWY A TWY DIRECTION SIGN WEST SIDE FOR TWY M LGT U/S",
+   "from": 1787087100,
+   "to": 1793401200,
+   "q": null,
+   "scope": "AERODROME",
+   "schedule": null
+  },
+  {
+   "id": "JFK 08/320",
+   "raw": "!JFK 08/320 JFK TWY A EDGE MARKINGS BTN TWY M AND TWY MA NOT STD 2608182044-2610302300",
+   "text": "TWY A EDGE MARKINGS BTN TWY M AND TWY MA NOT STD",
+   "from": 1787085840,
+   "to": 1793401200,
+   "q": null,
+   "scope": "AERODROME",
+   "schedule": null
+  },
+  {
+   "id": "JFK 08/084",
+   "raw": "!JFK 08/084 JFK TWY B LOCATION SIGN FOR TWY M MISSING 2608061003-2611302300",
+   "text": "TWY B LOCATION SIGN FOR TWY M MISSING",
+   "from": 1786010580,
+   "to": 1796079600,
+   "q": null,
+   "scope": "AERODROME",
+   "schedule": null
+  },
+  {
+   "id": "JFK 08/072",
+   "raw": "!JFK 08/072 JFK TWY K IN PAVEMENT RWY GUARD LGT AT RWY 13R/31L U/S 2608050944-2612312300",
+   "text": "TWY K IN PAVEMENT RWY GUARD LGT AT RWY 13R/31L U/S",
+   "from": 1785923040,
+   "to": 1798758000,
+   "q": null,
+   "scope": "AERODROME",
+   "schedule": null
+  },
+  {
+   "id": "JFK 08/071",
+   "raw": "!JFK 08/071 JFK TWY KE ELEVATED RWY GUARD LGT AT RWY 13R/31L U/S 2608050943-2612312300",
+   "text": "TWY KE ELEVATED RWY GUARD LGT AT RWY 13R/31L U/S",
+   "from": 1785922980,
+   "to": 1798758000,
+   "q": null,
+   "scope": "AERODROME",
+   "schedule": null
+  },
+  {
+   "id": "JFK 08/069",
+   "raw": "!JFK 08/069 JFK TWY KE IN PAVEMENT RWY GUARD LGT U/S 2608050942-2612312300",
+   "text": "TWY KE IN PAVEMENT RWY GUARD LGT U/S",
+   "from": 1785922920,
+   "to": 1798758000,
+   "q": null,
+   "scope": "AERODROME",
+   "schedule": null
+  },
+  {
+   "id": "JFK 08/070",
+   "raw": "!JFK 08/070 JFK TWY K ELEVATED RWY GUARD LGT AT RWY 13R/31L U/S 2608050942-2612312300",
+   "text": "TWY K ELEVATED RWY GUARD LGT AT RWY 13R/31L U/S",
+   "from": 1785922920,
+   "to": 1798758000,
+   "q": null,
+   "scope": "AERODROME",
+   "schedule": null
+  },
+  {
+   "id": "JFK 07/510",
+   "raw": "!JFK 07/510 JFK TWY E CL LGT BTN APCH END RWY 22R AND TWY Y U/S 2607310744-2611302300",
+   "text": "TWY E CL LGT BTN APCH END RWY 22R AND TWY Y U/S",
+   "from": 1785483840,
+   "to": 1796079600,
+   "q": null,
+   "scope": "AERODROME",
+   "schedule": null
+  },
+  {
+   "id": "JFK 07/232",
+   "raw": "!JFK 07/232 JFK OBST CRANE (ASN 2025-AEA-4238-NRA) 403901N0734653W (0.6NM N JFK) 81FT\n(70FT AGL) FLAGGED AND LGTD 2607151306-2706162359",
+   "text": "OBST CRANE (ASN 2025-AEA-4238-NRA) 403901N0734653W (0.6NM N JFK) 81FT (70FT AGL) FLAGGED AND LGTD",
+   "from": 1784120760,
+   "to": 1813190340,
+   "q": null,
+   "scope": "AERODROME",
+   "schedule": null
+  },
+  {
+   "id": "JFK 07/230",
+   "raw": "!JFK 07/230 JFK OBST CRANE (ASN 2025-AEA-4239-NRA) 403858N0734654W (0.6NM NNW JFK) 81FT\n(70FT AGL) FLAGGED AND LGTD 2607151258-2706162359",
+   "text": "OBST CRANE (ASN 2025-AEA-4239-NRA) 403858N0734654W (0.6NM NNW JFK) 81FT (70FT AGL) FLAGGED AND LGTD",
+   "from": 1784120280,
+   "to": 1813190340,
+   "q": null,
+   "scope": "AERODROME",
+   "schedule": null
+  },
+  {
+   "id": "JFK 07/201",
+   "raw": "!JFK 07/201 JFK OBST CRANE (ASN 2023-AEA-2076-NRA) 403857N0734641W (0.6NM NE JFK) 240FT\n(230FT AGL) FLAGGED AND LGTD 2607141900-2801252359",
+   "text": "OBST CRANE (ASN 2023-AEA-2076-NRA) 403857N0734641W (0.6NM NE JFK) 240FT (230FT AGL) FLAGGED AND LGTD",
+   "from": 1784055600,
+   "to": 1832457540,
+   "q": null,
+   "scope": "AERODROME",
+   "schedule": null
+  },
+  {
+   "id": "JFK 07/200",
+   "raw": "!JFK 07/200 JFK OBST CRANE (ASN 2023-AEA-2075-NRA) 403858N0734642W (0.6NM NE JFK) 240FT\n(230FT AGL) FLAGGED AND LGTD 2607141859-2801252359",
+   "text": "OBST CRANE (ASN 2023-AEA-2075-NRA) 403858N0734642W (0.6NM NE JFK) 240FT (230FT AGL) FLAGGED AND LGTD",
+   "from": 1784055540,
+   "to": 1832457540,
+   "q": null,
+   "scope": "AERODROME",
+   "schedule": null
+  },
+  {
+   "id": "JFK 07/199",
+   "raw": "!JFK 07/199 JFK OBST CRANE (ASN 2023-AEA-2074-NRA) 403856N0734645W (0.5NM N JFK) 241FT\n(230FT AGL) FLAGGED AND LGTD 2607141857-2801252359",
+   "text": "OBST CRANE (ASN 2023-AEA-2074-NRA) 403856N0734645W (0.5NM N JFK) 241FT (230FT AGL) FLAGGED AND LGTD",
+   "from": 1784055420,
+   "to": 1832457540,
+   "q": null,
+   "scope": "AERODROME",
+   "schedule": null
+  },
+  {
+   "id": "JFK 07/198",
+   "raw": "!JFK 07/198 JFK OBST CRANE (ASN 2023-AEA-2073-NRA) 403855N0734643W (0.5NM NE JFK) 241FT\n(230FT AGL) FLAGGED AND LGTD 2607141854-2801252359",
+   "text": "OBST CRANE (ASN 2023-AEA-2073-NRA) 403855N0734643W (0.5NM NE JFK) 241FT (230FT AGL) FLAGGED AND LGTD",
+   "from": 1784055240,
+   "to": 1832457540,
+   "q": null,
+   "scope": "AERODROME",
+   "schedule": null
+  },
+  {
+   "id": "JFK 07/197",
+   "raw": "!JFK 07/197 JFK OBST CRANE (ASN 2023-AEA-2072-NRA) 403850N0734648W (0.4NM N JFK) 243FT\n(230FT AGL) FLAGGED AND LGTD 2607141852-2801252359",
+   "text": "OBST CRANE (ASN 2023-AEA-2072-NRA) 403850N0734648W (0.4NM N JFK) 243FT (230FT AGL) FLAGGED AND LGTD",
+   "from": 1784055120,
+   "to": 1832457540,
+   "q": null,
+   "scope": "AERODROME",
+   "schedule": null
+  },
+  {
+   "id": "JFK 07/196",
+   "raw": "!JFK 07/196 JFK OBST CRANE (ASN 2023-AEA-2071-NRA) 403848N0734645W (0.4NM N JFK) 244FT\n(230FT AGL) FLAGGED AND LGTD 2607141851-2801252359",
+   "text": "OBST CRANE (ASN 2023-AEA-2071-NRA) 403848N0734645W (0.4NM N JFK) 244FT (230FT AGL) FLAGGED AND LGTD",
+   "from": 1784055060,
+   "to": 1832457540,
+   "q": null,
+   "scope": "AERODROME",
+   "schedule": null
+  },
+  {
+   "id": "JFK 07/195",
+   "raw": "!JFK 07/195 JFK OBST CRANE (ASN 2023-AEA-2070-NRA) 403854N0734641W (0.5NM NE JFK) 241FT\n(230FT AGL) FLAGGED AND LGTD 2607141849-2801252359",
+   "text": "OBST CRANE (ASN 2023-AEA-2070-NRA) 403854N0734641W (0.5NM NE JFK) 241FT (230FT AGL) FLAGGED AND LGTD",
+   "from": 1784054940,
+   "to": 1832457540,
+   "q": null,
+   "scope": "AERODROME",
+   "schedule": null
+  },
+  {
+   "id": "JFK 07/194",
+   "raw": "!JFK 07/194 JFK OBST CRANE (ASN 2023-AEA-2069-NRA) 403855N0734643W (0.5NM NE JFK) 241FT\n(230FT AGL) FLAGGED AND LGTD 2607141847-2801252359",
+   "text": "OBST CRANE (ASN 2023-AEA-2069-NRA) 403855N0734643W (0.5NM NE JFK) 241FT (230FT AGL) FLAGGED AND LGTD",
+   "from": 1784054820,
+   "to": 1832457540,
+   "q": null,
+   "scope": "AERODROME",
+   "schedule": null
+  },
+  {
+   "id": "JFK 07/193",
+   "raw": "!JFK 07/193 JFK OBST CRANE (ASN 2023-AEA-2068-NRA) 403856N0734645W (0.5NM N JFK) 261FT\n(250FT AGL) FLAGGED AND LGTD 2607141844-2801252359",
+   "text": "OBST CRANE (ASN 2023-AEA-2068-NRA) 403856N0734645W (0.5NM N JFK) 261FT (250FT AGL) FLAGGED AND LGTD",
+   "from": 1784054640,
+   "to": 1832457540,
+   "q": null,
+   "scope": "AERODROME",
+   "schedule": null
+  },
+  {
+   "id": "JFK 07/192",
+   "raw": "!JFK 07/192 JFK OBST CRANE (ASN 2023-AEA-2067-NRA) 403858N0734654W (0.6NM NNW JFK) 262FT\n(250FT AGL) FLAGGED AND LGTD 2607141838-2801252359",
+   "text": "OBST CRANE (ASN 2023-AEA-2067-NRA) 403858N0734654W (0.6NM NNW JFK) 262FT (250FT AGL) FLAGGED AND LGTD",
+   "from": 1784054280,
+   "to": 1832457540,
+   "q": null,
+   "scope": "AERODROME",
+   "schedule": null
+  },
+  {
+   "id": "JFK 07/191",
+   "raw": "!JFK 07/191 JFK OBST CRANE (ASN 2023-AEA-2066-NRA) 403854N0734655W (0.5NM NNW JFK) 256FT\n(250FT AGL) FLAGGED AND LGTD 2607141836-2801250500",
+   "text": "OBST CRANE (ASN 2023-AEA-2066-NRA) 403854N0734655W (0.5NM NNW JFK) 256FT (250FT AGL) FLAGGED AND LGTD",
+   "from": 1784054160,
+   "to": 1832389200,
+   "q": null,
+   "scope": "AERODROME",
+   "schedule": null
+  },
+  {
+   "id": "JFK 07/190",
+   "raw": "!JFK 07/190 JFK OBST CRANE (ASN 2023-AEA-2065-NRA) 403854N0734654W (0.5NM NNW JFK) 258FT\n(250FT AGL) FLAGGED AND LGTD 2607141832-2801252359",
+   "text": "OBST CRANE (ASN 2023-AEA-2065-NRA) 403854N0734654W (0.5NM NNW JFK) 258FT (250FT AGL) FLAGGED AND LGTD",
+   "from": 1784053920,
+   "to": 1832457540,
+   "q": null,
+   "scope": "AERODROME",
+   "schedule": null
+  },
+  {
+   "id": "JFK 07/189",
+   "raw": "!JFK 07/189 JFK OBST CRANE (ASN 2023-AEA-2064-NRA) 403850N0734648W (0.4NM N JFK) 243FT\n\n\n(230FT AGL) FLAGGED AND LGTD 2607141827-2801252359",
+   "text": "OBST CRANE (ASN 2023-AEA-2064-NRA) 403850N0734648W (0.4NM N JFK) 243FT (230FT AGL) FLAGGED AND LGTD",
+   "from": 1784053620,
+   "to": 1832457540,
+   "q": null,
+   "scope": "AERODROME",
+   "schedule": null
+  },
+  {
+   "id": "JFK 07/188",
+   "raw": "!JFK 07/188 JFK OBST CRANE (ASN 2023-AEA-2063-NRA) 403855N0734643W (0.5NM NE JFK) 261FT\n(250FT AGL) FLAGGED AND LGTD 2607141818-2801252359",
+   "text": "OBST CRANE (ASN 2023-AEA-2063-NRA) 403855N0734643W (0.5NM NE JFK) 261FT (250FT AGL) FLAGGED AND LGTD",
+   "from": 1784053080,
+   "to": 1832457540,
+   "q": null,
+   "scope": "AERODROME",
+   "schedule": null
+  },
+  {
+   "id": "JFK 07/152",
+   "raw": "!JFK 07/152 JFK TWY A LOCATION SIGN FOR TWY KE NOT STD 2607101523-2610302300",
+   "text": "TWY A LOCATION SIGN FOR TWY KE NOT STD",
+   "from": 1783696980,
+   "to": 1793401200,
+   "q": null,
+   "scope": "AERODROME",
+   "schedule": null
+  },
+  {
+   "id": "JFK 07/143",
+   "raw": "!JFK 07/143 JFK TWY EA LOCATION SIGN FOR TWY A LGT U/S 2607101300-2610302300",
+   "text": "TWY EA LOCATION SIGN FOR TWY A LGT U/S",
+   "from": 1783688400,
+   "to": 1793401200,
+   "q": null,
+   "scope": "AERODROME",
+   "schedule": null
+  },
+  {
+   "id": "JFK 07/140",
+   "raw": "!JFK 07/140 JFK TWY KE LGT BTN RWY 13R/31L AND TWY A U/S 2607101252-2610302300",
+   "text": "TWY KE LGT BTN RWY 13R/31L AND TWY A U/S",
+   "from": 1783687920,
+   "to": 1793401200,
+   "q": null,
+   "scope": "AERODROME",
+   "schedule": null
+  },
+  {
+   "id": "JFK 07/139",
+   "raw": "!JFK 07/139 JFK TWY B TWY DIRECTION SIGN SOUTH SIDE FOR TWY E MISSING\n2607101248-2610302300",
+   "text": "TWY B TWY DIRECTION SIGN SOUTH SIDE FOR TWY E MISSING",
+   "from": 1783687680,
+   "to": 1793401200,
+   "q": null,
+   "scope": "AERODROME",
+   "schedule": null
+  },
+  {
+   "id": "JFK 06/415",
+   "raw": "!JFK 06/415 JFK RWY 13R HLDG PSN SIGN FOR RWY 04L/22R NW SIDE LGT U/S\n2606301101-2612151400",
+   "text": "RWY 13R HLDG PSN SIGN FOR RWY 04L/22R NW SIDE LGT U/S",
+   "from": 1782817260,
+   "to": 1797343200,
+   "q": null,
+   "scope": "AERODROME",
+   "schedule": null
+  },
+  {
+   "id": "FDC 6/1511",
+   "raw": "!FDC 6/1511 JFK IAP JOHN F KENNEDY INTL, NEW YORK, NY.\nVOR RWY 4R, ORIG-B...\nS-4R CAT C VISIBILITY RVR 5500. NOTE: FOR INOPERATIVE ALS, INCREASE S-4R CAT D\nVISIBILITY TO 1 1/2 SM.\n2606291656-2806291656EST",
+   "text": "IAP JOHN F KENNEDY INTL, NEW YORK, NY. VOR RWY 4R, ORIG-B... S-4R CAT C VISIBILITY RVR 5500. NOTE: FOR INOPERATIVE ALS, INCREASE S-4R CAT D VISIBILITY TO 1 1/2 SM.",
+   "from": 1782752160,
+   "to": 1845910560,
+   "q": null,
+   "scope": "AERODROME",
+   "schedule": null
+  },
+  {
+   "id": "JFK 06/435",
+   "raw": "!JFK 06/435 JFK TWY KD BTN RWY 13R/31L AND TWY A LGT U/S 2606291255-2612312300",
+   "text": "TWY KD BTN RWY 13R/31L AND TWY A LGT U/S",
+   "from": 1782737700,
+   "to": 1798758000,
+   "q": null,
+   "scope": "AERODROME",
+   "schedule": null
+  },
+  {
+   "id": "JFK 06/434",
+   "raw": "!JFK 06/434 JFK TWY Q5 LGT U/S 2606291253-2612312300",
+   "text": "TWY Q5 LGT U/S",
+   "from": 1782737580,
+   "to": 1798758000,
+   "q": null,
+   "scope": "AERODROME",
+   "schedule": null
+  },
+  {
+   "id": "JFK 06/397",
+   "raw": "!JFK 06/397 JFK TWY VV CLSD 2606261430-PERM",
+   "text": "TWY VV CLSD",
+   "from": 1782484200,
+   "to": null,
+   "q": null,
+   "scope": "AERODROME",
+   "schedule": null
+  },
+  {
+   "id": "JFK 06/376",
+   "raw": "!JFK 06/376 JFK TWY LA BTN TWY A AND TWY B COMMISSIONED ASPH NOT LGTD 2606261201-PERM",
+   "text": "TWY LA BTN TWY A AND TWY B COMMISSIONED ASPH NOT LGTD",
+   "from": 1782475260,
+   "to": null,
+   "q": null,
+   "scope": "AERODROME",
+   "schedule": null
+  },
+  {
+   "id": "JFK 06/374",
+   "raw": "!JFK 06/374 JFK TWY LA BTN TERMINAL 1 RAMP AND TWY A CHANGED TO TWY A14 ASPH NOT LGTD\n2606260401-PERM",
+   "text": "TWY LA BTN TERMINAL 1 RAMP AND TWY A CHANGED TO TWY A14 ASPH NOT LGTD",
+   "from": 1782446460,
+   "to": null,
+   "q": null,
+   "scope": "AERODROME",
+   "schedule": null
+  },
+  {
+   "id": "JFK 06/375",
+   "raw": "!JFK 06/375 JFK TWY A14 BTN TWY A AND TWY B COMMISSIONED ASPH NOT LGTD 2606260401-PERM",
+   "text": "TWY A14 BTN TWY A AND TWY B COMMISSIONED ASPH NOT LGTD",
+   "from": 1782446460,
+   "to": null,
+   "q": null,
+   "scope": "AERODROME",
+   "schedule": null
+  },
+  {
+   "id": "JFK 06/366",
+   "raw": "!JFK 06/366 JFK TWY F SIGNS LGT U/S 2606250607-2612312359",
+   "text": "TWY F SIGNS LGT U/S",
+   "from": 1782367620,
+   "to": 1798761540,
+   "q": null,
+   "scope": "AERODROME",
+   "schedule": null
+  },
+  {
+   "id": "JFK 06/364",
+   "raw": "!JFK 06/364 JFK TWY F TWY DIRECTION SIGN FOR TERMINAL 5 RAMP MISSING 2606250541-2612312359",
+   "text": "TWY F TWY DIRECTION SIGN FOR TERMINAL 5 RAMP MISSING",
+   "from": 1782366060,
+   "to": 1798761540,
+   "q": null,
+   "scope": "AERODROME",
+   "schedule": null
+  },
+  {
+   "id": "JFK 06/346",
+   "raw": "!JFK 06/346 JFK TWY L CL LGT BTN RWY 13R/31L AND TWY A U/S 2606241521-2612312359",
+   "text": "TWY L CL LGT BTN RWY 13R/31L AND TWY A U/S",
+   "from": 1782314460,
+   "to": 1798761540,
+   "q": null,
+   "scope": "AERODROME",
+   "schedule": null
+  },
+  {
+   "id": "JFK 06/344",
+   "raw": "!JFK 06/344 JFK TWY KG CLR BAR LGT AT TERMINAL 4 RAMP U/S 2606241428-2612312300",
+   "text": "TWY KG CLR BAR LGT AT TERMINAL 4 RAMP U/S",
+   "from": 1782311280,
+   "to": 1798758000,
+   "q": null,
+   "scope": "AERODROME",
+   "schedule": null
+  },
+  {
+   "id": "JFK 06/322",
+   "raw": "!JFK 06/322 JFK TWY A10 TWY DIRECTION SIGN FOR TWY A MISSING 2606231724-2612312300",
+   "text": "TWY A10 TWY DIRECTION SIGN FOR TWY A MISSING",
+   "from": 1782235440,
+   "to": 1798758000,
+   "q": null,
+   "scope": "AERODROME",
+   "schedule": null
+  },
+  {
+   "id": "JFK 06/319",
+   "raw": "!JFK 06/319 JFK TWY HB LOCATION SIGN FOR TWY A LGT U/S 2606231622-2612312300",
+   "text": "TWY HB LOCATION SIGN FOR TWY A LGT U/S",
+   "from": 1782231720,
+   "to": 1798758000,
+   "q": null,
+   "scope": "AERODROME",
+   "schedule": null
+  },
+  {
+   "id": "JFK 06/190",
+   "raw": "!JFK 06/190 JFK TWY L LOCATION SIGN FOR TWY LL MISSING 2606151207-2612312300",
+   "text": "TWY L LOCATION SIGN FOR TWY LL MISSING",
+   "from": 1781525220,
+   "to": 1798758000,
+   "q": null,
+   "scope": "AERODROME",
+   "schedule": null
+  },
+  {
+   "id": "JFK 06/189",
+   "raw": "!JFK 06/189 JFK OBST CRANE (ASN 2026-AEA-5746-OE) 403855N0734934W (2.2NM WNW JFK) 81FT\n(81FT AGL) FLAGGED AND LGTD 2606151133-2712092359",
+   "text": "OBST CRANE (ASN 2026-AEA-5746-OE) 403855N0734934W (2.2NM WNW JFK) 81FT (81FT AGL) FLAGGED AND LGTD",
+   "from": 1781523180,
+   "to": 1828396740,
+   "q": null,
+   "scope": "AERODROME",
+   "schedule": null
+  },
+  {
+   "id": "FDC 6/7857",
+   "raw": "!FDC 6/7857 JFK IAP JOHN F KENNEDY INTL, NEW YORK, NY.\nVOR RWY 4R, ORIG-C...\nPROCEDURE NA.\n2606121324-2612240901EST",
+   "text": "IAP JOHN F KENNEDY INTL, NEW YORK, NY. VOR RWY 4R, ORIG-C... PROCEDURE NA.",
+   "from": 1781270640,
+   "to": 1798102860,
+   "q": null,
+   "scope": "AERODROME",
+   "schedule": null
+  },
+  {
+   "id": "JFK 06/165",
+   "raw": "!JFK 06/165 JFK TWY B TWY DIRECTION SIGN FOR TWY M LGT U/S 2606121009-2610312359",
+   "text": "TWY B TWY DIRECTION SIGN FOR TWY M LGT U/S",
+   "from": 1781258940,
+   "to": 1793491140,
+   "q": null,
+   "scope": "AERODROME",
+   "schedule": null
+  },
+  {
+   "id": "JFK 06/159",
+   "raw": "!JFK 06/159 JFK TWY LL COMMISSIONED BTN TWY A AND TWY B ASPH NOT LGTD 2606111809-PERM",
+   "text": "TWY LL COMMISSIONED BTN TWY A AND TWY B ASPH NOT LGTD",
+   "from": 1781201340,
+   "to": null,
+   "q": null,
+   "scope": "AERODROME",
+   "schedule": null
+  },
+  {
+   "id": "JFK 06/130",
+   "raw": "!JFK 06/130 JFK TWY L BTN TWY A AND TWY B CLSD 2606101732-PERM",
+   "text": "TWY L BTN TWY A AND TWY B CLSD",
+   "from": 1781112720,
+   "to": null,
+   "q": null,
+   "scope": "AERODROME",
+   "schedule": null
+  },
+  {
+   "id": "JFK 05/283",
+   "raw": "!JFK 05/283 JFK APRON TERMINAL 5 RAMP WIP CONST ADJ NW SIDE BARRICADED\n2605211823-2704302359",
+   "text": "APRON TERMINAL 5 RAMP WIP CONST ADJ NW SIDE BARRICADED",
+   "from": 1779387780,
+   "to": 1809129540,
+   "q": null,
+   "scope": "AERODROME",
+   "schedule": null
+  },
+  {
+   "id": "JFK 05/282",
+   "raw": "!JFK 05/282 JFK APRON TERMINAL 7 RAMP WIP CONST ADJ SE SIDE LGTD AND BARRICADED\n2605211810-2704302359",
+   "text": "APRON TERMINAL 7 RAMP WIP CONST ADJ SE SIDE LGTD AND BARRICADED",
+   "from": 1779387000,
+   "to": 1809129540,
+   "q": null,
+   "scope": "AERODROME",
+   "schedule": null
+  },
+  {
+   "id": "JFK 05/260",
+   "raw": "!JFK 05/260 JFK TWY K LGT BTN RWY 13R/31L AND TWY A U/S 2605200830-2612312300",
+   "text": "TWY K LGT BTN RWY 13R/31L AND TWY A U/S",
+   "from": 1779265800,
+   "to": 1798758000,
+   "q": null,
+   "scope": "AERODROME",
+   "schedule": null
+  },
+  {
+   "id": "JFK 05/259",
+   "raw": "!JFK 05/259 JFK TWY KF TWY DIRECTION SIGN FOR TERMINAL 4 RAMP MISSING\n2605200825-2612312300",
+   "text": "TWY KF TWY DIRECTION SIGN FOR TERMINAL 4 RAMP MISSING",
+   "from": 1779265500,
+   "to": 1798758000,
+   "q": null,
+   "scope": "AERODROME",
+   "schedule": null
+  },
+  {
+   "id": "JFK 05/060",
+   "raw": "!JFK 05/060 JFK TWY A CL LGT BTN TWY N AND TWY MB NOT STD 2605061549-2705042359",
+   "text": "TWY A CL LGT BTN TWY N AND TWY MB NOT STD",
+   "from": 1778082540,
+   "to": 1809475140,
+   "q": null,
+   "scope": "AERODROME",
+   "schedule": null
+  },
+  {
+   "id": "JFK 04/127",
+   "raw": "!JFK 04/127 JFK TWY E CL LGT BTN TWY B AND TWY YA NOT STD 2604072139-2708312300",
+   "text": "TWY E CL LGT BTN TWY B AND TWY YA NOT STD",
+   "from": 1775597940,
+   "to": 1819753200,
+   "q": null,
+   "scope": "AERODROME",
+   "schedule": null
+  },
+  {
+   "id": "JFK 04/092",
+   "raw": "!JFK 04/092 JFK TWY A4 BTN TWY A AND TERMINAL 5 RAMP CLSD 2604061608-2610301900",
+   "text": "TWY A4 BTN TWY A AND TERMINAL 5 RAMP CLSD",
+   "from": 1775491680,
+   "to": 1793386800,
+   "q": null,
+   "scope": "AERODROME",
+   "schedule": null
+  },
+  {
+   "id": "JFK 03/285",
+   "raw": "!JFK 03/285 JFK TWY J SFC PAINTED HLDG PSN SIGNS FOR RWY 04R/22L FADED\n2603171655-2612312300",
+   "text": "TWY J SFC PAINTED HLDG PSN SIGNS FOR RWY 04R/22L FADED",
+   "from": 1773766500,
+   "to": 1798758000,
+   "q": null,
+   "scope": "AERODROME",
+   "schedule": null
+  },
+  {
+   "id": "JFK 03/180",
+   "raw": "!JFK 03/180 JFK OBST CRANE (ASN 2025-AEA-5155-NRA) 403941N0734730W (1.4NM NNW JFK) 126FT\n(111FT AGL) FLAGGED AND LGTD 2603102226-2707132359",
+   "text": "OBST CRANE (ASN 2025-AEA-5155-NRA) 403941N0734730W (1.4NM NNW JFK) 126FT (111FT AGL) FLAGGED AND LGTD",
+   "from": 1773181560,
+   "to": 1815523140,
+   "q": null,
+   "scope": "AERODROME",
+   "schedule": null
+  },
+  {
+   "id": "JFK 03/179",
+   "raw": "!JFK 03/179 JFK OBST CRANE (ASN 2026-AEA-228-NRA) 403923N0734854W (1.9NM WNW JFK) 139FT\n(127FT AGL) FLAGGED AND LGTD 2603102215-2708062359",
+   "text": "OBST CRANE (ASN 2026-AEA-228-NRA) 403923N0734854W (1.9NM WNW JFK) 139FT (127FT AGL) FLAGGED AND LGTD",
+   "from": 1773180900,
+   "to": 1817596740,
+   "q": null,
+   "scope": "AERODROME",
+   "schedule": null
+  },
+  {
+   "id": "JFK 03/169",
+   "raw": "!JFK 03/169 JFK OBST CRANE (ASN 2025-AEA-4297-NRA) 403811N0734703W (0.3NM SW JFK) 112FT\n(100FT AGL) FLAGGED AND LGTD 2603101757-2706222359",
+   "text": "OBST CRANE (ASN 2025-AEA-4297-NRA) 403811N0734703W (0.3NM SW JFK) 112FT (100FT AGL) FLAGGED AND LGTD",
+   "from": 1773165420,
+   "to": 1813708740,
+   "q": null,
+   "scope": "AERODROME",
+   "schedule": null
+  },
+  {
+   "id": "JFK 02/434",
+   "raw": "!JFK 02/434 JFK TWY VA BTN TERMINAL 7 RAMP AND TWY A CLSD 2602182118-2712312359",
+   "text": "TWY VA BTN TERMINAL 7 RAMP AND TWY A CLSD",
+   "from": 1771449480,
+   "to": 1830297540,
+   "q": null,
+   "scope": "AERODROME",
+   "schedule": null
+  },
+  {
+   "id": "FDC 6/4963",
+   "raw": "!FDC 6/4963 JFK IAP JOHN F KENNEDY INTL, NEW YORK, NY.\nCOPTER RNAV (GPS) 027, ORIG-C...\nLNAV MDA 680/HAS 647. NUMEROUS OFFSHORE TEMPORARY BARGE CRANES/WIND TURBINES 345FT MSL\n10NM SOUTHWEST OF JFK AIRPORT (2024-WTE-4148 THRU 4149-OE, 2024-WTE-4196 THRU 4197-OE,\n2024-WTE-4236 THRU 4344-OE).\n2602171633-2710051633EST",
+   "text": "IAP JOHN F KENNEDY INTL, NEW YORK, NY. COPTER RNAV (GPS) 027, ORIG-C... LNAV MDA 680/HAS 647. NUMEROUS OFFSHORE TEMPORARY BARGE CRANES/WIND TURBINES 345FT MSL 10NM SOUTHWEST OF JFK AIRPORT (2024-WTE-4148 THRU 4149-OE, 2024-WTE-4196 THRU 4197-OE, 2024-WTE-4236 THRU 4344-OE).",
+   "from": 1771345980,
+   "to": 1822753980,
+   "q": null,
+   "scope": "AERODROME",
+   "schedule": null
+  },
+  {
+   "id": "JFK 01/233",
+   "raw": "!JFK 01/233 JFK TWY TB BTN TERMINAL 8 RAMP AND TWY A CLSD 2601081536-2612312300",
+   "text": "TWY TB BTN TERMINAL 8 RAMP AND TWY A CLSD",
+   "from": 1767886560,
+   "to": 1798758000,
+   "q": null,
+   "scope": "AERODROME",
+   "schedule": null
+  },
+  {
+   "id": "JFK 12/171",
+   "raw": "!JFK 12/171 JFK TWY PB BTN HANGAR 12 RAMP AND TWY Q CLSD 2512101944-PERM",
+   "text": "TWY PB BTN HANGAR 12 RAMP AND TWY Q CLSD",
+   "from": 1765395840,
+   "to": null,
+   "q": null,
+   "scope": "AERODROME",
+   "schedule": null
+  },
+  {
+   "id": "JFK 12/054",
+   "raw": "!JFK 12/054 JFK TWY H CL LGT BTN TWY Y AND TWY Z NOT STD 2512031625-2612312300",
+   "text": "TWY H CL LGT BTN TWY Y AND TWY Z NOT STD",
+   "from": 1764779100,
+   "to": 1798758000,
+   "q": null,
+   "scope": "AERODROME",
+   "schedule": null
+  },
+  {
+   "id": "JFK 12/053",
+   "raw": "!JFK 12/053 JFK TWY Z BTN RWY 04L/22R AND TWY Y CLSD 2512031620-2612312300",
+   "text": "TWY Z BTN RWY 04L/22R AND TWY Y CLSD",
+   "from": 1764778800,
+   "to": 1798758000,
+   "q": null,
+   "scope": "AERODROME",
+   "schedule": null
+  },
+  {
+   "id": "JFK 11/346",
+   "raw": "!JFK 11/346 JFK TWY KG BTN TWY A AND TWY B CLSD 2511192100-PERM",
+   "text": "TWY KG BTN TWY A AND TWY B CLSD",
+   "from": 1763586000,
+   "to": null,
+   "q": null,
+   "scope": "AERODROME",
+   "schedule": null
+  },
+  {
+   "id": "FDC 5/3815",
+   "raw": "!FDC 5/3815 JFK IAP JOHN F KENNEDY INTL, NEW YORK, NY.\nILS OR LOC RWY 4L, AMDT 11E...\nCHANGE NOTE: AUTOPILOT COUPLED APPROACH NA BELOW 200 FEET MSL TO READ AUTOPILOT COUPLED\nAPPROACH NA BELOW 500 MSL.\n2510211421-2710211421EST",
+   "text": "IAP JOHN F KENNEDY INTL, NEW YORK, NY. ILS OR LOC RWY 4L, AMDT 11E... CHANGE NOTE: AUTOPILOT COUPLED APPROACH NA BELOW 200 FEET MSL TO READ AUTOPILOT COUPLED APPROACH NA BELOW 500 MSL.",
+   "from": 1761056460,
+   "to": 1824128460,
+   "q": null,
+   "scope": "AERODROME",
+   "schedule": null
+  },
+  {
+   "id": "FDC 5/2362",
+   "raw": "!FDC 5/2362 JFK IAP JOHN F KENNEDY INTL, NEW YORK, NY.\nILS OR LOC RWY 22L, AMDT 26...\nILS OR LOC RWY 22R, AMDT 4...\nILS OR LOC RWY 31L, AMDT 11B...\nILS OR LOC RWY 31R, AMDT 16B...\nILS OR LOC RWY 4R, AMDT 30B...\nRNAV (GPS) RWY 22R, AMDT 1G...\nRNAV (GPS) X RWY 22L, ORIG-A...\nRNAV (GPS) Y RWY 22L, AMDT 1F...\nRNAV (GPS) Y RWY 4L, AMDT 3B...\nRNAV (GPS) Y RWY 4R, AMDT 2B...\nVOR RWY 31L, ORIG-B...\nVOR RWY 4R, ORIG-B...\nCIRCLING MDA CATS C/D 700/HAA 687. VISIBILITY CAT C 2, CAT D 2 1/4.\n2509292049-2712262048EST",
+   "text": "IAP JOHN F KENNEDY INTL, NEW YORK, NY. ILS OR LOC RWY 22L, AMDT 26... ILS OR LOC RWY 22R, AMDT 4... ILS OR LOC RWY 31L, AMDT 11B... ILS OR LOC RWY 31R, AMDT 16B... ILS OR LOC RWY 4R, AMDT 30B... RNAV (GPS) RWY 22R, AMDT 1G... RNAV (GPS) X RWY 22L, ORIG-A... RNAV (GPS) Y RWY 22L, AMDT 1F... RNAV (GPS) Y RWY 4L, AMDT 3B... RNAV (GPS) Y RWY 4R, AMDT 2B... VOR RWY 31L, ORIG-B... VOR RWY 4R, ORIG-B... CIRCLING MDA CATS C/D 700/HAA 687. VISIBILITY CAT C 2, CAT D 2 1/4.",
+   "from": 1759178940,
+   "to": 1829854080,
+   "q": null,
+   "scope": "AERODROME",
+   "schedule": null
+  },
+  {
+   "id": "FDC 5/2951",
+   "raw": "!FDC 5/2951 JFK IAP JOHN F KENNEDY INTL, NEW YORK, NY.\nILS OR LOC RWY 22R, AMDT 4...\nS-LOC 22R MDA 580/HAT 567 ALL CATS. VISIBILITY CAT C/D 1 5/8. PERMANENT BUILDING 266FT\nMSL 4.7NM NORTH OF RWY 22R (2024-AEA-9867-OE).\n2507052228-2707052228EST",
+   "text": "IAP JOHN F KENNEDY INTL, NEW YORK, NY. ILS OR LOC RWY 22R, AMDT 4... S-LOC 22R MDA 580/HAT 567 ALL CATS. VISIBILITY CAT C/D 1 5/8. PERMANENT BUILDING 266FT MSL 4.7NM NORTH OF RWY 22R (2024-AEA-9867-OE).",
+   "from": 1751754480,
+   "to": 1814826480,
+   "q": null,
+   "scope": "AERODROME",
+   "schedule": null
+  }
+ ]
+}

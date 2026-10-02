@@ -1,0 +1,296 @@
+{
+ "source": "FAA NOTAM Search (export PDF)",
+ "queried": 1790974920,
+ "notams": [
+  {
+   "id": "D4272/26",
+   "raw": "D4272/26 NOTAMN\nQ) CZYZ/QMXLC/IV/BO/A/000/999/4341N07938W005\nA) CYYZ B) 2610041400 C) 2610041800\nE) TWY B BTN TWY T AND TWY V CLSD.",
+   "text": "TWY B BTN TWY T AND TWY V CLSD.",
+   "from": 1791122400,
+   "to": 1791136800,
+   "q": "QMXLC",
+   "scope": "AERODROME",
+   "schedule": null
+  },
+  {
+   "id": "D4269/26",
+   "raw": "D4269/26 NOTAMN\nQ) CZYZ/QMXLT/IV/M/A/000/999/4341N07938W005\nA) CYYZ B) 2610040401 C) 2610050800\nD) DAILY 0401-0800\nE) TWY A BTN TWY AK AND TWY AL NOT AVBL TO ACFT WITH WINGSPAN\nGREATER THAN 118FT",
+   "text": "TWY A BTN TWY AK AND TWY AL NOT AVBL TO ACFT WITH WINGSPAN\nGREATER THAN 118FT",
+   "from": 1791086460,
+   "to": 1791187200,
+   "q": "QMXLT",
+   "scope": "AERODROME",
+   "schedule": "DAILY 0401-0800"
+  },
+  {
+   "id": "D4268/26",
+   "raw": "D4268/26 NOTAMN\nQ) CZYZ/QMNLT/IV/NBO/A/000/999/4341N07938W005\nA) CYYZ B) 2610040401 C) 2610040800\nE) NORTH/SOUTH TAXILANE BTN STAND 521 AND STAND 522 NOT AUTH TO\nACFT WITH WINGSPAN GREATER THAN 118FT.",
+   "text": "NORTH/SOUTH TAXILANE BTN STAND 521 AND STAND 522 NOT AUTH TO\nACFT WITH WINGSPAN GREATER THAN 118FT.",
+   "from": 1791086460,
+   "to": 1791100800,
+   "q": "QMNLT",
+   "scope": "AERODROME",
+   "schedule": null
+  },
+  {
+   "id": "D4263/26",
+   "raw": "D4263/26 NOTAMN\nQ) CZYZ/QMXLC/IV/BO/A/000/999/4341N07938W005\nA) CYYZ B) 2610031400 C) 2610031800\nE) TWY V BTN TWY B AND RWY 15L/33R CLSD.",
+   "text": "TWY V BTN TWY B AND RWY 15L/33R CLSD.",
+   "from": 1791036000,
+   "to": 1791050400,
+   "q": "QMXLC",
+   "scope": "AERODROME",
+   "schedule": null
+  },
+  {
+   "id": "D4264/26",
+   "raw": "D4264/26 NOTAMN\nQ) CZYZ/QMRLC/IV/NBO/A/000/999/4341N07938W005\nA) CYYZ B) 2610031400 C) 2610031800\nE) RWY 15L/33R CLSD AVBL AS TWY.",
+   "text": "RWY 15L/33R CLSD AVBL AS TWY.",
+   "from": 1791036000,
+   "to": 1791050400,
+   "q": "QMRLC",
+   "scope": "AERODROME",
+   "schedule": null
+  },
+  {
+   "id": "D4241/26",
+   "raw": "D4241/26 NOTAMN\nQ) CZYZ/QMRLC/IV/NBO/A/000/999/4341N07938W005\nA) CYYZ B) 2610030401 C) 2610041000\n\n\nD) DAILY 0401-1000\nE) RWY 15L/33R CLSD.",
+   "text": "RWY 15L/33R CLSD.",
+   "from": 1791000060,
+   "to": 1791108000,
+   "q": "QMRLC",
+   "scope": "AERODROME",
+   "schedule": "DAILY 0401-1000"
+  },
+  {
+   "id": "S4322/26",
+   "raw": "S4322/26 NOTAMR S4299/26\nQ) CZYZ/QFAXX/IV/NBO/A/000/999/4341N07938W005\nA) CYYZ B) 2610022007 C) 2610030407\nE) RSC 05 6/6/6 DRY, DRY, DRY. VALID OCT 02 1738 - OCT 03 0138.\n\nRSC 23 6/6/6 DRY, DRY, DRY. VALID OCT 02 1738 - OCT 03 0138.\n\nRSC 06L 6/6/6 DRY, DRY, DRY. VALID OCT 02 1738 - OCT 03 0138.\n\nRSC 24R 6/6/6 DRY, DRY, DRY. VALID OCT 02 1738 - OCT 03 0138.\n\nRSC 15L 6/6/6 DRY, DRY, DRY. VALID OCT 02 1738 - OCT 03 0138.\n\nRSC 33R 6/6/6 DRY, DRY, DRY. VALID OCT 02 1738 - OCT 03 0138.\n\nRSC 15R 6/6/6 DRY, DRY, DRY. VALID OCT 02 1738 - OCT 03 0138.\n\nRSC 33L 6/6/6 DRY, DRY, DRY. VALID OCT 02 1738 - OCT 03 0138.\n\nADDN NON-GRF/TALPA INFO:",
+   "text": "RSC 05 6/6/6 DRY, DRY, DRY. VALID OCT 02 1738 - OCT 03 0138.\n\nRSC 23 6/6/6 DRY, DRY, DRY. VALID OCT 02 1738 - OCT 03 0138.\n\nRSC 06L 6/6/6 DRY, DRY, DRY. VALID OCT 02 1738 - OCT 03 0138.\n\nRSC 24R 6/6/6 DRY, DRY, DRY. VALID OCT 02 1738 - OCT 03 0138.\n\nRSC 15L 6/6/6 DRY, DRY, DRY. VALID OCT 02 1738 - OCT 03 0138.\n\nRSC 33R 6/6/6 DRY, DRY, DRY. VALID OCT 02 1738 - OCT 03 0138.\n\nRSC 15R 6/6/6 DRY, DRY, DRY. VALID OCT 02 1738 - OCT 03 0138.\n\nRSC 33L 6/6/6 DRY, DRY, DRY. VALID OCT 02 1738 - OCT 03 0138.\n\nADDN NON-GRF/TALPA INFO:",
+   "from": 1790971620,
+   "to": 1791000420,
+   "q": "QFAXX",
+   "scope": "AERODROME",
+   "schedule": null
+  },
+  {
+   "id": "D4274/26",
+   "raw": "D4274/26 NOTAMN\nQ) CZYZ/QMXLC/IV/BO/A/000/999/4341N07938W005\nA) CYYZ B) 2610021730 C) 2610022200\nE) TWY A BTN TWY T AND TWY V CLSD.\nRegional Approach Radiotelephony Nomenclature Change\nThe full version of this LTA is available at the following URL.\nhttps://notams.aim.faa.gov/lta/main/viewlta?lookupid=3470140914452665704\n\nParagliding Activity Southern California TRACON\nThe full version of this LTA is available at the following URL.\nhttps://notams.aim.faa.gov/lta/main/viewlta?lookupid=3573184243032921899\n\nNRVNA or KENT Departure Procedures\nThe full version of this LTA is available at the following URL.\nhttps://notams.aim.faa.gov/lta/main/viewlta?lookupid=3586922113405031872\n\nAvailability of Standard Taxi Routes\nThe full version of this LTA is available at the following URL.\nhttps://notams.aim.faa.gov/lta/main/viewlta?lookupid=3617173537908856661\n\nFlight Service Toll Free Number\nThe full version of this LTA is available at the following URL.\nhttps://notams.aim.faa.gov/lta/main/viewlta?lookupid=3620883770757879002\n\nRunway Incursions on LAX's North Complex\nThe full version of this LTA is available at the following URL.\nhttps://notams.aim.faa.gov/lta/main/viewlta?lookupid=3636886989862606139\n\nIRNMN RYDRR HUULL STARs at LAX\nThe full version of this LTA is available at the following URL.\nhttps://notams.aim.faa.gov/lta/main/viewlta?lookupid=3708655273359972284\n\nSEATTLE APPROACH CONTROL (S46) CONCURRENT OPERATIONS AT BOEING FIELD (KBFI) AND\nSEATTLE-TACOMA INTERNATIONAL AIRPORT (KSEA)\nThe full version of this LTA is available at the following URL.\nhttps://notams.aim.faa.gov/lta/main/viewlta?lookupid=3734059434465301976\n\nBeacon Codes for Helicopter Operations within the Los Angeles Region\nThe full version of this LTA is available at the following URL.\nhttps://notams.aim.faa.gov/lta/main/viewlta?lookupid=3738448248222783409\n\nVFR PRACTICE INSTRUMENT APPROACH PROCEDURES\nThe full version of this LTA is available at the following URL.\nhttps://notams.aim.faa.gov/lta/main/viewlta?lookupid=3743375393080481154\n\nLine Up and Wait (LUAW) Procedures at Miami International Airport\nThe full version of this LTA is available at the following URL.\nhttps://notams.aim.faa.gov/lta/main/viewlta?lookupid=3748322669011932947\n\nSIMULTANEOUS DEPARTURES AT DFW\nThe full version of this LTA is available at the following URL.\nhttps://notams.aim.faa.gov/lta/main/viewlta?lookupid=3757807204162344518\n\nRunway Hold Position Markings Between Intersecting Runways\nThe full version of this LTA is available at the following URL.\n\n\nhttps://notams.aim.faa.gov/lta/main/viewlta?lookupid=3765028075079734649\nLine Up and Wait (LUAW) when Intersection Not Visible from Tower\nThe full version of this LTA is available at the following URL.\nhttps://notams.aim.faa.gov/lta/main/viewlta?lookupid=3781057427290461339\nAvailability of RNAV Approaches at John F. Kennedy International Airport (JFK)\nThe full version of this LTA is available at the following URL.\nhttps://notams.aim.faa.gov/lta/main/viewlta?lookupid=3804958136033351017\nRunway 09L Departures from Intersection M2\nThe full version of this LTA is available at the following URL.\nhttps://notams.aim.faa.gov/lta/main/viewlta?lookupid=3805036125827896716\nClimb and Descent Performance, Transponder Usage and Speed Adjustments\nThe full version of this LTA is available at the following URL.\nhttps://notams.aim.faa.gov/lta/main/viewlta?lookupid=3804959982374360432\nHHR IFR Departures and LAX IFR Arrivals\nThe full version of this LTA is available at the following URL.\nhttps://notams.aim.faa.gov/lta/main/viewlta?lookupid=3811466487781135616\nLos Angeles Airport (LAX) GARDY (RNAV) SID Procedural Reminder\nThe full version of this LTA is available at the following URL.\nhttps://notams.aim.faa.gov/lta/main/viewlta?lookupid=3816667247431128889\nArrival Aircraft Operating Outside New York Class B Airspace\nThe full version of this LTA is available at the following URL.\nhttps://notams.aim.faa.gov/lta/main/viewlta?lookupid=3804958314249327978\nKBFI RWY14R Published Missed Approach Procedure\nThe full version of this LTA is available at the following URL.\nhttps://notams.aim.faa.gov/lta/main/viewlta?lookupid=3865990577921201792\nSimultaneous Departures from Parallel Runways\nThe full version of this LTA is available at the following URL.\nhttps://notams.aim.faa.gov/lta/main/viewlta?lookupid=3881038025328694529\nKSFO Departure Metering Frequency\nThe full version of this LTA is available at the following URL.\nhttps://notams.aim.faa.gov/lta/main/viewlta?lookupid=3891298333427242653\nNew Taxiway: W\nThe full version of this LTA is available at the following URL.\nhttps://notams.aim.faa.gov/lta/main/viewlta?lookupid=3921757090405684521\nSCT Practice Instrument Approaches\nThe full version of this LTA is available at the following URL.\nhttps://notams.aim.faa.gov/lta/main/viewlta?lookupid=3926092887321745134\nSimultaneous Instrument Approaches to Parallel Runways\nThe full version of this LTA is available at the following URL.\nhttps://notams.aim.faa.gov/lta/main/viewlta?lookupid=3967917488976434360\nPacific Airshow, Newport Beach 2026\nThe full version of this LTA is available at the following URL.\nhttps://notams.aim.faa.gov/lta/main/viewlta?lookupid=3994125955781105616\n\n\nSan Francisco Fleet Week\nThe full version of this LTA is available at the following URL.\nhttps://notams.aim.faa.gov/lta/main/viewlta?lookupid=3997746741817382204\nCharted Visual Flight Procedure (CVFP) - Quiet Bridge Approach\nThe full version of this LTA is available at the following URL.\nhttps://notams.aim.faa.gov/lta/main/viewlta?lookupid=3998656857014015480\n\n-----End of PDF Report.-----",
+   "text": "TWY A BTN TWY T AND TWY V CLSD.\nRegional Approach Radiotelephony Nomenclature Change\nThe full version of this LTA is available at the following URL.\nhttps://notams.aim.faa.gov/lta/main/viewlta?lookupid=3470140914452665704\n\nParagliding Activity Southern California TRACON\nThe full version of this LTA is available at the following URL.\nhttps://notams.aim.faa.gov/lta/main/viewlta?lookupid=3573184243032921899\n\nNRVNA or KENT Departure Procedures\nThe full version of this LTA is available at the following URL.\nhttps://notams.aim.faa.gov/lta/main/viewlta?lookupid=3586922113405031872\n\nAvailability of Standard Taxi Routes\nThe full version of this LTA is available at the following URL.\nhttps://notams.aim.faa.gov/lta/main/viewlta?lookupid=3617173537908856661\n\nFlight Service Toll Free Number\nThe full version of this LTA is available at the following URL.\nhttps://notams.aim.faa.gov/lta/main/viewlta?lookupid=3620883770757879002\n\nRunway Incursions on LAX's North Complex\nThe full version of this LTA is available at the following URL.\nhttps://notams.aim.faa.gov/lta/main/viewlta?lookupid=3636886989862606139\n\nIRNMN RYDRR HUULL STARs at LAX\nThe full version of this LTA is available at the following URL.\nhttps://notams.aim.faa.gov/lta/main/viewlta?lookupid=3708655273359972284\n\nSEATTLE APPROACH CONTROL (S46) CONCURRENT OPERATIONS AT BOEING FIELD (KBFI) AND\nSEATTLE-TACOMA INTERNATIONAL AIRPORT (KSEA)\nThe full version of this LTA is available at the following URL.\nhttps://notams.aim.faa.gov/lta/main/viewlta?lookupid=3734059434465301976\n\nBeacon Codes for Helicopter Operations within the Los Angeles Region\nThe full version of this LTA is available at the following URL.\nhttps://notams.aim.faa.gov/lta/main/viewlta?lookupid=3738448248222783409\n\nVFR PRACTICE INSTRUMENT APPROACH PROCEDURES\nThe full version of this LTA is available at the following URL.\nhttps://notams.aim.faa.gov/lta/main/viewlta?lookupid=3743375393080481154\n\nLine Up and Wait (LUAW) Procedures at Miami International Airport\nThe full version of this LTA is available at the following URL.\nhttps://notams.aim.faa.gov/lta/main/viewlta?lookupid=3748322669011932947\n\nSIMULTANEOUS DEPARTURES AT DFW\nThe full version of this LTA is available at the following URL.\nhttps://notams.aim.faa.gov/lta/main/viewlta?lookupid=3757807204162344518\n\nRunway Hold Position Markings Between Intersecting Runways\nThe full version of this LTA is available at the following URL.\n\n\nhttps://notams.aim.faa.gov/lta/main/viewlta?lookupid=3765028075079734649\nLine Up and Wait (LUAW) when Intersection Not Visible from Tower\nThe full version of this LTA is available at the following URL.\nhttps://notams.aim.faa.gov/lta/main/viewlta?lookupid=3781057427290461339\nAvailability of RNAV Approaches at John F. Kennedy International Airport (JFK)\nThe full version of this LTA is available at the following URL.\nhttps://notams.aim.faa.gov/lta/main/viewlta?lookupid=3804958136033351017\nRunway 09L Departures from Intersection M2\nThe full version of this LTA is available at the following URL.\nhttps://notams.aim.faa.gov/lta/main/viewlta?lookupid=3805036125827896716\nClimb and Descent Performance, Transponder Usage and Speed Adjustments\nThe full version of this LTA is available at the following URL.\nhttps://notams.aim.faa.gov/lta/main/viewlta?lookupid=3804959982374360432\nHHR IFR Departures and LAX IFR Arrivals\nThe full version of this LTA is available at the following URL.\nhttps://notams.aim.faa.gov/lta/main/viewlta?lookupid=3811466487781135616\nLos Angeles Airport (LAX) GARDY (RNAV) SID Procedural Reminder\nThe full version of this LTA is available at the following URL.\nhttps://notams.aim.faa.gov/lta/main/viewlta?lookupid=3816667247431128889\nArrival Aircraft Operating Outside New York Class B Airspace\nThe full version of this LTA is available at the following URL.\nhttps://notams.aim.faa.gov/lta/main/viewlta?lookupid=3804958314249327978\nKBFI RWY14R Published Missed Approach Procedure\nThe full version of this LTA is available at the following URL.\nhttps://notams.aim.faa.gov/lta/main/viewlta?lookupid=3865990577921201792\nSimultaneous Departures from Parallel Runways\nThe full version of this LTA is available at the following URL.\nhttps://notams.aim.faa.gov/lta/main/viewlta?lookupid=3881038025328694529\nKSFO Departure Metering Frequency\nThe full version of this LTA is available at the following URL.\nhttps://notams.aim.faa.gov/lta/main/viewlta?lookupid=3891298333427242653\nNew Taxiway: W\nThe full version of this LTA is available at the following URL.\nhttps://notams.aim.faa.gov/lta/main/viewlta?lookupid=3921757090405684521\nSCT Practice Instrument Approaches\nThe full version of this LTA is available at the following URL.\nhttps://notams.aim.faa.gov/lta/main/viewlta?lookupid=3926092887321745134\nSimultaneous Instrument Approaches to Parallel Runways\nThe full version of this LTA is available at the following URL.\nhttps://notams.aim.faa.gov/lta/main/viewlta?lookupid=3967917488976434360\nPacific Airshow, Newport Beach 2026\nThe full version of this LTA is available at the following URL.\nhttps://notams.aim.faa.gov/lta/main/viewlta?lookupid=3994125955781105616\n\n\nSan Francisco Fleet Week\nThe full version of this LTA is available at the following URL.\nhttps://notams.aim.faa.gov/lta/main/viewlta?lookupid=3997746741817382204\nCharted Visual Flight Procedure (CVFP) - Quiet Bridge Approach\nThe full version of this LTA is available at the following URL.\nhttps://notams.aim.faa.gov/lta/main/viewlta?lookupid=3998656857014015480\n\n-----End of PDF Report.-----",
+   "from": 1790962200,
+   "to": 1790978400,
+   "q": "QMXLC",
+   "scope": "AERODROME",
+   "schedule": null
+  },
+  {
+   "id": "D4208/26",
+   "raw": "D4208/26 NOTAMN\nQ) CZYZ/QMXLC/IV/BO/A/000/999/4341N07938W005\nA) CYYZ B) 2609301000 C) 2610062100\nE) TWY D7, TWY D1O,\nTWY W BTN TWY Y AND RWY 06R/24L,\nTWY D3 BTN RWY 06R/24L AND RWY 06L/24R,\nTWY D5 BTN RWY 06R/24L AND RWY 06L/24R,\nTWY D4 BTN RWY 06R/24L AND RWY 06L/24R,\nTWY D8 BTN RWY 06R/24L AND RWY 06L/24R CLSD",
+   "text": "TWY D7, TWY D1O,\nTWY W BTN TWY Y AND RWY 06R/24L,\nTWY D3 BTN RWY 06R/24L AND RWY 06L/24R,\nTWY D5 BTN RWY 06R/24L AND RWY 06L/24R,\nTWY D4 BTN RWY 06R/24L AND RWY 06L/24R,\nTWY D8 BTN RWY 06R/24L AND RWY 06L/24R CLSD",
+   "from": 1790762400,
+   "to": 1791320400,
+   "q": "QMXLC",
+   "scope": "AERODROME",
+   "schedule": null
+  },
+  {
+   "id": "D4210/26",
+   "raw": "D4210/26 NOTAMN\nQ) CZYZ/QMRLC/IV/NBO/A/000/999/4341N07938W005\nA) CYYZ B) 2609301000 C) 2610062100\nE) RWY 06R/24L CLSD.",
+   "text": "RWY 06R/24L CLSD.",
+   "from": 1790762400,
+   "to": 1791320400,
+   "q": "QMRLC",
+   "scope": "AERODROME",
+   "schedule": null
+  },
+  {
+   "id": "D4217/26",
+   "raw": "D4217/26 NOTAMN\nQ) CZYZ/QMXLT/IV/M/A/000/999/4341N07938W005\nA) CYYZ B) 2609301000 C) 2610062100\nE) TWY D1, TWY D2 NOT AVBL TO ACFT WITH WINGSPAN\nGREATER THAN 118FT",
+   "text": "TWY D1, TWY D2 NOT AVBL TO ACFT WITH WINGSPAN\nGREATER THAN 118FT",
+   "from": 1790762400,
+   "to": 1791320400,
+   "q": "QMXLT",
+   "scope": "AERODROME",
+   "schedule": null
+  },
+  {
+   "id": "D4139/26",
+   "raw": "D4139/26 NOTAMR D2306/26\nQ) CZYZ/QMXXX/IV/M/A/000/999/4341N07938W005\nA) CYYZ B) 2609251156 C) 2612251500\nE) OPR TRIAL OF NEW ANGLED RWY HOLD POSITION IN EFFECT ON TWY D4 AND\nTWY D5, SOUTH OF RWY 06L/24R, REFER TO AIC 15/21",
+   "text": "OPR TRIAL OF NEW ANGLED RWY HOLD POSITION IN EFFECT ON TWY D4 AND\nTWY D5, SOUTH OF RWY 06L/24R, REFER TO AIC 15/21",
+   "from": 1790337360,
+   "to": 1798210800,
+   "q": "QMXXX",
+   "scope": "AERODROME",
+   "schedule": null
+  },
+  {
+   "id": "D4137/26",
+   "raw": "D4137/26 NOTAMN\nQ) CZYZ/QMNXX/IV/NBO/A/000/999/4341N07938W005\nA) CYYZ B) 2609250912 C) 2611062359\nE) TAXILANE 1 CL RELOCATED DUE CONST. CL LTG U/S WITHIN THIS\nPORTION. FOLLOW-ME AVBL ON REQUEST",
+   "text": "TAXILANE 1 CL RELOCATED DUE CONST. CL LTG U/S WITHIN THIS\nPORTION. FOLLOW-ME AVBL ON REQUEST",
+   "from": 1790327520,
+   "to": 1794009540,
+   "q": "QMNXX",
+   "scope": "AERODROME",
+   "schedule": null
+  },
+  {
+   "id": "D4136/26",
+   "raw": "D4136/26 NOTAMN\nQ) CZYZ/QMNLC/IV/NBO/A/000/999/4341N07938W005\nA) CYYZ B) 2609250901 C) 2611062359\nE) TAXILANE 2 BTN TWY AT AND STAND B13 CLSD",
+   "text": "TAXILANE 2 BTN TWY AT AND STAND B13 CLSD",
+   "from": 1790326860,
+   "to": 1794009540,
+   "q": "QMNLC",
+   "scope": "AERODROME",
+   "schedule": null
+  },
+  {
+   "id": "D4134/26",
+   "raw": "D4134/26 NOTAMN\nQ) CZYZ/QMNLC/IV/NBO/A/000/999/4341N07938W005\nA) CYYZ B) 2609250401 C) 2611062359\nE) TAXILANE 1S CLSD",
+   "text": "TAXILANE 1S CLSD",
+   "from": 1790308860,
+   "to": 1794009540,
+   "q": "QMNLC",
+   "scope": "AERODROME",
+   "schedule": null
+  },
+  {
+   "id": "D4093/26",
+   "raw": "D4093/26 NOTAMR D3913/26\nQ) CZYZ/QLAAS/IV/NBO/A/000/999/4341N07938W005\nA) CYYZ B) 2609231220 C) 2610231400\nE) ALS 06R AND 24L U/S.\nAPPLY PROC FOR HIGH INTST APCH LGT INOPERATIVE (AIP AD 2.22.4)",
+   "text": "ALS 06R AND 24L U/S.\nAPPLY PROC FOR HIGH INTST APCH LGT INOPERATIVE (AIP AD 2.22.4)",
+   "from": 1790166000,
+   "to": 1792764000,
+   "q": "QLAAS",
+   "scope": "AERODROME",
+   "schedule": null
+  },
+  {
+   "id": "D3711/26",
+   "raw": "D3711/26 NOTAMR D3682/26\nQ) CZYZ/QMXLL/IV/M/A/000/999/4341N07938W005\nA) CYYZ B) 2609031248 C) 2612011700\nE) ACFT WITH WINGSPAN UP TO 262FT AUTH ON TWY J BTN TWY P AND\nRWY 15L",
+   "text": "ACFT WITH WINGSPAN UP TO 262FT AUTH ON TWY J BTN TWY P AND\nRWY 15L",
+   "from": 1788439680,
+   "to": 1796144400,
+   "q": "QMXLL",
+   "scope": "AERODROME",
+   "schedule": null
+  },
+  {
+   "id": "V0309/26",
+   "raw": "V0309/26 NOTAMN\nQ) CZYZ/QPICH/I/BO/A/000/999/4340N07937W005\nA) CYYZ\nB) 2608311339\nC) 2611261600\nE) [US DOD PROCEDURAL NOTAM] INSTRUMENT APPROACH PROCEDURE CHANGED ILS RWY 06L, AMDT 9\nS-LOC 06L MINIMA TO READ: 980/50 445 (500-1)",
+   "text": "[US DOD PROCEDURAL NOTAM] INSTRUMENT APPROACH PROCEDURE CHANGED ILS RWY 06L, AMDT 9\nS-LOC 06L MINIMA TO READ: 980/50 445 (500-1)",
+   "from": 1788183540,
+   "to": 1795708800,
+   "q": "QPICH",
+   "scope": "AERODROME",
+   "schedule": null
+  },
+  {
+   "id": "D3615/26",
+   "raw": "D3615/26 NOTAMR D1993/26\nQ) CZYZ/QOBCE/IV/M/AE/000/999/4341N07938W005\nA) CYYZ B) 2608311204 C) 2611041800EST\nE) MAINT CREW AND EQPT APRX 1750FT BEYOND DEP END RWY 15R AND APRX\n350FT RIGHT RWY EXTENDED CENTRE LINE. 46FT AGL, 574FT AMSL.\nLGTD, NOT PAINTED",
+   "text": "MAINT CREW AND EQPT APRX 1750FT BEYOND DEP END RWY 15R AND APRX\n350FT RIGHT RWY EXTENDED CENTRE LINE. 46FT AGL, 574FT AMSL.\nLGTD, NOT PAINTED",
+   "from": 1788177840,
+   "to": 1793815200,
+   "q": "QOBCE",
+   "scope": "AERODROME",
+   "schedule": null
+  },
+  {
+   "id": "D3613/26",
+   "raw": "D3613/26 NOTAMR D3538/26\nQ) CZYZ/QPICH/I/NBO/A/000/999/4341N07938W005\nA) CYYZ B) 2608311123 C) 2611301800EST\nE) RNAV (GNSS) Z RWY 15R APCH:\nLNAV/VNAV MINIMA: NOT AUTH\nLNAV MINIMA TO READ: 1040 (489) 1 RVR 50\nDIST/ALT TABLE: LAST ALT TO READ 1.4/1040 INSTEAD OF 1.2/980",
+   "text": "RNAV (GNSS) Z RWY 15R APCH:\nLNAV/VNAV MINIMA: NOT AUTH\nLNAV MINIMA TO READ: 1040 (489) 1 RVR 50\nDIST/ALT TABLE: LAST ALT TO READ 1.4/1040 INSTEAD OF 1.2/980",
+   "from": 1788175380,
+   "to": 1796061600,
+   "q": "QPICH",
+   "scope": "AERODROME",
+   "schedule": null
+  },
+  {
+   "id": "D3611/26",
+   "raw": "D3611/26 NOTAMN\nQ) CZYZ/QPMCH/IV/NBO/A/000/999/4341N07938W005\nA) CYYZ B) 2608311119 C) 2611261600EST\nE) ILS RWY 06L APCH: LOC/DME MINIMA TO READ: 980 (445) 1 RVR 50",
+   "text": "ILS RWY 06L APCH: LOC/DME MINIMA TO READ: 980 (445) 1 RVR 50",
+   "from": 1788175140,
+   "to": 1795708800,
+   "q": "QPMCH",
+   "scope": "AERODROME",
+   "schedule": null
+  },
+  {
+   "id": "D3362/26",
+   "raw": "D3362/26 NOTAMN\nQ) CZYZ/QOBCE/IV/M/AE/000/007/4340N07938W005\nA) CYYZ B) 2608241000 C) 2611012300\nE) MOBILE CRANE WITHIN 628FT RADIUS CENTRED ON 434025N 0793737W APRX\n530FT BEYOND DTHR 33L AND 1830FT NE RCL. 120FT AGL 681FT AMSL.\nLGTD, PAINTED.",
+   "text": "MOBILE CRANE WITHIN 628FT RADIUS CENTRED ON 434025N 0793737W APRX\n530FT BEYOND DTHR 33L AND 1830FT NE RCL. 120FT AGL 681FT AMSL.\nLGTD, PAINTED.",
+   "from": 1787565600,
+   "to": 1793574000,
+   "q": "QOBCE",
+   "scope": "AERODROME",
+   "schedule": null
+  },
+  {
+   "id": "D2838/26",
+   "raw": "D2838/26 NOTAMN\nQ) CZYZ/QMXLT/IV/M/A/000/999/4341N07938W005\nA) CYYZ B) 2607271100 C) 2610262100\nE) TWY TC NOT AUTH TO ACFT WITH WINGSPAN GREATER THAN 118FT.",
+   "text": "TWY TC NOT AUTH TO ACFT WITH WINGSPAN GREATER THAN 118FT.",
+   "from": 1785150000,
+   "to": 1793048400,
+   "q": "QMXLT",
+   "scope": "AERODROME",
+   "schedule": null
+  },
+  {
+   "id": "V0253/26",
+   "raw": "V0253/26 NOTAMN\nQ) CZYZ/QPICH/I/BO/A/000/999/4340N07937W005\nA) CYYZ\nB) 2607161535\nC) 2610121600\nE) [US DOD PROCEDURAL NOTAM] IFR TAKE-OFF MINIMUMS AND (OBSTACLE) DEPARTURE PROCEDURES\nCHANGED AMDT 5, DEPARTURE PROCEDURE: ADD RWY 23: REQUIRES A MINIMUM CLIMB GRADIENT OF\n230 FT/NM TO 1300 OR SPECIFIED TAKEOFF MINIMUM VISIBILITY OF 1 SM (CAT A), 1� SM (CAT\nB), 2 SM (CAT CD) IN VISUAL CONDITIONS.",
+   "text": "[US DOD PROCEDURAL NOTAM] IFR TAKE-OFF MINIMUMS AND (OBSTACLE) DEPARTURE PROCEDURES\nCHANGED AMDT 5, DEPARTURE PROCEDURE: ADD RWY 23: REQUIRES A MINIMUM CLIMB GRADIENT OF\n230 FT/NM TO 1300 OR SPECIFIED TAKEOFF MINIMUM VISIBILITY OF 1 SM (CAT A), 1� SM (CAT\nB), 2 SM (CAT CD) IN VISUAL CONDITIONS.",
+   "from": 1784216100,
+   "to": 1791820800,
+   "q": "QPICH",
+   "scope": "AERODROME",
+   "schedule": null
+  },
+  {
+   "id": "D2655/26",
+   "raw": "D2655/26 NOTAMR D1303/26\nQ) CZYZ/QPDCH/I/NBO/A/000/999/4341N07938W005\nA) CYYZ B) 2607141332 C) 2610121600EST\nE) ALL SID AND DEPARTURE PROCEDURE: RWY 23:\nADD: REQUIRES A MINIMUM CLIMB GRADIENT OF 230 FT/NM TO 1300.\n\nDEPARTURE CLIMB RATE V/V (FPM)\nGROUND SPEED 90 120 140 160 180 200 250 300\n230 FT/NM 350 460 540 620 690 770 960 1150",
+   "text": "ALL SID AND DEPARTURE PROCEDURE: RWY 23:\nADD: REQUIRES A MINIMUM CLIMB GRADIENT OF 230 FT/NM TO 1300.\n\nDEPARTURE CLIMB RATE V/V (FPM)\nGROUND SPEED 90 120 140 160 180 200 250 300\n230 FT/NM 350 460 540 620 690 770 960 1150",
+   "from": 1784035920,
+   "to": 1791820800,
+   "q": "QPDCH",
+   "scope": "AERODROME",
+   "schedule": null
+  },
+  {
+   "id": "D2552/26",
+   "raw": "D2552/26 NOTAMR D1076/26\nQ) CZYZ/QFAXX/IV/NBO/A/000/999/4341N07938W005\nA) CYYZ B) 2607091605 C) 2610091500\nE) DUE CONST: STAND 181 LEAD-IN LINE POSITION MODIFIED.\nVISUAL DOCKING GUIDANCE SYSTEM NOT AVBL.\nACFT TO TRANSITION FM STARTBOX 9C TO LEAD-IN\nLINE TRIANGLE THEN STRICT ADHERANCE ALONG LEAD-IN LINE.",
+   "text": "DUE CONST: STAND 181 LEAD-IN LINE POSITION MODIFIED.\nVISUAL DOCKING GUIDANCE SYSTEM NOT AVBL.\nACFT TO TRANSITION FM STARTBOX 9C TO LEAD-IN\nLINE TRIANGLE THEN STRICT ADHERANCE ALONG LEAD-IN LINE.",
+   "from": 1783613100,
+   "to": 1791558000,
+   "q": "QFAXX",
+   "scope": "AERODROME",
+   "schedule": null
+  },
+  {
+   "id": "D2079/26",
+   "raw": "D2079/26 NOTAMN\nQ) CZYZ/QFAXX/IV/NBO/A/000/999/4341N07938W005\nA) CYYZ B) 2606092055 C) PERM\nE) AMEND PUBLICATIONS:\nRWY DATA: TWY:\nADD: TWY V: ACFT WITH WINGSPANS 214FT AND GREATER NOT AUTH BTWN\nTWY E AND TWY F\n\nTAXI CHART: NOTES: RESTRICTIONS:\nADD: ACFT WITH WINGSPANS 214FT AND GREATER NO TAXIING ON TWY V\nBTWN TWY E AND TWY F",
+   "text": "AMEND PUBLICATIONS:\nRWY DATA: TWY:\nADD: TWY V: ACFT WITH WINGSPANS 214FT AND GREATER NOT AUTH BTWN\nTWY E AND TWY F\n\nTAXI CHART: NOTES: RESTRICTIONS:\nADD: ACFT WITH WINGSPANS 214FT AND GREATER NO TAXIING ON TWY V\nBTWN TWY E AND TWY F",
+   "from": 1781038500,
+   "to": null,
+   "q": "QFAXX",
+   "scope": "AERODROME",
+   "schedule": null
+  },
+  {
+   "id": "D1308/26",
+   "raw": "D1308/26 NOTAMN\nQ) CZYZ/QPICH/I/NBO/A/000/999/4341N07938W005\nA) CYYZ B) 2604231520 C) PERM\nE) AMEND PUBLICATIONS: ILS RWY 24L APCH:\nLOC/DME MINIMA TO READ: 1040 (493) 1 RVR 50",
+   "text": "AMEND PUBLICATIONS: ILS RWY 24L APCH:\nLOC/DME MINIMA TO READ: 1040 (493) 1 RVR 50",
+   "from": 1776957600,
+   "to": null,
+   "q": "QPICH",
+   "scope": "AERODROME",
+   "schedule": null
+  },
+  {
+   "id": "D0670/26",
+   "raw": "D0670/26 NOTAMR D0563/26\nQ) CZYZ/QOBCE/IV/M/AE/000/012/4340N07944W005\nA) CYYZ B) 2603111545 C) PERM\nE) AMEND PUBLICATIONS: NEW BUILDING 433941N 0794416W (APRX 4.7NM W\nAD (CYYZ)). 429FT AGL 1121FT AMSL. NOT LGTD, NOT PAINTED.",
+   "text": "AMEND PUBLICATIONS: NEW BUILDING 433941N 0794416W (APRX 4.7NM W\nAD (CYYZ)). 429FT AGL 1121FT AMSL. NOT LGTD, NOT PAINTED.",
+   "from": 1773243900,
+   "to": null,
+   "q": "QOBCE",
+   "scope": "AERODROME",
+   "schedule": null
+  }
+ ]
+}

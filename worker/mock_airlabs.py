@@ -398,6 +398,17 @@ class Handler(BaseHTTPRequestHandler):
         url = urlparse(self.path)
         if url.path == "/wx":
             return self._send(*weather_response(parse_qs(url.query)))
+        if url.path == "/notam":
+            ident = (parse_qs(url.query).get("id") or [""])[0].upper()
+            if not re.match(r"^[A-Z0-9]{4}$", ident):
+                return self._send(400, {"error": {"message": "Paramètre id invalide (un code OACI de 4 caractères)"}})
+            now = int(time.time())
+            nl = chr(10)
+            raw1 = nl.join([f"A0001/26 NOTAMN", f"Q) {ident}/QMRLC/IV/NBO/A/000/999", f"A) {ident} B) 2610010600 C) 2610302000", "E) RWY 09/27 CLSD DUE WIP"])
+            raw2 = nl.join([f"A0002/26 NOTAMN", f"Q) {ident}/QNVAS/IV/BO/A/000/999", f"A) {ident} B) 2609150000 C) PERM", "E) VOR OUT OF SERVICE"])
+            return self._send(200, {"t": now, "notams": [
+                {"id": "A0001/26", "raw": raw1, "text": "RWY 09/27 CLSD DUE WIP", "from": now - 86400, "to": now + 28 * 86400, "q": "QMRLC", "subject": "Runway", "condition": "Closed"},
+                {"id": "A0002/26", "raw": raw2, "text": "VOR OUT OF SERVICE", "from": now - 17 * 86400, "to": None, "q": "QNVAS", "subject": "VOR", "condition": "Unserviceable"}]})
         params = ROUTES.get(url.path)
         if params is None:
             return self._send(404, {"error": {"message": "Route inconnue"}})

@@ -11,6 +11,7 @@
  *   GET /usage                                                 -> appels AirLabs du jour et budget quotidien
  *   GET /config                                                -> mode (« demo » ou « live ») et, en démo, la liste des vols
  *   GET /wx?ids=LFPG,KJFK[&taf=1]                              -> METAR (et TAF) des aéroports, relayés depuis NOAA (weather.js)
+ *   GET /notam?id=LFPG                                         -> NOTAM d'un aéroport, ICAO API Data Service (notam.js, secret ICAO_API_KEY)
  *
  * Mode démo (par défaut) : 20 vols fictifs générés par demo.js, sans aucun appel à AirLabs. Les vraies données
  * ne sont servies qu'avec l'en-tête X-Access-Code égal au secret LIVE_ACCESS_CODE, ou si DATA_MODE = "live".
@@ -23,6 +24,7 @@ import { fetchPosition } from './position.js';
 import { checkBudget, isAirLabsQuotaError, budgetUsage, QUOTA_MESSAGES } from './budget.js';
 import { demoList, demoLive, demoFlight, demoTrack } from './demo.js';
 import { parseIds, weather, MAX_IDS } from './weather.js';
+import { parseNotamId, notams } from './notam.js';
 
 const AIRLABS_BASE = 'https://airlabs.co/api/v9';
 
@@ -171,6 +173,21 @@ export default {
                 return json(data, 200, { ...cors, 'Cache-Control': 'public, max-age=120' });
             } catch (err) {
                 return json({ error: { message: 'Service météo indisponible' } }, 502, cors);
+            }
+        }
+        if (url.pathname === '/notam') {
+            // NOTAM : ICAO API Data Service (clé à quota très limité), un aéroport par requête, cache KV 6 h
+            const id = parseNotamId(url.searchParams.get('id'));
+            if (!id) return json({ error: { message: 'Paramètre id invalide (un code OACI de 4 caractères)' } }, 400, cors);
+            try {
+                const { body, cache } = await notams(id, env, ctx);
+                return new Response(body, { status: 200, headers: { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'public, max-age=900', 'X-Cache': cache, ...cors } });
+            } catch (err) {
+                if (err.missing) return json({ error: { message: 'NOTAM non configurés sur ce serveur', code: 'notam_unconfigured' } }, 503, cors);
+                if (err.status === 401 || err.status === 403 || err.status === 429 || err.quota) {
+                    return json({ error: { message: 'Quota NOTAM épuisé ou clé refusée', code: 'notam_quota' } }, 503, cors);
+                }
+                return json({ error: { message: 'Service NOTAM indisponible' } }, 502, cors);
             }
         }
         if (url.pathname === '/usage') {

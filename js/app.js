@@ -2783,9 +2783,16 @@ function drawFlightMap() {
                 mctx.arc(x, y, 1.8, 0, Math.PI * 2);
                 mctx.fillStyle = MAP_COLORS.capitalDot;
                 mctx.fill();
-                mctx.lineWidth = 3;
-                mctx.strokeStyle = MAP_COLORS.halo;
-                mctx.strokeText(name, x + 5, y);
+                if (theme === 'light') {
+                    // Thème clair : cartouche rectangulaire (un halo qui suit les lettres se voit trop sur fond clair)
+                    pathRoundRect(mctx, x + 2, y - 7, tw + 6, 14, 3);
+                    mctx.fillStyle = MAP_COLORS.labelBg;
+                    mctx.fill();
+                } else {
+                    mctx.lineWidth = 3;
+                    mctx.strokeStyle = MAP_COLORS.halo;
+                    mctx.strokeText(name, x + 5, y);
+                }
                 mctx.fillStyle = MAP_COLORS.capitalText;
                 mctx.fillText(name, x + 5, y);
             }

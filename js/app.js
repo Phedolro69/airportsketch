@@ -3193,6 +3193,7 @@ function syncMapSettings() {
     document.querySelectorAll('#mapAirspaceFilters [data-asptype]').forEach(b => b.setAttribute('aria-pressed', String(mapPrefs.aspTypes.includes(+b.dataset.asptype))));
     document.querySelectorAll('#mapAirspaceFilters [data-aspclass]').forEach(b => b.setAttribute('aria-pressed', String(mapPrefs.aspClasses.includes(b.dataset.aspclass))));
     document.getElementById('mapLargeOnlyPhone').checked = mapPrefs.largeOnly;
+    document.getElementById('mapSpiderPhone').checked = mapPrefs.spider;
 }
 
 

@@ -8,7 +8,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css?v=9">
+    <link rel="stylesheet" href="style.css?v=10">
 </head>
 <body data-mobile-tab="diagram" data-search-mode="airport">
 
@@ -297,11 +297,18 @@
                  n'a pas de boîte (display: contents) et le HUD garde sa place en haut à gauche. -->
             <div class="map-bottom">
                 <div class="map-hud" id="mapHud" hidden></div>
-                <label class="map-large-btn overflown-filter" id="mapLargeBtn" title="N'afficher que les grands aéroports le long de la route">
-                    <input type="checkbox" id="mapLargeOnlyPhone" onchange="setLargeOnly(this.checked)">
-                    <span class="overflown-switch"></span>
-                    Grands aéroports uniquement
-                </label>
+                <div class="map-toggles">
+                    <label class="map-large-btn overflown-filter" id="mapLargeBtn" title="N'afficher que les grands aéroports le long de la route">
+                        <input type="checkbox" id="mapLargeOnlyPhone" onchange="setLargeOnly(this.checked)">
+                        <span class="overflown-switch"></span>
+                        Grands aéroports
+                    </label>
+                    <label class="map-large-btn overflown-filter" id="mapSpiderBtn" title="Relie l'avion aux 3 aéroports les plus proches, avec distance et temps de vol">
+                        <input type="checkbox" id="mapSpiderPhone" onchange="setMapLayer('spider', this.checked)">
+                        <span class="overflown-switch"></span>
+                        Spider
+                    </label>
+                </div>
             </div>
             <!-- Réglages de la carte du vol -->
             <div class="map-settings" id="mapSettings">
@@ -387,7 +394,7 @@
     </div>
 
     <script src="js/airspace-router.js?v=2"></script>
-    <script src="js/app.js?v=16"></script>
+    <script src="js/app.js?v=17"></script>
     <!-- Menu de choix de carte d'approche (pastille regroupant plusieurs cartes) -->
     <div id="chartMenu" class="chart-menu" hidden></div>
 </body>

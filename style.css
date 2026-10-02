@@ -1031,7 +1031,7 @@
     body[data-view="map"] .map-settings { display: flex; }
     .is-fullscreen .map-settings { top: 118px; }
     .map-bottom { display: contents; }
-    .map-bottom > .map-large-btn { display: none; }   /* téléphone seulement (voir plus bas) */
+    .map-bottom > .map-toggles { display: none; }   /* téléphone seulement (voir plus bas) */
     .map-settings-row { display: flex; align-items: center; gap: 8px; }
     .map-settings-row[hidden] { display: none; }
     /* Filtres des espaces aériens (sous l'interrupteur de la couche) */
@@ -1791,6 +1791,7 @@
         }
         .map-bottom > * { pointer-events: auto; }
         body[data-view="map"] .canvas-area .map-bottom .map-hud { position: static; max-width: 100%; }
+        body[data-view="map"] .map-bottom > .map-toggles { display: flex; justify-content: space-between; align-items: center; gap: 8px; width: 100%; }
         body[data-view="map"] .map-large-btn {
             display: inline-flex;
             align-items: center;

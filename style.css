@@ -537,6 +537,7 @@
     }
     /* Logo de la compagnie à côté du numéro de vol (liste de recherche, dossier de vol, bandeau de la carte) */
     .airline-logo { width: 18px; height: 18px; border-radius: 4px; vertical-align: middle; margin: -2px 6px 0 0; object-fit: contain; background: #fff; }
+    .airline-logo-own { box-sizing: border-box; padding: 2px; }   /* logos maison, plus larges que hauts */
     .airline-logo-lg { width: 26px; height: 26px; border-radius: 6px; margin: 0; box-shadow: 0 0 0 1px var(--border-card); }
     .flight-result-code { display: flex; align-items: center; gap: 0; }
     .ident-badge {

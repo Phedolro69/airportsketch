@@ -181,12 +181,12 @@ function showTouchHint() {
 
 function getAirportTypeBadge(type) {
     const config = {
-        'large_airport':  { label: 'Grand aéroport', bg: '#10b981', color: '#ffffff' },
-        'medium_airport': { label: 'Aéroport moyen', bg: '#3b82f6', color: '#ffffff' },
-        'small_airport':  { label: 'Petit aéroport', bg: '#8b5cf6', color: '#ffffff' },
-        'heliport':       { label: 'Héliport',        bg: '#f59e0b', color: '#ffffff' },
-        'seaplane_base':  { label: 'Hydrobase',       bg: '#06b6d4', color: '#ffffff' },
-        'closed':         { label: 'Fermé',           bg: '#ef4444', color: '#ffffff' }
+        'large_airport':  { label: t('Grand aéroport'), bg: '#10b981', color: '#ffffff' },
+        'medium_airport': { label: t('Aéroport moyen'), bg: '#3b82f6', color: '#ffffff' },
+        'small_airport':  { label: t('Petit aéroport'), bg: '#8b5cf6', color: '#ffffff' },
+        'heliport':       { label: t('Héliport'),        bg: '#f59e0b', color: '#ffffff' },
+        'seaplane_base':  { label: t('Hydrobase'),       bg: '#06b6d4', color: '#ffffff' },
+        'closed':         { label: t('Fermé'),           bg: '#ef4444', color: '#ffffff' }
     };
 
     const cfg = config[type] || { label: type || 'N/A', bg: '#4b5563', color: '#ffffff' };
@@ -200,11 +200,11 @@ async function initApp() {
     const inputEl = document.getElementById('airportInput');
 
     try {
-        statusBox.innerText = "Chargement de l'index des aéroports...";
+        statusBox.innerText = t("Chargement de l'index des aéroports...");
 
         const res = await fetch('./data/search_index.json');
         if (!res.ok) {
-            throw new Error(`Index introuvable (${res.status}). Veuillez exécuter 'python scripts/build_data.py'`);
+            throw new Error(t("Index introuvable ({status}). Veuillez exécuter 'python scripts/build_data.py'", { status: res.status }));
         }
 
         searchIndex = await res.json();
@@ -219,7 +219,7 @@ async function initApp() {
 
         statusBox.style.display = 'none';
         inputEl.disabled = false;
-        inputEl.placeholder = "ICAO, IATA ou Nom (ex: LFPG, Nice, CDG)...";
+        inputEl.placeholder = t("ICAO, IATA ou Nom (ex: LFPG, Nice, CDG)...");
 
         // Vérifier si un paramètre d'URL est fourni, sinon défaut à LFMN
         const urlParams = new URLSearchParams(window.location.search);
@@ -238,8 +238,8 @@ async function initApp() {
     } catch (err) {
         statusBox.style.display = 'none';
         errorBox.innerHTML = `
-            <strong>Impossible de charger les données :</strong> ${err.message}<br><br>
-            <small>Astuce : En local, générez les données avec <code>python scripts/build_data.py --output .</code> et lancez un serveur avec <code>python -m http.server</code>.</small>
+            <strong>${t('Impossible de charger les données :')}</strong> ${err.message}<br><br>
+            <small>${t('Astuce : En local, générez les données avec <code>python scripts/build_data.py --output .</code> et lancez un serveur avec <code>python -m http.server</code>.')}</small>
         `;
         errorBox.style.display = 'block';
     }
@@ -281,7 +281,7 @@ function handleInput(val) {
                         ${item.iata ? `<span style="color:var(--accent-blue); font-size:11px; margin-left:4px;">(${item.iata})</span>` : ''}
                         <span style="margin-left:6px;">${typeBadge}</span>
                     </div>
-                    <span style="color:var(--n-9ca3af); font-size:11px;">${item.runways} piste(s)</span>
+                    <span style="color:var(--n-9ca3af); font-size:11px;">${t('{n} piste(s)', { n: item.runways })}</span>
                 </div>
                 <div style="color:var(--n-94a3b8); font-size:11px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
                     ${item.name}${item.municipality ? ` (${item.municipality})` : ''}
@@ -326,12 +326,12 @@ async function selectAirport(code) {
 
     if (!data) {
         statusBox.style.display = 'flex';
-        statusBox.innerText = `Chargement des données de ${upperCode}...`;
+        statusBox.innerText = t('Chargement des données de {code}...', { code: upperCode });
 
         try {
             const res = await fetch(`./data/airports/${upperCode}.json`);
             if (!res.ok) {
-                throw new Error(`Aéroport '${upperCode}' non trouvé ou non répertorié.`);
+                throw new Error(t("Aéroport '{code}' non trouvé ou non répertorié.", { code: upperCode }));
             }
             data = await res.json();
             airportCache.set(upperCode, data);
@@ -377,10 +377,10 @@ const LIVE_CACHE_TTL_MS = 10 * 60 * 1000;   // comme le cache du worker (quota A
 const MAX_FLIGHT_RESULTS = 30;
 
 const FLIGHT_STATUS = {
-    'en-route':  { label: 'En vol',  color: 'var(--accent-green)' },
-    'scheduled': { label: 'Prévu',   color: 'var(--accent-amber)' },
-    'landed':    { label: 'Atterri', color: 'var(--text-muted)' },
-    'cancelled': { label: 'Annulé',  color: 'var(--accent-red)' }
+    'en-route':  { label: t('En vol'),  color: 'var(--accent-green)' },
+    'scheduled': { label: t('Prévu'),   color: 'var(--accent-amber)' },
+    'landed':    { label: t('Atterri'), color: 'var(--text-muted)' },
+    'cancelled': { label: t('Annulé'),  color: 'var(--accent-red)' }
 };
 
 let iataIndexMap = new Map();
@@ -416,7 +416,7 @@ function setSearchMode(mode, focus = true) {
     if (!isFlight && viewMode === 'map') setViewMode('diagram');
 
     const label = document.getElementById('searchLabel');
-    label.textContent = isFlight ? 'Rechercher un vol' : 'Rechercher un aéroport';
+    label.textContent = isFlight ? t('Rechercher un vol') : t('Rechercher un aéroport');
     label.htmlFor = isFlight ? 'flightInput' : 'airportInput';
 
     if (focus) document.getElementById(isFlight ? 'flightInput' : 'airportInput').focus();
@@ -568,15 +568,13 @@ function handleFlightInput(val) {
 
 // Logo de la compagnie (icônes Kiwi.com, par code IATA ; avion gris générique pour une compagnie inconnue).
 // Simple confort visuel : l'image disparaît si elle ne se charge pas.
-// Logos fournis par nos soins, prioritaires sur Kiwi.com (SVG intégré : aucun fichier à publier)
-const AIRLINE_LOGOS = {
-    AF: 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="-40 -70 452 390"><path d="M215 0H372L168 250H0C40 250 62 232 84 200Z" fill="#ED1C24"/></svg>')
-};
+// Logos fournis par nos soins (img/airlines/), prioritaires sur Kiwi.com
+const AIRLINE_LOGOS = { AF: 'img/airlines/AF.png' };
 function airlineLogo(f, cls = 'airline-logo') {
     const iata = (f && (f.airline_iata || (f.flight_iata || '').slice(0, 2)) || '').toUpperCase();
     if (!/^[A-Z0-9]{2}$/.test(iata)) return '';
     const src = AIRLINE_LOGOS[iata] || `https://images.kiwi.com/airlines/64/${iata}.png`;
-    return `<img class="${cls}" src="${src}" alt="" width="64" height="64" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()">`;
+    return `<img class="${cls}${AIRLINE_LOGOS[iata] ? ' airline-logo-own' : ''}" src="${src}" alt="" width="64" height="64" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()">`;
 }
 
 function renderFlightResults(p, matches, liveError) {

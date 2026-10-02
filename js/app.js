@@ -566,6 +566,14 @@ function handleFlightInput(val) {
     }, /\d/.test(p.q) ? 300 : 900); // sans chiffre, "AF" peut encore devenir "AFR" : on attend plus longtemps
 }
 
+// Logo de la compagnie (icônes Kiwi.com, par code IATA ; avion gris générique pour une compagnie inconnue).
+// Simple confort visuel : l'image disparaît si elle ne se charge pas.
+function airlineLogo(f, cls = 'airline-logo') {
+    const iata = (f && (f.airline_iata || (f.flight_iata || '').slice(0, 2)) || '').toUpperCase();
+    if (!/^[A-Z0-9]{2}$/.test(iata)) return '';
+    return `<img class="${cls}" src="https://images.kiwi.com/airlines/64/${iata}.png" alt="" width="64" height="64" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()">`;
+}
+
 function renderFlightResults(p, matches, liveError) {
     const box = document.getElementById('flightResults');
     box.innerHTML = '';
@@ -593,8 +601,8 @@ function renderFlightResults(p, matches, liveError) {
         el.className = 'autocomplete-item';
         el.innerHTML = `
             <div style="display:flex; justify-content:space-between; align-items:center;">
-                <div>
-                    <b>${escapeHtml(code)}</b>
+                <div class="flight-result-code">
+                    ${airlineLogo(f)}<b>${escapeHtml(code)}</b>
                     ${other ? `<span style="color:var(--mode-accent); font-size:11px; margin-left:4px;">(${escapeHtml(other)})</span>` : ''}
                 </div>
                 <span style="color:${status.color}; font-size:11px; font-weight:600;">${escapeHtml(status.label)}</span>
@@ -760,7 +768,7 @@ function renderFlightCard(f) {
                 </div>
             </div>
             <div style="display:flex; align-items:center; gap:6px;">
-                <span class="ident-badge">${escapeHtml(code)}</span>
+                ${airlineLogo(f, 'airline-logo airline-logo-lg')}<span class="ident-badge">${escapeHtml(code)}</span>
                 <button class="btn-close-card" onclick="closeFlightCard()" title="Fermer le dossier de vol">×</button>
             </div>
         </div>
@@ -1518,26 +1526,32 @@ function approachTagAt(clientX, clientY) {
     return approachHitAreas.findLast(a => px >= a.x && px <= a.x + a.w && py >= a.y && py <= a.y + a.h);
 }
 
+// Diagramme plus lisible sur PC : textes agrandis et pistes un peu épaissies ; téléphone inchangé
+const DIAGRAM_PC = { text: 1.35, width: 1.6, minHalfWidth: 5 };
+const diagramText = () => isMobileLayout() ? 1 : DIAGRAM_PC.text;
+const IDENT_GAP = 28;   // distance (px, avant agrandissement) entre le seuil et le numéro de piste
+
 // (ux, uy) : direction unitaire vers l'extérieur de la piste depuis le seuil p
 function drawApproachTags(ident, p, ux, uy) {
     const tags = approachTags(ident);
     if (!tags.length) return;
 
+    const k = diagramText();
     ctx.save();
-    ctx.font = 'bold 9px sans-serif';
+    ctx.font = `bold ${9 * k}px sans-serif`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    const gap = 3, h = 14;
-    const widths = tags.map(t => ctx.measureText(t.label).width + 10);
+    const gap = 3 * k, h = 14 * k;
+    const widths = tags.map(t => ctx.measureText(t.label).width + 10 * k);
     const total = widths.reduce((a, b) => a + b, 0) + gap * (tags.length - 1);
 
     // Centre du bloc : juste après l'identifiant (centré à 28 px du seuil), sans le recouvrir
     // ni recouvrir la piste, quelle que soit l'orientation
-    ctx.font = 'bold 12px sans-serif';
-    const identReach = Math.abs(ux) * ctx.measureText(ident).width / 2 + Math.abs(uy) * 7;
-    ctx.font = 'bold 9px sans-serif';
+    ctx.font = `bold ${12 * k}px sans-serif`;
+    const identReach = Math.abs(ux) * ctx.measureText(ident).width / 2 + Math.abs(uy) * 7 * k;
+    ctx.font = `bold ${9 * k}px sans-serif`;
     const reach = Math.abs(ux) * total / 2 + Math.abs(uy) * h / 2;
-    const d = 28 + identReach + 5 + reach;
+    const d = IDENT_GAP * k + identReach + 5 * k + reach;
     let x = p.x + ux * d - total / 2;
     const y = p.y + uy * d - h / 2;
 
@@ -1545,7 +1559,7 @@ function drawApproachTags(ident, p, ux, uy) {
         const w = widths[i];
         approachHitAreas.push({ x, y, w, h, ident, key: t.key });
         ctx.beginPath();
-        if (ctx.roundRect) ctx.roundRect(x, y, w, h, 3); else ctx.rect(x, y, w, h);
+        if (ctx.roundRect) ctx.roundRect(x, y, w, h, 3 * k); else ctx.rect(x, y, w, h);
         ctx.fillStyle = DC.pillBase;
         ctx.fill();
         ctx.fillStyle = theme === 'light' && t.bgL ? t.bgL : t.bg;
@@ -1578,6 +1592,8 @@ function draw() {
 
     if (!viewState.baseBounds) return;
 
+    const k = diagramText();
+    const widen = isMobileLayout() ? 1 : DIAGRAM_PC.width, minHalf = isMobileLayout() ? 3 : DIAGRAM_PC.minHalfWidth;
     currentRunways.forEach(r => {
         const p1 = toCanvasCoords(r.le_m);
         const p2 = toCanvasCoords(r.he_m);
@@ -1587,7 +1603,8 @@ function draw() {
 
         const ux = dx / len, uy = dy / len;
         const nx = -uy, ny = ux;
-        const halfWidthPx = Math.max((r.width_m * viewState.scale) / 2, 3);
+        // Largeur exagérée sur PC (les longueurs restent à l'échelle)
+        const halfWidthPx = Math.max((r.width_m * viewState.scale * widen) / 2, minHalf);
 
         // Corps de la piste (violet pâle pour les pistes de moins de 2000 m)
         const isShort = r.length_m < MIN_RUNWAY_LENGTH_M;
@@ -1621,11 +1638,11 @@ function draw() {
 
         // Identifiants de pistes
         ctx.fillStyle = isShort ? DC.shortId : DC.rwyId;
-        ctx.font = 'bold 12px sans-serif';
+        ctx.font = `bold ${12 * k}px sans-serif`;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        ctx.fillText(r.le_ident, p1.x - ux * 28, p1.y - uy * 28);
-        ctx.fillText(r.he_ident, p2.x + ux * 28, p2.y + uy * 28);
+        ctx.fillText(r.le_ident, p1.x - ux * IDENT_GAP * k, p1.y - uy * IDENT_GAP * k);
+        ctx.fillText(r.he_ident, p2.x + ux * IDENT_GAP * k, p2.y + uy * IDENT_GAP * k);
 
         // Pastilles d'approche IFR, dans le prolongement de l'axe au-delà de l'identifiant
         drawApproachTags(r.le_ident, p1, -ux, -uy);
@@ -1647,16 +1664,18 @@ function draw() {
         if (angle > Math.PI / 2 || angle < -Math.PI / 2) angle += Math.PI;
         ctx.rotate(angle);
 
-        ctx.font = '10px monospace';
+        ctx.font = `${k > 1 ? 'bold ' : ''}${10 * k}px monospace`;
         const textWidth = ctx.measureText(label).width;
-        
+        // Étiquette au-dessus de la piste, quelle que soit son épaisseur à l'écran
+        const boxH = 14 * k, boxY = k > 1 ? -Math.max(18 * k, halfWidthPx + 3 + boxH) : -18;
+
         ctx.fillStyle = DC.dimBg;
-        ctx.fillRect(-textWidth / 2 - 4, -18, textWidth + 8, 14);
+        ctx.fillRect(-textWidth / 2 - 4 * k, boxY, textWidth + 8 * k, boxH);
 
         ctx.fillStyle = DC.dimText;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        ctx.fillText(label, 0, -11);
+        ctx.fillText(label, 0, boxY + boxH / 2);
         ctx.restore();
     });
 }
@@ -2862,7 +2881,7 @@ function updateMapOverlay() {
             ? new Date(n.ts * 1000).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
             : hm(n.ts)) : '';
         hud.innerHTML = [
-            `<b>${escapeHtml(f.flight_iata || f.flight_icao || '')}</b>`,
+            `${airlineLogo(f)}<b>${escapeHtml(f.flight_iata || f.flight_icao || '')}</b>`,
             n.alt != null ? `${n.alt.toLocaleString('fr-FR')} ft` : '',
             n.gs != null ? `${n.gs} kt` : '',
             n.track != null ? `cap ${String(n.track).padStart(3, '0')}°` : '',

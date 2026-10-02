@@ -625,14 +625,30 @@
     :root[data-theme="light"] .wx-taf-row.is-eta { background: rgba(124, 58, 237, 0.10); box-shadow: inset 2px 0 0 #7c3aed; }
     .wx-tag { font-size: 9px; font-weight: 700; letter-spacing: 0.4px; color: var(--p-fde68a); }
     .wx-card { margin-top: 2px; padding-top: 12px; border-top: 1px solid var(--border-subtle); }
-    /* NOTAM : barre de couleur selon l'importance (critique rouge, important orange, information gris) */
-    .notam { --nc-critical: #f87171; --nc-important: #fbbf24; --nc-info: var(--n-64748b, #64748b); font-size: 11.5px; color: var(--n-cbd5e1); line-height: 1.45; }
-    :root[data-theme="light"] .notam { --nc-critical: #dc2626; --nc-important: #c2410c; --nc-info: #94a3b8; }
-    .notam-counts { display: flex; flex-wrap: wrap; gap: 4px; }
-    .notam-count { padding: 0 7px; border-radius: 9999px; font-size: 10.5px; font-weight: 700; white-space: nowrap; }
-    .notam-count.critical { background: color-mix(in srgb, var(--nc-critical) 18%, transparent); color: var(--nc-critical); }
-    .notam-count.important { background: color-mix(in srgb, var(--nc-important) 18%, transparent); color: var(--nc-important); }
-    .notam-count.info { background: rgb(var(--ov) / 0.07); color: var(--text-muted); }
+    /* NOTAM : bloc encadré, distinct de la météo, replié par défaut ; barre de couleur selon l'importance */
+    #apNotam { margin-top: 12px; padding-top: 0; border-top: none; }
+    .notam { --nc-critical: #f87171; --nc-important: #fbbf24; --nc-info: #64748b; --notam-icon-ink: var(--bg-surface);
+        font-size: 11.5px; color: var(--n-cbd5e1); line-height: 1.45;
+        background: var(--n-111827); border: 1px solid var(--n-2d3748); border-radius: 8px; }
+    :root[data-theme="light"] .notam { --nc-critical: #dc2626; --nc-important: #d97706; --nc-info: #94a3b8; --notam-icon-ink: #fff; }
+    .notam > summary { display: flex; align-items: center; gap: 10px; padding: 8px 10px; cursor: pointer; list-style: none; user-select: none; }
+    .notam > summary::-webkit-details-marker { display: none; }
+    .notam > summary::after { content: '▸'; margin-left: auto; color: var(--text-dim); transition: transform 0.15s ease; }
+    .notam[open] > summary::after { transform: rotate(90deg); }
+    .notam[data-empty] > summary { cursor: default; }
+    .notam[data-empty] > summary::after { content: none; }
+    .notam > summary:focus-visible { outline: 2px solid var(--accent-blue); outline-offset: -2px; border-radius: 8px; }
+    .notam-title { font-size: 10px; font-weight: 700; letter-spacing: 0.8px; color: var(--text-muted); }
+    .notam-status { font-size: 11px; color: var(--text-dim); font-style: italic; }
+    .notam-body { padding: 0 10px 8px; border-top: 1px solid rgb(var(--ov) / 0.07); }
+    .notam-counts { display: flex; align-items: center; gap: 10px; }
+    .notam-count { display: inline-flex; align-items: center; gap: 3px; font-size: 12px; line-height: 1; }
+    .notam-count svg { width: 15px; height: 15px; flex: none; }
+    .notam-count b { font-weight: 800; font-variant-numeric: tabular-nums; }
+    .notam-count.critical { color: var(--nc-critical); }
+    .notam-count.important { color: var(--nc-important); }
+    .notam-count.info { color: var(--nc-info); }
+    .notam-count.info b { color: var(--text-muted); }
     .notam-row { padding: 5px 0 5px 9px; margin: 4px 0; border-left: 3px solid var(--nc-info); }
     .notam-row.critical { border-left-color: var(--nc-critical); background: color-mix(in srgb, var(--nc-critical) 7%, transparent); }
     .notam-row.important { border-left-color: var(--nc-important); }
@@ -657,12 +673,10 @@
         background: none; border: none; padding: 0; cursor: pointer;
         font: inherit; font-size: 10px; font-weight: 700; letter-spacing: 0.5px; color: var(--text-dim);
     }
-    .flight-ap-notam-btn .notam-count { letter-spacing: 0; }
-    .flight-ap-notam-btn:hover .notam-count, .flight-ap-notam-btn:focus-visible .notam-count { text-decoration: underline; }
-    .flight-ap-notam .notam-count.critical { background: color-mix(in srgb, #f87171 18%, transparent); color: #f87171; }
-    .flight-ap-notam .notam-count.important { background: color-mix(in srgb, #fbbf24 18%, transparent); color: #fbbf24; }
-    :root[data-theme="light"] .flight-ap-notam .notam-count.critical { color: #dc2626; background: rgba(220, 38, 38, 0.1); }
-    :root[data-theme="light"] .flight-ap-notam .notam-count.important { color: #c2410c; background: rgba(194, 65, 12, 0.1); }
+    .flight-ap-notam-btn { --nc-critical: #f87171; --nc-important: #fbbf24; --notam-icon-ink: var(--bg-surface); gap: 7px; }
+    :root[data-theme="light"] .flight-ap-notam-btn { --nc-critical: #dc2626; --nc-important: #d97706; --notam-icon-ink: #fff; }
+    .flight-ap-notam-btn .notam-count svg { width: 13px; height: 13px; }
+    .flight-ap-notam-btn:hover .flight-ap-notam-label, .flight-ap-notam-btn:focus-visible .flight-ap-notam-label { color: var(--text-main); text-decoration: underline; }
     .diagram-title-wx { margin-top: 5px; display: flex; justify-content: center; align-items: center; gap: 8px; font-size: 11.5px; color: var(--text-muted); }
     .diagram-title-wx:empty { display: none; }
     .map-legend .wx-legend { display: flex; flex-wrap: wrap; gap: 2px 10px; margin-top: 4px; }

@@ -1066,9 +1066,16 @@ function startFlightProgress() {
     flightProgressTimer = setInterval(renderFlightProgress, 30000);
 }
 
-function openFlightAirport(icao) {
-    selectAirport(icao);
-    if (isMobileLayout()) switchMobileTab('diagram');
+// notams : ouvre l'aéroport avec son bloc NOTAM déplié et visible (onglet des détails sur téléphone)
+async function openFlightAirport(icao, { notams = false } = {}) {
+    if (notams) notamOpenIcao = icao;
+    const ready = selectAirport(icao);
+    if (isMobileLayout()) switchMobileTab(notams ? 'details' : 'diagram');
+    if (notams) {
+        await ready;
+        const box = document.getElementById('apNotam');
+        if (currentAirportCode === icao && !box.hidden) box.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
 }
 
 // Met en évidence le bouton de l'aéroport actuellement affiché
@@ -3559,33 +3566,50 @@ function notamRow(n) {
     </div>`;
 }
 
-// Compteurs « 1 critique · 2 importants » (pastilles colorées)
+// Pictogrammes des niveaux : triangle d'alerte (critique), point d'exclamation (important), « i » (information)
+const NOTAM_ICONS = {
+    critical: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8 1.6 20.6h20.8L12 2.8z" fill="currentColor"/><path d="M12 9v5.2" stroke="var(--notam-icon-ink)" stroke-width="2.4" stroke-linecap="round"/><circle cx="12" cy="17.4" r="1.4" fill="var(--notam-icon-ink)"/></svg>',
+    important: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10.5" fill="currentColor"/><path d="M12 6.5v7" stroke="var(--notam-icon-ink)" stroke-width="2.6" stroke-linecap="round"/><circle cx="12" cy="17.3" r="1.5" fill="var(--notam-icon-ink)"/></svg>',
+    info: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10.5" fill="currentColor"/><circle cx="12" cy="7" r="1.5" fill="var(--notam-icon-ink)"/><path d="M12 10.8v6.7" stroke="var(--notam-icon-ink)" stroke-width="2.6" stroke-linecap="round"/></svg>'
+};
+
+// Compteurs par niveau : pictogramme + nombre (libellé complet en infobulle et pour les lecteurs d'écran)
 function notamCounts(list, { withInfo = true } = {}) {
     const by = { critical: 0, important: 0, info: 0 };
     list.forEach(n => by[n.level]++);
-    return Object.keys(by).filter(k => by[k] && (withInfo || k !== 'info'))
-        .map(k => `<span class="notam-count ${k}">${by[k]} ${by[k] > 1 ? NOTAM_LEVELS[k].plural : NOTAM_LEVELS[k].label.toLowerCase()}</span>`).join('');
+    return Object.keys(by).filter(k => by[k] && (withInfo || k !== 'info')).map(k => {
+        const label = `${by[k]} NOTAM ${by[k] > 1 ? NOTAM_LEVELS[k].plural : NOTAM_LEVELS[k].label.toLowerCase()}`;
+        return `<span class="notam-count ${k}" title="${label}" aria-label="${label}">${NOTAM_ICONS[k]}<b>${by[k]}</b></span>`;
+    }).join('');
 }
 
-// Bloc NOTAM complet d'un aéroport (panneau latéral) : critiques et importants visibles, informations repliées
+// Bloc NOTAM d'un aéroport (panneau latéral), replié par défaut : l'en-tête montre les compteurs ;
+// une fois déplié, critiques et importants visibles, informations repliées à part
+let notamOpenIcao = null;   // aéroport dont le bloc a été déplié (conservé quand le bloc est redessiné)
 function notamBlock(icao) {
     const e = notamStore.get(icao);
-    const head = extra => `<div class="wx-head"><span class="wx-label">NOTAM</span>${extra || ''}</div>`;
-    if (!e || (!e.list && !e.error)) return `<div class="notam">${head()}<div class="wx-none">Chargement…</div></div>`;
-    if (!e.list) {
-        const msg = e.error === 'notam_budget' ? 'Limite quotidienne atteinte : réessayez demain'
-            : e.error === 'notam_quota' ? 'Quota du service NOTAM épuisé' : 'NOTAM indisponibles';
-        return `<div class="notam">${head()}<div class="wx-none">${msg}</div></div>`;
+    let summary = '', body = '';
+    if (!e || (!e.list && !e.error)) {
+        summary = '<span class="notam-status">Chargement…</span>';
+    } else if (!e.list) {
+        summary = `<span class="notam-status">${e.error === 'notam_budget' ? 'Limite du jour atteinte' : e.error === 'notam_quota' ? 'Quota épuisé' : 'Indisponibles'}</span>`;
+    } else {
+        const list = notamsFor(icao);
+        if (!list.length) {
+            summary = '<span class="notam-status">Aucun en vigueur</span>';
+        } else {
+            const main = list.filter(n => n.level !== 'info'), info = list.filter(n => n.level === 'info');
+            summary = `<span class="notam-counts">${notamCounts(list)}</span>`;
+            body = `${main.map(notamRow).join('')}
+                ${info.length ? `<details class="notam-more"${main.length ? '' : ' open'}><summary>${info.length} NOTAM d'information</summary>${info.map(notamRow).join('')}</details>` : ''}
+                <div class="notam-foot">Indicatif, ne pas utiliser pour la navigation${e.fetched ? ` · relevés à ${wxPad(new Date(e.fetched * 1000).getUTCHours())}:${wxPad(new Date(e.fetched * 1000).getUTCMinutes())}Z` : ''}</div>`;
+        }
     }
-    const list = notamsFor(icao);
-    if (!list.length) return `<div class="notam">${head()}<div class="wx-none">Aucun NOTAM en vigueur</div></div>`;
-    const main = list.filter(n => n.level !== 'info'), info = list.filter(n => n.level === 'info');
-    return `<div class="notam">
-        ${head(`<span class="notam-counts">${notamCounts(list)}</span>`)}
-        ${main.map(notamRow).join('')}
-        ${info.length ? `<details class="notam-more"${main.length ? '' : ' open'}><summary>${info.length} NOTAM d'information</summary>${info.map(notamRow).join('')}</details>` : ''}
-        <div class="notam-foot">Indicatif, ne pas utiliser pour la navigation${e.fetched ? ` · relevés à ${wxPad(new Date(e.fetched * 1000).getUTCHours())}:${wxPad(new Date(e.fetched * 1000).getUTCMinutes())}Z` : ''}</div>
-    </div>`;
+    const open = body && notamOpenIcao === icao;
+    return `<details class="notam"${open ? ' open' : ''}${body ? '' : ' data-empty'} ontoggle="notamOpenIcao = this.open ? '${escapeHtml(icao)}' : null">
+        <summary><span class="notam-title">NOTAM</span>${summary}</summary>
+        ${body ? `<div class="notam-body">${body}</div>` : ''}
+    </details>`;
 }
 
 function renderAirportNotams() {
@@ -3608,7 +3632,7 @@ function renderFlightNotams(f) {
         const list = notamHidden(icao) ? null : notamsFor(icao);
         const counts = list ? notamCounts(list, { withInfo: false }) : '';
         el.hidden = !counts;
-        el.innerHTML = counts ? `<button type="button" class="flight-ap-notam-btn" onclick="openFlightAirport('${escapeHtml(icao)}')" title="Voir les NOTAM de l'aéroport">NOTAM ${counts}</button>` : '';
+        el.innerHTML = counts ? `<button type="button" class="flight-ap-notam-btn" onclick="openFlightAirport('${escapeHtml(icao)}', { notams: true })" title="Voir les NOTAM de l'aéroport"><span class="flight-ap-notam-label">NOTAM</span>${counts}</button>` : '';
     });
 }
 

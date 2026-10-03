@@ -411,6 +411,11 @@
                     <span class="overflown-switch"></span>
                     <span data-i18n="Zones de conflit (EASA)">Zones de conflit (EASA)</span>
                 </label>
+                <label class="map-settings-row overflown-filter map-large-only" title="Zones où des avions ont signalé une navigation GPS dégradée la veille (brouillage ou leurrage probable)" data-i18n-title="Zones où des avions ont signalé une navigation GPS dégradée la veille (brouillage ou leurrage probable)">
+                    <input type="checkbox" id="mapJamming" onchange="setMapLayer('jamming', this.checked)">
+                    <span class="overflown-switch"></span>
+                    <span data-i18n="Brouillage GPS">Brouillage GPS</span>
+                </label>
                 <label class="map-settings-row" for="mapBand">
                     <span data-i18n="Couloir">Couloir</span>
                     <input type="range" id="mapBand" min="100" max="300" step="10" oninput="setMapBand(this.value)" title="Distance maximale de part et d'autre de la route" data-i18n-title="Distance maximale de part et d'autre de la route">

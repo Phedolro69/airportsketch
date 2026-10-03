@@ -806,11 +806,12 @@ function renderFlightCard(f) {
 const EARTH_NM = 3440.065;
 // Réglages de la carte du vol, mémorisés dans le navigateur (simple confort, facultatif)
 const MAP_PREFS_KEY = 'airportsketch.mapPrefs';
-const mapPrefs = { code: 'icao', band: 100, largeOnly: false, style: 'standard', conflict: true, spider: false };   // code : 'icao' (KJFK, par défaut) | 'iata' (JFK) ; couloir en nm ; style : 'standard' | 'inverted' | 'contrast'
+const mapPrefs = { code: 'icao', band: 100, largeOnly: false, style: 'standard', conflict: true, jamming: true, spider: false };   // code : 'icao' (KJFK, par défaut) | 'iata' (JFK) ; couloir en nm ; style : 'standard' | 'inverted' | 'contrast'
 try {
     const saved = JSON.parse(localStorage.getItem(MAP_PREFS_KEY) || '{}');
     if (['standard', 'inverted', 'contrast'].includes(saved.style)) mapPrefs.style = saved.style;
     if (typeof saved.conflict === 'boolean') mapPrefs.conflict = saved.conflict;
+    if (typeof saved.jamming === 'boolean') mapPrefs.jamming = saved.jamming;
     if (typeof saved.spider === 'boolean') mapPrefs.spider = saved.spider;
     if (saved.code === 'iata' || saved.code === 'icao') mapPrefs.code = saved.code;
     if (typeof saved.largeOnly === 'boolean') mapPrefs.largeOnly = saved.largeOnly;
@@ -1974,6 +1975,7 @@ function loadWorld() {
                 flightMap.world = { land, borders, capitals: w.capitals || [] };
                 if (w.avoid && w.avoid.vis) { flightMap.avoid = new AirspaceRouter(w.avoid); planCache.clear(); }
                 loadConflictZones();   // couches facultatives : leur absence ne bloque pas la carte
+                loadGpsJamming();
             })
             .catch(err => { flightMap.worldPromise = null; throw err; });
     }
@@ -2033,6 +2035,69 @@ function conflictZonesAt(lon, lat) {
         }
         return inside;
     }));
+}
+
+// --- Brouillage GPS : hexagones (~40 km) où des avions ont signalé une navigation dégradée la veille ------
+// data/gps_jamming.json est produit chaque nuit par scripts/build_gps_jamming.py (niveau 2 : > 10 % des avions, 1 : 2-10 %).
+const JAM_STYLES = {
+    2: { fill: 'rgba(217, 70, 239, 0.45)', stroke: 'rgba(217, 70, 239, 0.9)', label: tr('Brouillage GPS probable (> 10 % des avions)') },
+    1: { fill: 'rgba(217, 70, 239, 0.18)', stroke: 'rgba(217, 70, 239, 0.45)', label: tr('Brouillage GPS possible (2 à 10 %)') }
+};
+let jammingPromise = null;
+function loadGpsJamming() {
+    if (!jammingPromise) {
+        jammingPromise = fetch('./data/gps_jamming.json', { cache: 'no-cache' })
+            .then(res => { if (!res.ok) throw new Error(tr('Brouillage GPS indisponible')); return res.json(); })
+            .then(d => {
+                const u = d.unit || 0.01;
+                const paths = { 1: new Path2D(), 2: new Path2D() };
+                const hexes = d.hexes.filter(h => paths[h[0]]).map(([level, bad, n, ...a]) => {
+                    const pts = [];
+                    let x = a[0], y = a[1];
+                    pts.push([x * u, y * u]);
+                    for (let i = 2; i < a.length; i += 2) { x += a[i]; y += a[i + 1]; pts.push([x * u, y * u]); }
+                    pts.forEach(([lon, lat], i) => paths[level][i ? 'lineTo' : 'moveTo'](lon, mapY(lat)));
+                    paths[level].closePath();
+                    const lons = pts.map(p => p[0]), lats = pts.map(p => p[1]);
+                    return { level, bad, n, pts, box: [Math.min(...lons), Math.min(...lats), Math.max(...lons), Math.max(...lats)] };
+                });
+                flightMap.jamming = { hexes, paths, date: d.date };
+                scheduleMapDraw();
+                if (flightMap.flight) updateMapOverlay();
+            })
+            .catch(() => { /* couche absente : la carte reste utilisable */ });
+    }
+    return jammingPromise;
+}
+
+// Hexagone de brouillage contenant le point (lon, lat), le plus fort s'il y en a plusieurs
+function jammingAt(lon, lat) {
+    const j = flightMap.jamming;
+    if (!j) return null;
+    let best = null;
+    for (const h of j.hexes) {
+        const lo = lon + 360 * Math.round((h.pts[0][0] - lon) / 360);
+        if (lo < h.box[0] || lo > h.box[2] || lat < h.box[1] || lat > h.box[3]) continue;
+        let inside = false;
+        for (let i = 0, k = h.pts.length - 1; i < h.pts.length; k = i++) {
+            const [xi, yi] = h.pts[i], [xk, yk] = h.pts[k];
+            if ((yi > lat) !== (yk > lat) && lo < (xk - xi) * (lat - yi) / (yk - yi) + xi) inside = !inside;
+        }
+        if (inside && (!best || h.level > best.level || (h.level === best.level && h.bad / h.n > best.bad / best.n))) best = h;
+    }
+    return best;
+}
+
+// Niveau de brouillage le plus fort rencontré le long de la route (0 si aucun)
+function routeJammingLevel(route) {
+    if (!route || !flightMap.jamming) return 0;
+    let level = 0;
+    for (const [lon, wy] of route.points) {
+        const h = jammingAt(lon, latOfWorldY(wy));
+        if (h && h.level > level) level = h.level;
+        if (level === 2) break;
+    }
+    return level;
 }
 
 async function getAirportData(icao) {
@@ -2610,6 +2675,16 @@ function drawFlightMap() {
             mctx.stroke(world.land);
         }
 
+        if (mapPrefs.jamming && flightMap.jamming) {
+            for (const [level, st] of Object.entries(JAM_STYLES)) {
+                mctx.fillStyle = st.fill;
+                mctx.fill(flightMap.jamming.paths[level], 'nonzero');
+                mctx.strokeStyle = st.stroke;
+                mctx.lineWidth = 0.6 / s;
+                mctx.stroke(flightMap.jamming.paths[level]);
+            }
+        }
+
         if (mapPrefs.conflict && flightMap.conflict) {
             for (const [level, st] of Object.entries(CONFLICT_STYLES)) {
                 // FIR = terres + mer : la mer reçoit un voile léger, les terres le remplissage complet (zone ≈ pays)
@@ -2929,6 +3004,14 @@ function updateMapOverlay() {
             if (levels.has(level)) items.push(`<div><svg width="30" height="10"><rect x="2" y="1" width="26" height="8" rx="2" fill="${st.fill}" stroke="${st.stroke}" stroke-dasharray="4 3"/></svg>${st.label}</div>`);
         }
     }
+    if (mapPrefs.jamming && flightMap.jamming) {
+        const levels = new Set(flightMap.jamming.hexes.map(h => h.level));
+        for (const [level, st] of Object.entries(JAM_STYLES).reverse()) {
+            if (levels.has(+level)) items.push(`<div><svg width="30" height="10"><rect x="2" y="1" width="26" height="8" rx="2" fill="${st.fill}" stroke="${st.stroke}"/></svg>${st.label}</div>`);
+        }
+        const onRoute = routeJammingLevel(route);
+        if (onRoute) items.push(`<div class="map-legend-alert">⚠ ${onRoute === 2 ? tr('La route traverse une zone de brouillage GPS probable') : tr('La route traverse une zone de brouillage GPS possible')}</div>`);
+    }
     const isDemo = (t && t.source === 'demo') || (flightMap.flight && flightMap.flight.demo);
     const credit = isDemo
         ? tr('Vol de démonstration : données fictives · fond Natural Earth')
@@ -3107,6 +3190,7 @@ function syncMapSettings() {
     document.getElementById('mapBandValue').textContent = `± ${mapPrefs.band} nm`;
     document.getElementById('mapLargeOnly').checked = mapPrefs.largeOnly;
     document.getElementById('mapConflict').checked = mapPrefs.conflict;
+    document.getElementById('mapJamming').checked = mapPrefs.jamming;
     document.getElementById('mapSpider').checked = mapPrefs.spider;
     document.getElementById('mapLargeOnlyPhone').checked = mapPrefs.largeOnly;
     document.getElementById('mapSpiderPhone').checked = mapPrefs.spider;
@@ -3151,7 +3235,7 @@ async function shareLink() {
 function setTheme(next) { applyTheme(next); }
 function toggleTheme() { applyTheme(theme === 'light' ? 'dark' : 'light'); }
 
-// Couches de la carte (zones de conflit EASA, liens « spider »)
+// Couches de la carte (zones de conflit EASA, brouillage GPS, liens « spider »)
 function setMapLayer(name, on) {
     mapPrefs[name] = !!on;
     saveMapPrefs();
@@ -3886,26 +3970,32 @@ async function showMapTip(icao, clientX, clientY) {
     positionMapTip(clientX, clientY);
 }
 
-// Infobulle de la couche des zones de conflit EASA sous le curseur ; true si elle s'affiche
+// Infobulle des couches zones de conflit EASA et brouillage GPS sous le curseur ; true si elle s'affiche
 function showLayerTip(clientX, clientY) {
     const conflictOn = mapPrefs.conflict && flightMap.conflict;
-    if (!conflictOn) return false;
+    const jamOn = mapPrefs.jamming && flightMap.jamming;
+    if (!conflictOn && !jamOn) return false;
     const rect = mapCanvas.getBoundingClientRect();
     const s = flightMap.scale;
     const lon = flightMap.cx + (clientX - rect.left - rect.width / 2) / s;
     const lat = latOfWorldY(flightMap.cy + (clientY - rect.top - rect.height / 2) / s);
-    const zones = conflictZonesAt(lon, lat);
-    if (!zones.length) return false;
-    const key = '#layers:' + zones.map(z => z.id).join(',');
+    const zones = conflictOn ? conflictZonesAt(lon, lat) : [];
+    const jam = jamOn ? jammingAt(lon, lat) : null;
+    if (!zones.length && !jam) return false;
+    const key = '#layers:' + zones.map(z => z.id).join(',') + (jam ? `|jam:${jam.box.join(',')}` : '');
     if (mapTipIcao !== key) {
         mapTipIcao = key;
+        const jamHtml = jam ? `
+            <div class="map-tooltip-name" style="color:${JAM_STYLES[2].stroke}">${escapeHtml(JAM_STYLES[jam.level].label)}</div>
+            <div class="map-tooltip-row">${tr('{bad} avion(s) sur {n} passés ici ont signalé une navigation GPS dégradée le {date} (UTC)', { bad: jam.bad, n: jam.n, date: escapeHtml(flightMap.jamming.date) })}</div>
+            <div class="map-tooltip-hint">${tr('Brouillage ou leurrage probable : indicatif, ne pas utiliser pour la navigation')}</div>` : '';
         const conflictHtml = zones.map(z => `
             <div class="map-tooltip-name">${escapeHtml(z.title)}</div>
             <div class="map-tooltip-row" style="color:${CONFLICT_STYLES[z.level].stroke}">${escapeHtml(CONFLICT_STYLES[z.level].label)}</div>
             <div class="map-tooltip-row">${escapeHtml(z.scope.replace(/\s+/g, ' '))}</div>
             <div class="map-tooltip-row" style="color:var(--text-dim)">${escapeHtml(z.id)} · ${tr("valable jusqu'au {date}", { date: escapeHtml(z.valid_until) })}</div>`).join('');
-        mapTip.innerHTML = conflictHtml +
-            `<div class="map-tooltip-hint">${tr('Bulletins EASA (CZIB) : indicatif, ne pas utiliser pour la navigation')}</div>`;
+        mapTip.innerHTML = (zones.length ? conflictHtml +
+            `<div class="map-tooltip-hint">${tr('Bulletins EASA (CZIB) : indicatif, ne pas utiliser pour la navigation')}</div>` : '') + jamHtml;
     }
     mapTip.hidden = false;
     positionMapTip(clientX, clientY);

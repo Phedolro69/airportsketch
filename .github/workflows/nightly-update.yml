@@ -66,6 +66,13 @@ jobs:
         continue-on-error: true
         run: python scripts/build_conflict_zones.py --output dist
 
+      # Brouillage GPS de la veille (GPSJam) : même principe, couche facultative
+      - name: Build GPS jamming layer
+        continue-on-error: true
+        run: |
+          pip install h3
+          python scripts/build_gps_jamming.py --output dist
+
       # Clé = cycle réellement obtenu (peut être l'ancien si la FAA était en panne)
       - name: Read FAA cycle used
         id: faa-used

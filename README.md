@@ -251,5 +251,6 @@ Pour la recherche de vols en local, lancez aussi le simulateur : `python worker/
 Deux couches facultatives, activables dans les réglages de la carte :
 
 - **Zones de conflit** : `scripts/build_conflict_zones.py` lit chaque nuit les bulletins CZIB actifs de l'EASA (page publique, texte parsé : FIR concernées, recommandation, validité) et dessine les FIR correspondantes (contours du [VATSpy Data Project](https://github.com/vatsimnetwork/vatspy-data-project), CC-BY-SA 4.0). Rouge = « ne pas opérer », orange = prudence. Résultat : `data/conflict_zones.json`. Si l'EASA change sa mise en page, le script échoue et le site est déployé sans la couche.
+- **Brouillage GPS** : `scripts/build_gps_jamming.py` récupère chaque nuit le fichier GPSJam de la veille (hexagones H3 de ~40 km, nombre d'avions ADS-B à navigation bonne / dégradée), garde les hexagones où plus de 2 % des avions sont touchés (formule GPSJam) et écrit leurs contours dans `data/gps_jamming.json` (~55 Ko). Magenta plein = brouillage probable (> 10 %), pâle = possible (2 à 10 %) ; la légende signale une route qui traverse une zone. Dépendance : `pip install h3`. En cas d'échec, le site est déployé sans la couche.
 
 Données indicatives : ne pas utiliser pour la navigation.

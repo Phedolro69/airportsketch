@@ -1095,7 +1095,7 @@
     .map-bottom > .map-toggles { display: none; }   /* téléphone seulement (voir plus bas) */
     .map-settings-row { display: flex; align-items: center; gap: 8px; }
     .map-settings-row[hidden] { display: none; }
-    .map-settings-row > span { width: 46px; color: var(--text-muted); }
+    .map-settings-row > span:first-child { width: 46px; color: var(--text-muted); }
     .map-settings .map-large-only { margin: 0; font-weight: 600; }
     .map-settings .map-large-only > .overflown-switch { width: 26px; }
     .map-settings-row b { min-width: 58px; text-align: right; color: var(--p-fde68a); font-weight: 700; }
@@ -1896,7 +1896,7 @@
         .view-toggle button { padding: 6px 8px; font-size: 11px; gap: 4px; white-space: nowrap; }
         .map-notice { top: 140px; }
         .map-settings { top: 96px; left: 14px; right: auto; flex-direction: row; flex-wrap: wrap; gap: 6px 12px; padding: 6px 8px; }
-        .map-settings-row > span { width: auto; }
+        .map-settings-row > span:first-child { width: auto; }
         #mapBand { width: 80px; }
         .map-legend { left: 14px; bottom: calc(16px + var(--safe-bottom)); }
 

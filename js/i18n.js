@@ -290,6 +290,8 @@ const I18N_EN = {
     "Zones de conflit (EASA)": "Conflict zones (EASA)",
     "Brouillage GPS": "GPS jamming",
     "Vue": "View",
+    "Réglages": "Settings",
+    "Réglages de la carte": "Map settings",
     "Vue de la carte": "Map view",
     "Globe 3D": "3D globe",
     "Globe": "Globe",

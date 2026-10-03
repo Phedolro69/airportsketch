@@ -1110,6 +1110,7 @@
     .is-fullscreen .map-settings { top: 118px; }
     .map-bottom { display: contents; }
     .map-bottom > .map-toggles { display: none; }   /* téléphone seulement (voir plus bas) */
+    .map-settings-head, .map-settings-backdrop { display: none; }   /* popup des réglages : téléphone seulement */
     .map-settings-row { display: flex; align-items: center; gap: 8px; }
     .map-settings-row[hidden] { display: none; }
     .map-settings-row > span:first-child { width: 46px; color: var(--text-muted); }
@@ -1912,9 +1913,39 @@
         .canvas-top-center { top: 54px; max-width: calc(100% - 20px); width: max-content; }
         .view-toggle button { padding: 6px 8px; font-size: 11px; gap: 4px; white-space: nowrap; }
         .map-notice { top: 140px; }
-        .map-settings { top: 96px; left: 14px; right: auto; flex-direction: row; flex-wrap: wrap; gap: 6px 12px; padding: 6px 8px; }
-        .map-settings-row > span:first-child { width: auto; }
-        #mapBand { width: 80px; }
+        /* Réglages de la carte : popup ouvert par le bouton « Réglages » (mêmes réglages que sur ordinateur) */
+        body.map-settings-open[data-view="map"] .map-settings {
+            display: flex !important;
+            position: fixed;
+            top: auto;
+            left: 12px;
+            right: 12px;
+            bottom: calc(12px + var(--safe-bottom));
+            z-index: 1001;
+            max-height: calc(100% - 80px);
+            overflow-y: auto;
+            gap: 12px;
+            padding: 14px 16px 16px;
+            border-radius: 14px;
+            font-size: 13px;
+            background: rgb(var(--ps) / 0.98);
+            box-shadow: 0 -8px 30px rgba(0, 0, 0, 0.45);
+        }
+        body.map-settings-open[data-view="map"] .map-settings-backdrop {
+            display: block;
+            position: fixed;
+            inset: 0;
+            z-index: 1000;
+            background: rgba(0, 0, 0, 0.45);
+        }
+        .map-settings-head { display: flex; align-items: center; justify-content: space-between; font-size: 15px; font-weight: 700; color: var(--text-main); }
+        .map-settings-head button { width: 32px; height: 32px; border: none; border-radius: 50%; background: rgb(var(--ov) / 0.08); color: inherit; font-size: 20px; line-height: 1; cursor: pointer; }
+        .map-settings-row > span:first-child { width: 64px; }
+        .map-settings .map-seg { flex: 1; }
+        .map-settings .map-seg button { flex: 1; padding: 7px 6px; font-size: 12px; }
+        .map-settings .map-large-only { gap: 10px; font-size: 13px; }
+        #mapBand { flex: 1; width: auto; }
+        body[data-view="map"] .map-settings-btn { font-size: 12px; padding: 6px 12px 6px 10px; }
         .map-legend { left: 14px; bottom: calc(16px + var(--safe-bottom)); }
 
         /* Selon l'onglet actif : Schéma ou Détails */

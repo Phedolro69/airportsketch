@@ -377,25 +377,19 @@
             <div class="map-bottom">
                 <div class="map-hud" id="mapHud" hidden></div>
                 <div class="map-toggles">
-                    <label class="map-large-btn overflown-filter" id="mapLargeBtn" title="N'afficher que les grands aéroports le long de la route" data-i18n-title="N'afficher que les grands aéroports le long de la route">
-                        <input type="checkbox" id="mapLargeOnlyPhone" onchange="setLargeOnly(this.checked)">
-                        <span class="overflown-switch"></span>
-                        <span data-i18n="Grands aéroports">Grands aéroports</span>
-                    </label>
-                    <label class="map-large-btn overflown-filter" id="mapSpiderBtn" title="Relie l'avion aux 3 aéroports les plus proches, avec distance et temps de vol" data-i18n-title="Relie l'avion aux 3 aéroports les plus proches, avec distance et temps de vol">
-                        <input type="checkbox" id="mapSpiderPhone" onchange="setMapLayer('spider', this.checked)">
-                        <span class="overflown-switch"></span>
-                        Spider
-                    </label>
-                    <label class="map-large-btn overflown-filter" title="Globe 3D" data-i18n-title="Globe 3D">
-                        <input type="checkbox" id="mapGlobePhone" onchange="setMapView(this.checked)">
-                        <span class="overflown-switch"></span>
-                        <span data-i18n="Globe">Globe</span>
-                    </label>
+                    <button type="button" class="map-large-btn map-settings-btn" id="mapSettingsBtn" onclick="openMapSettings()" aria-haspopup="dialog">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></svg>
+                        <span data-i18n="Réglages">Réglages</span>
+                    </button>
                 </div>
             </div>
-            <!-- Réglages de la carte du vol -->
-            <div class="map-settings" id="mapSettings">
+            <!-- Réglages de la carte du vol (sur téléphone : popup ouvert par le bouton « Réglages ») -->
+            <div class="map-settings-backdrop" onclick="closeMapSettings()"></div>
+            <div class="map-settings" id="mapSettings" role="dialog" aria-labelledby="mapSettingsTitle">
+                <div class="map-settings-head">
+                    <span id="mapSettingsTitle" data-i18n="Réglages de la carte">Réglages de la carte</span>
+                    <button type="button" onclick="closeMapSettings()" aria-label="Fermer" data-i18n-aria="Fermer">×</button>
+                </div>
                 <div class="map-settings-row">
                     <span data-i18n="Vue">Vue</span>
                     <div class="map-seg" role="radiogroup" aria-label="Vue de la carte" data-i18n-aria="Vue de la carte">

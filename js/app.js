@@ -2469,7 +2469,7 @@ function fitFlightMap() {
 // Rectangles (pixels du canvas) des éléments visibles posés sur la carte
 function mapObstacles() {
     const base = mapCanvas.getBoundingClientRect();
-    return ['#mapLegend', '#mapSettings', '#mapHud', '#mapLargeBtn', '#mapNotice', '#viewToggle', '#shortRwyBtn', '.canvas-top-actions', '.controls-overlay', '#fullscreenHeader']
+    return ['#mapLegend', '#mapSettings', '#mapHud', '#mapSettingsBtn', '#mapNotice', '#viewToggle', '#shortRwyBtn', '.canvas-top-actions', '.controls-overlay', '#fullscreenHeader']
         .map(sel => document.querySelector(sel))
         .filter(el => el && !el.hidden && el.offsetParent !== null && getComputedStyle(el).display !== 'none')
         .map(el => {
@@ -3058,6 +3058,7 @@ function syncFullscreenHeader() {
 function setViewMode(mode) {
     if (viewMode === mode) return;
     hideMapTip();
+    closeMapSettings();
     viewMode = mode;
     document.body.dataset.view = mode;
     const isMap = mode === 'map';
@@ -3208,9 +3209,6 @@ function syncMapSettings() {
     document.getElementById('mapConflict').checked = mapPrefs.conflict;
     document.getElementById('mapJamming').checked = mapPrefs.jamming;
     document.getElementById('mapSpider').checked = mapPrefs.spider;
-    document.getElementById('mapLargeOnlyPhone').checked = mapPrefs.largeOnly;
-    document.getElementById('mapSpiderPhone').checked = mapPrefs.spider;
-    document.getElementById('mapGlobePhone').checked = mapPrefs.globe;
     document.querySelectorAll('#mapSettings [data-mapview]').forEach(b => {
         const on = (b.dataset.mapview === 'globe') === mapPrefs.globe;
         b.classList.toggle('active', on);
@@ -3283,6 +3281,11 @@ function setMapStyle(style) {
     if (flightMap.flight) updateMapOverlay();   // légende (couleurs inline)
     scheduleMapDraw();
 }
+
+// Téléphone : les réglages de la carte s'ouvrent en popup (bouton « Réglages ») ; sur ordinateur, panneau toujours visible
+function openMapSettings() { document.body.classList.add('map-settings-open'); }
+function closeMapSettings() { document.body.classList.remove('map-settings-open'); }
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeMapSettings(); });
 
 // Vue 2D (canvas) ou globe 3D (js/globe.js) ; fond du globe : satellite ou sombre (palette de la carte)
 function setMapView(globeOn) {

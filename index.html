@@ -387,10 +387,29 @@
                         <span class="overflown-switch"></span>
                         Spider
                     </label>
+                    <label class="map-large-btn overflown-filter" title="Globe 3D" data-i18n-title="Globe 3D">
+                        <input type="checkbox" id="mapGlobePhone" onchange="setMapView(this.checked)">
+                        <span class="overflown-switch"></span>
+                        <span data-i18n="Globe">Globe</span>
+                    </label>
                 </div>
             </div>
             <!-- Réglages de la carte du vol -->
             <div class="map-settings" id="mapSettings">
+                <div class="map-settings-row">
+                    <span data-i18n="Vue">Vue</span>
+                    <div class="map-seg" role="radiogroup" aria-label="Vue de la carte" data-i18n-aria="Vue de la carte">
+                        <button type="button" data-mapview="flat" role="radio" onclick="setMapView(false)">2D</button>
+                        <button type="button" data-mapview="globe" role="radio" onclick="setMapView(true)" data-i18n="Globe 3D">Globe 3D</button>
+                    </div>
+                </div>
+                <div class="map-settings-row" id="mapGlobeBaseRow" hidden>
+                    <span data-i18n="Fond">Fond</span>
+                    <div class="map-seg" role="radiogroup" aria-label="Fond du globe" data-i18n-aria="Fond du globe">
+                        <button type="button" data-globebase="satellite" role="radio" onclick="setGlobeBase('satellite')" data-i18n="Satellite">Satellite</button>
+                        <button type="button" data-globebase="dark" role="radio" onclick="setGlobeBase('dark')" data-i18n="Carte">Carte</button>
+                    </div>
+                </div>
                 <div class="map-settings-row">
                     <span data-i18n="Codes">Codes</span>
                     <div class="map-seg" role="radiogroup" aria-label="Codes d'aéroport" data-i18n-aria="Codes d'aéroport">
@@ -466,7 +485,8 @@
 
     <script src="js/i18n.js?v=2"></script>
     <script src="js/airspace-router.js?v=2"></script>
-    <script src="js/app.js?v=22"></script>
+    <script src="js/app.js?v=23"></script>
+    <script src="js/globe.js?v=1"></script>
     <!-- Menu de choix de carte d'approche (pastille regroupant plusieurs cartes) -->
     <div id="chartMenu" class="chart-menu" hidden></div>
 </body>

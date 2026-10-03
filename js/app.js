@@ -806,13 +806,15 @@ function renderFlightCard(f) {
 const EARTH_NM = 3440.065;
 // Réglages de la carte du vol, mémorisés dans le navigateur (simple confort, facultatif)
 const MAP_PREFS_KEY = 'airportsketch.mapPrefs';
-const mapPrefs = { code: 'icao', band: 100, largeOnly: false, style: 'standard', conflict: true, jamming: true, spider: false };   // code : 'icao' (KJFK, par défaut) | 'iata' (JFK) ; couloir en nm ; style : 'standard' | 'inverted' | 'contrast'
+const mapPrefs = { code: 'icao', band: 100, largeOnly: false, style: 'standard', conflict: true, jamming: true, spider: false, globe: false, globeBase: 'satellite' };   // code : 'icao' (KJFK, par défaut) | 'iata' (JFK) ; couloir en nm ; style : 'standard' | 'inverted' | 'contrast' ; globe : vue 3D (js/globe.js), fond 'satellite' | 'dark'
 try {
     const saved = JSON.parse(localStorage.getItem(MAP_PREFS_KEY) || '{}');
     if (['standard', 'inverted', 'contrast'].includes(saved.style)) mapPrefs.style = saved.style;
     if (typeof saved.conflict === 'boolean') mapPrefs.conflict = saved.conflict;
     if (typeof saved.jamming === 'boolean') mapPrefs.jamming = saved.jamming;
     if (typeof saved.spider === 'boolean') mapPrefs.spider = saved.spider;
+    if (typeof saved.globe === 'boolean') mapPrefs.globe = saved.globe;
+    if (saved.globeBase === 'satellite' || saved.globeBase === 'dark') mapPrefs.globeBase = saved.globeBase;
     if (saved.code === 'iata' || saved.code === 'icao') mapPrefs.code = saved.code;
     if (typeof saved.largeOnly === 'boolean') mapPrefs.largeOnly = saved.largeOnly;
     if (Number.isFinite(saved.band)) mapPrefs.band = Math.min(300, Math.max(100, Math.round(saved.band / 10) * 10));
@@ -1972,7 +1974,7 @@ function loadWorld() {
                 };
                 w.land.forEach(r => add(land, r, true));
                 w.borders.forEach(b => add(borders, b, false));
-                flightMap.world = { land, borders, capitals: w.capitals || [] };
+                flightMap.world = { land, borders, capitals: w.capitals || [], raw: w };   // raw : contours bruts, repris par le globe
                 if (w.avoid && w.avoid.vis) { flightMap.avoid = new AirspaceRouter(w.avoid); planCache.clear(); }
                 loadConflictZones();   // couches facultatives : leur absence ne bloque pas la carte
                 loadGpsJamming();
@@ -2287,15 +2289,20 @@ function buildFlightRoute() {
     const route = {
         solid: new Path2D(), dashed: new Path2D(), remaining: new Path2D(), direct: new Path2D(), flownEst: new Path2D(),
         hasTrack: false, hasGap: false, hasRemaining: false, hasPosition: false,
-        plane: null, dep: null, arr: null, points: []
+        plane: null, dep: null, arr: null, points: [],
+        lines: []   // mêmes tracés en [lon, lat] pour le globe : { kind: 'solid' | 'dashed' | 'remaining' | 'direct' | 'flownEst', coords }
     };
+    const kinds = new Map(['solid', 'dashed', 'remaining', 'direct', 'flownEst'].map(k => [route[k], k]));
     const depLabel = mapAirportLabel(dep, (f.dep_iata || f.dep_icao || '').toUpperCase());
     const arrLabel = mapAirportLabel(arr, (f.arr_iata || f.arr_icao || '').toUpperCase());
-    const draw = (path, pts) => pts.forEach(([lat, lon], i) => {
-        const y = mapY(lat);
-        if (i === 0) path.moveTo(lon, y); else path.lineTo(lon, y);
-        route.points.push([lon, y]);
-    });
+    const draw = (path, pts) => {
+        pts.forEach(([lat, lon], i) => {
+            const y = mapY(lat);
+            if (i === 0) path.moveTo(lon, y); else path.lineTo(lon, y);
+            route.points.push([lon, y]);
+        });
+        route.lines.push({ kind: kinds.get(path), coords: pts.map(([lat, lon]) => [lon, lat]) });
+    };
 
     if (t && Array.isArray(t.track) && t.track.length >= 2) {
         route.hasTrack = true;
@@ -2307,6 +2314,7 @@ function buildFlightRoute() {
         });
         route.solid.moveTo(pts[0].lon, mapY(pts[0].lat));
         route.points.push([pts[0].lon, mapY(pts[0].lat)]);
+        let seg = { kind: 'solid', coords: [[pts[0].lon, pts[0].lat]] };
         for (let i = 1; i < pts.length; i++) {
             const a = pts[i - 1], b = pts[i];
             if (b.ts - a.ts > MAP_GAP_S) {
@@ -2314,11 +2322,15 @@ function buildFlightRoute() {
                 route.hasGap = true;
                 draw(route.dashed, greatCircle(a.lat, a.lon, b.lat, b.lon));
                 route.solid.moveTo(b.lon, mapY(b.lat));
+                if (seg.coords.length > 1) route.lines.push(seg);
+                seg = { kind: 'solid', coords: [] };
             } else {
                 route.solid.lineTo(b.lon, mapY(b.lat));
             }
+            seg.coords.push([b.lon, b.lat]);
             route.points.push([b.lon, mapY(b.lat)]);
         }
+        if (seg.coords.length > 1) route.lines.push(seg);
         const last = pts[pts.length - 1], now = t.now || {};
         const lat = now.lat ?? last.lat;
         const lon = unwrapLon(now.lon ?? last.lon, last.lon);
@@ -2389,6 +2401,7 @@ function clampMapCenter() {
 }
 
 function fitFlightMap() {
+    if (mapPrefs.globe) { flightMap.needsFit = false; flightMap.userMoved = false; globeFit(); return; }
     const w = mapCanvas.clientWidth, h = mapCanvas.clientHeight;
     if (!w || !h) { flightMap.needsFit = true; return; }
     flightMap.needsFit = false;
@@ -2559,7 +2572,8 @@ function maybeReturnToMap() {
 // Boutons + / - / recentrer, communs au schéma de pistes et à la carte
 function viewZoom(factor) {
     if (viewMode === 'map') flightMap.userMoved = true;
-    if (viewMode === 'map') mapZoomAt(factor, mapCanvas.clientWidth / 2, mapCanvas.clientHeight / 2);
+    if (viewMode === 'map' && mapPrefs.globe) globeZoom(factor);
+    else if (viewMode === 'map') mapZoomAt(factor, mapCanvas.clientWidth / 2, mapCanvas.clientHeight / 2);
     else zoom(factor);
 }
 function viewReset() {
@@ -2568,6 +2582,7 @@ function viewReset() {
 }
 
 function resizeMapCanvas() {
+    if (mapPrefs.globe) return globeShow();
     const dpr = window.devicePixelRatio || 1;
     const w = canvasContainer.clientWidth, h = canvasContainer.clientHeight;
     if (!w || !h) return false;
@@ -2627,7 +2642,7 @@ function spiderLinks() {
 
 function scheduleMapDraw() {
     if (flightMap.raf || viewMode !== 'map') return;
-    flightMap.raf = requestAnimationFrame(() => { flightMap.raf = 0; drawFlightMap(); });
+    flightMap.raf = requestAnimationFrame(() => { flightMap.raf = 0; if (mapPrefs.globe) globeRender(); else drawFlightMap(); });
 }
 
 // --- Dessin -----------------------------------------------------------
@@ -3016,8 +3031,9 @@ function updateMapOverlay() {
     const credit = isDemo
         ? tr('Vol de démonstration : données fictives · fond Natural Earth')
         : t && t.source === 'airlabs' ? tr('Position : AirLabs · fond Natural Earth') : tr('Fond de carte : Natural Earth');
+    const imagery = mapPrefs.globe && mapPrefs.globeBase === 'satellite' ? tr(' · imagerie Esri') : '';
     legend.innerHTML = items.length
-        ? `${items.join('')}<small>${credit}${mapPrefs.conflict && flightMap.conflict ? tr(' · zones de conflit : EASA, FIR : VATSpy (CC-BY-SA)') : ''}<br>${tr('Plan de vol non public · indicatif, ne pas utiliser pour la navigation')}</small>`
+        ? `${items.join('')}<small>${credit}${imagery}${mapPrefs.conflict && flightMap.conflict ? tr(' · zones de conflit : EASA, FIR : VATSpy (CC-BY-SA)') : ''}<br>${tr('Plan de vol non public · indicatif, ne pas utiliser pour la navigation')}</small>`
         : '';
     legend.hidden = !items.length;
     // Le contenu (donc la taille) de ces boîtes vient de changer : la trajectoire doit rester dégagée
@@ -3194,6 +3210,19 @@ function syncMapSettings() {
     document.getElementById('mapSpider').checked = mapPrefs.spider;
     document.getElementById('mapLargeOnlyPhone').checked = mapPrefs.largeOnly;
     document.getElementById('mapSpiderPhone').checked = mapPrefs.spider;
+    document.getElementById('mapGlobePhone').checked = mapPrefs.globe;
+    document.querySelectorAll('#mapSettings [data-mapview]').forEach(b => {
+        const on = (b.dataset.mapview === 'globe') === mapPrefs.globe;
+        b.classList.toggle('active', on);
+        b.setAttribute('aria-checked', String(on));
+    });
+    document.querySelectorAll('#mapSettings [data-globebase]').forEach(b => {
+        const on = b.dataset.globebase === mapPrefs.globeBase;
+        b.classList.toggle('active', on);
+        b.setAttribute('aria-checked', String(on));
+    });
+    document.getElementById('mapGlobeBaseRow').hidden = !mapPrefs.globe;
+    document.body.dataset.globe = mapPrefs.globe ? 'on' : 'off';
 }
 
 
@@ -3206,6 +3235,7 @@ function applyTheme(next, { save = true } = {}) {
     if (save) { try { localStorage.setItem('pleinaxe.theme', theme); } catch (err) { /* stockage indisponible */ } }
     if (typeof hideMapTip === 'function') hideMapTip();
     if (typeof flightMap !== 'undefined' && flightMap.flight) updateMapOverlay();   // légende (couleurs inline)
+    if (typeof globeRestyle === 'function') globeRestyle();
     if (typeof viewMode !== 'undefined' && viewMode === 'map') scheduleMapDraw(); else if (currentRunways.length) draw();
 }
 // Lien de partage : l'URL courante (?icao= / ?flight=), sans code d'accès ; feuille de partage native sur téléphone
@@ -3249,8 +3279,29 @@ function setMapStyle(style) {
     saveMapPrefs();
     syncMapSettings();
     Object.assign(MAP_COLORS, mapPalette(theme));
+    globeRestyle();
     if (flightMap.flight) updateMapOverlay();   // légende (couleurs inline)
     scheduleMapDraw();
+}
+
+// Vue 2D (canvas) ou globe 3D (js/globe.js) ; fond du globe : satellite ou sombre (palette de la carte)
+function setMapView(globeOn) {
+    hideMapTip();
+    mapPrefs.globe = !!globeOn;
+    saveMapPrefs();
+    syncMapSettings();
+    if (flightMap.flight) updateMapOverlay();   // crédit du fond
+    if (viewMode === 'map') {
+        flightMap.needsFit = true;
+        resizeMapCanvas();
+    }
+}
+function setGlobeBase(base) {
+    mapPrefs.globeBase = base;
+    saveMapPrefs();
+    syncMapSettings();
+    globeRestyle();
+    if (flightMap.flight) updateMapOverlay();
 }
 
 function setMapCode(code) {
@@ -3972,13 +4023,17 @@ async function showMapTip(icao, clientX, clientY) {
 
 // Infobulle des couches zones de conflit EASA et brouillage GPS sous le curseur ; true si elle s'affiche
 function showLayerTip(clientX, clientY) {
-    const conflictOn = mapPrefs.conflict && flightMap.conflict;
-    const jamOn = mapPrefs.jamming && flightMap.jamming;
-    if (!conflictOn && !jamOn) return false;
     const rect = mapCanvas.getBoundingClientRect();
     const s = flightMap.scale;
     const lon = flightMap.cx + (clientX - rect.left - rect.width / 2) / s;
     const lat = latOfWorldY(flightMap.cy + (clientY - rect.top - rect.height / 2) / s);
+    return showLayerTipAt(lon, lat, clientX, clientY);
+}
+// Même infobulle pour un point (lon, lat) donné : utilisée aussi par le globe
+function showLayerTipAt(lon, lat, clientX, clientY) {
+    const conflictOn = mapPrefs.conflict && flightMap.conflict;
+    const jamOn = mapPrefs.jamming && flightMap.jamming;
+    if (!conflictOn && !jamOn) return false;
     const zones = conflictOn ? conflictZonesAt(lon, lat) : [];
     const jam = jamOn ? jammingAt(lon, lat) : null;
     if (!zones.length && !jam) return false;
